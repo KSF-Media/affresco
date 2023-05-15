@@ -3,5 +3,5 @@ import phone from "../../../../images/phone-symbol.svg";
 
 export const icons = {
   signOut,
-  phone
+  phone,
 };

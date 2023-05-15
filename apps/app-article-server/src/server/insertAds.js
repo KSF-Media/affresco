@@ -38,7 +38,7 @@ export default function insertAds(articleBody) {
     // body = [{ ad: "MOBMITT"}, ...body];
     articleBody.splice(ad1Position, 0, { ad: "MOBMITT" });
     // +1 needed because inserted ad1 changes positioning after it
-    articleBody.splice(ad2Position+1, 0, { ad: "DIGIHELMOB" });
+    articleBody.splice(ad2Position + 1, 0, { ad: "DIGIHELMOB" });
   } else if (ad1Position) {
     articleBody.splice(ad1Position, 0, { ad: "MOBMITT" });
   }

@@ -6,10 +6,10 @@ ul#progressIndicator {
   width: 100%;
   padding: 0;
   margin: 2em 0;
-  @media(max-width: @screen-sm-max) {
+  @media (max-width: @screen-sm-max) {
     margin: 0;
   }
-  @media(max-width: @screen-xs-max) {
+  @media (max-width: @screen-xs-max) {
     margin: 0;
   }
   li {
@@ -48,25 +48,25 @@ ul#progressIndicator {
         float: left;
         background: #a69e9a url("@{path-icons}/tail.png") top left no-repeat;
       }
-      span.nr{
+      span.nr {
         background: #fff;
         color: #a69e9a;
       }
     }
-    &.last{
+    &.last {
       background: #fff;
       &.active {
         background: #a69e9a;
       }
     }
-    span.desc{
+    span.desc {
       display: inline;
       position: relative;
       top: 1px;
     }
-    span.nr{
+    span.nr {
       border-radius: 17px;
-      color: #FFF;
+      color: #fff;
       background: #a69e9a none repeat scroll 0% 0%;
       width: 17px;
       height: 17px;
@@ -78,13 +78,15 @@ ul#progressIndicator {
       font-weight: 400;
     }
   }
-  @media(max-width: @screen-xs-max) {
+  @media (max-width: @screen-xs-max) {
     border: none;
     li {
       display: none;
       background: transparent;
       height: auto;
-      span.tail, span.desc, span.nr {
+      span.tail,
+      span.desc,
+      span.nr {
         display: none;
       }
       &.active {

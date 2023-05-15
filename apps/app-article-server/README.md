@@ -22,10 +22,11 @@ As an alternative to exporting PUBLIC_URL for every new shell you can also use [
 A server in port `8003` should be now up. Here's an example article for you to test it `http://localhost:8003/article/44f345b5-eb92-4e60-a884-26396cd3d831`.
 
 ## Tests
+
 TODO
 
 ## Deploying
 
-When a PR is merged to __master__ it gets __deployed__ to __production__
+When a PR is merged to **master** it gets **deployed** to **production**
 
 Deployment is handled by our gitlab mirror, see [.gitlab-ci.yml](../../.gitlab-ci.yml) and [infra](../../infra/README.md) for details

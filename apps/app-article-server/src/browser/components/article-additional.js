@@ -1,7 +1,4 @@
 import React, { Component } from "react";
-import shareIcon from "../assets/images/share.png";
-import SvgIcon from "../svgIcon";
-import soundIcon from "../assets/images/sound.png";
 
 class Additional extends Component {
   constructor(props) {
@@ -9,19 +6,12 @@ class Additional extends Component {
   }
 
   componentDidMount() {}
-  onShare() {
-    Android.showIntent(process.env.SHARE_URL + this.state.uuid);
-  }
 
   render() {
     return (
       <div className={"row"}>
         <div className="col-12">
-          <p
-            className={`preamble ${
-              this.props.darkModeEnabled ? "darkMode" : ""
-            } additional-xs ${this.customStyle()}`}
-          >
+          <p className={`preamble ${this.props.darkModeEnabled ? "darkMode" : ""} additional-xs ${this.customStyle()}`}>
             {this.props.preamble}
           </p>
         </div>

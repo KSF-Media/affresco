@@ -1,10 +1,9 @@
 import React from "react";
-import { render } from "react-dom";
 import ReactTable from "react-table";
 import "react-table/react-table.css";
 import { isMobile } from "react-device-detect";
 
-import { AreaResponse, Nominator, Status } from "election";
+import { Status } from "election";
 
 export default class Table extends React.Component {
   constructor(props) {

@@ -1,10 +1,10 @@
-.transition-properties(...){
+.transition-properties(...) {
   -webkit-transition: @arguments;
   -moz-transition: @arguments;
   -o-transition: @arguments;
   transition: @arguments;
 }
-.rotate-properties(...){
+.rotate-properties(...) {
   -ms-transform: rotate(@arguments); /* IE 9 */
   -webkit-transform: rotate(@arguments); /* Chrome, Safari, Opera */
   transform: rotate(@arguments);
@@ -18,8 +18,8 @@
 
 .appearance-properties (...) {
   -webkit-appearance: @arguments;
-  -moz-appearance:    @arguments;
-  appearance:         @arguments;
+  -moz-appearance: @arguments;
+  appearance: @arguments;
 }
 
 .add-ajax-loader(@size: 50px) {
@@ -27,10 +27,10 @@
     width: @size;
     height: @size;
     margin: 20px auto;
-    background-image: url('@{path-icons}/loader-gif.gif');
+    background-image: url("@{path-icons}/loader-gif.gif");
     background-repeat: no-repeat;
     background-size: @size @size;
-  };
+  }
 }
 
 /** Create a balloon of the element with this mixin*/
@@ -45,7 +45,7 @@
   line-height: @size;
 
   &:before {
-    content: '';
+    content: "";
     display: block;
     position: absolute;
     bottom: 0 - @arrowSize;
@@ -70,7 +70,6 @@
 
 /** Create a custom styled select */
 .selectBox(@height: 40px, @textPadding: 15px, @arrowSize: 4px) {
-
   .select-menu {
     position: relative;
     display: inline-block;
@@ -80,7 +79,7 @@
     cursor: pointer;
 
     &:after {
-      content: '';
+      content: "";
       display: block;
       position: absolute;
       bottom: floor(@height / 2) - @arrowSize;
@@ -94,7 +93,7 @@
       border-top: @arrowSize solid #000;
     }
 
-    &.focus:after  {
+    &.focus:after {
       /** Create arrow */
       border-left: @arrowSize solid transparent;
       border-right: @arrowSize solid transparent;
@@ -137,7 +136,7 @@
   cursor: pointer;
 
   &:after {
-    content: '';
+    content: "";
     display: block;
     position: absolute;
     bottom: floor(@height - @font-size) - 1;
@@ -151,7 +150,7 @@
     border-top: @arrow-height solid @ksf-article-comments-color-primary;
   }
 
-  &.focus:after  {
+  &.focus:after {
     /** Create arrow when select is focused */
     border-left: @arrow-width solid transparent;
     border-right: @arrow-width solid transparent;
@@ -179,7 +178,6 @@
 }
 
 .makeKSFMediaObject(@objectWidth: 50px, @objectPadding: 15px) {
-
   .media {
     display: table;
     width: 100%;
@@ -236,11 +234,9 @@
     margin-top: 0;
     margin-bottom: 5px;
   }
-
 }
 
 .makeKSFMediaList(@dividerMargin: 25px, @dividerColor:#eee) {
-
   // Media list variation
   .media-list {
     padding-left: 0;
@@ -253,7 +249,6 @@
     }
   }
 }
-
 
 .isFetchMoreButton(@width: 250px, @btnColor: @accept, @color: #fff) {
   display: block;
@@ -289,9 +284,9 @@
 
 .touch-callout(@value) {
   -webkit-touch-callout: @value; // iOS Safari
-  -webkit-user-select: @value;   // Chrome/Safari/Opera
-  -khtml-user-select: @value;    // Konqueror
-  -moz-user-select: @value;      // Firefox
-  -ms-user-select: @value;       // Internet Explorer/Edge
+  -webkit-user-select: @value; // Chrome/Safari/Opera
+  -khtml-user-select: @value; // Konqueror
+  -moz-user-select: @value; // Firefox
+  -ms-user-select: @value; // Internet Explorer/Edge
   user-select: @value;
 }

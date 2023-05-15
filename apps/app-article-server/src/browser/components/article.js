@@ -1,5 +1,4 @@
 import React, { Component, Suspense } from "react";
-import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
 import Header from "./header";
 import Additional from "./article-additional";
 import ArticleDetails from "./article-details";
@@ -8,9 +7,9 @@ import Footer from "./footer";
 import RelatedArticles from "./related-articles";
 import Lightbox from "react-image-lightbox";
 import "react-image-lightbox/style.css";
-import { AdvertorialLiftup } from "./advertorial-liftup.js"
+import { AdvertorialLiftup } from "./advertorial-liftup.js";
 
-const MostReadArticles = React.lazy(() => import('./most-read-articles'))
+const MostReadArticles = React.lazy(() => import("./most-read-articles"));
 
 const axios = require("axios");
 var _ = require("lodash");
@@ -132,13 +131,10 @@ class Article extends Component {
               />
             ) : (
               ""
-              )}
-              {this.state.adsAreShown && (
-                  <AdvertorialLiftup
-                    darkModeEnabled={this.props.darkModeEnabled}
-                    paper={this.props.paper}
-                  />
-              )}
+            )}
+            {this.state.adsAreShown && (
+              <AdvertorialLiftup darkModeEnabled={this.props.darkModeEnabled} paper={this.props.paper} />
+            )}
             {this.state.mostReadArticles.length > 0 ? (
               <Suspense fallback={<div>Laddar ...</div>}>
                 <MostReadArticles
@@ -159,7 +155,7 @@ class Article extends Component {
   }
 }
 
-const Title = (props, state) => {
+const Title = (props) => {
   const classNames = new Map();
   classNames.set("1.06", "title-xs");
   classNames.set("1.5", "title-sm");

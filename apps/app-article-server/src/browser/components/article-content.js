@@ -1,9 +1,9 @@
 import React, { Component } from "react";
 const _ = require("lodash");
-import * as cheerio from 'cheerio';
+import * as cheerio from "cheerio";
 import PremiumBox from "./premium";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import 'react-lazy-load-image-component/src/effects/opacity.css';
+import "react-lazy-load-image-component/src/effects/opacity.css";
 
 class Content extends Component {
   constructor(props) {
@@ -20,9 +20,7 @@ class Content extends Component {
       if (blockType === "ad") {
         return this.renderAd(block, key);
       }
-      if (blockType === "paragraph") {
-        return this.renderParagraph(block, key);
-      } else if (blockType === "headline") {
+      if (blockType === "headline") {
         return this.renderHeadline(block, key);
       } else if (blockType === "image") {
         return this.renderImage(block, key);
@@ -52,33 +50,26 @@ class Content extends Component {
     }
   }
 
-  renderParagraph(block, key) {
-    return (
-      <p className={"paragraph"} key={key}>
-        {htmlToReactParser.parse(block.paragraph)}
-      </p>
-    );
-  }
-
-  getBrandQuoteIcon(paper) {
-    switch (paper) {
-      case ("on"):
-        return quoteIconON
-      case ("vn"):
-        return quoteIconVN
-      default:
-        return quoteIconHBL
-    }
-  }
-
   renderQuotes(block, key) {
     return (
       <div className={"quotePlaceHolder"} key={key}>
         <div className={"row"}>
           <div className={"col-2 thojzat quote-" + this.state.paper}>
-            <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-    width="100%" viewBox="0 0 359 326" xmlSpace="preserve">
-              <path shapeRendering="geometricPrecision" opacity="1.000000" stroke="none"
+            <svg
+              version="1.1"
+              id="Layer_1"
+              xmlns="http://www.w3.org/2000/svg"
+              xmlnsXlink="http://www.w3.org/1999/xlink"
+              x="0px"
+              y="0px"
+              width="100%"
+              viewBox="0 0 359 326"
+              xmlSpace="preserve"
+            >
+              <path
+                shapeRendering="geometricPrecision"
+                opacity="1.000000"
+                stroke="none"
                 d="
                 M216.255249,304.102295
                 C201.816803,312.021271 205.385315,312.756470 198.310562,300.092773
@@ -99,8 +90,12 @@ class Content extends Component {
                 C325.513123,203.357315 315.360535,222.724228 300.731873,239.058868
                 C290.657349,250.308304 279.238831,260.457611 267.738831,270.301636
                 C252.159119,283.637939 234.605118,294.188171 216.255249,304.102295
-              z"/>
-              <path shapeRendering="geometricPrecision" opacity="1.000000" stroke="none"
+              z"
+              />
+              <path
+                shapeRendering="geometricPrecision"
+                opacity="1.000000"
+                stroke="none"
                 d="
                 M19.836990,109.253517
                 C15.946694,87.355743 19.138172,67.367111 32.103050,49.257465
@@ -123,10 +118,14 @@ class Content extends Component {
                 C91.200890,161.133331 82.584038,161.975830 74.005867,161.806030
                 C56.178204,161.453171 42.272221,153.212555 31.824890,138.989319
                 C25.398611,130.240448 21.449877,120.435944 19.836990,109.253517
-              z"/>
+              z"
+              />
             </svg>
           </div>
-          <div className={`col-10 quote ${this.props.darkModeEnabled ? "darkMode" : ""}`} style={{ paddingLeft: "0px" }}>
+          <div
+            className={`col-10 quote ${this.props.darkModeEnabled ? "darkMode" : ""}`}
+            style={{ paddingLeft: "0px" }}
+          >
             {block.quote}
           </div>
         </div>
@@ -156,7 +155,7 @@ class Content extends Component {
     let byline = block.image.byline === null ? "" : block.image.byline;
     return (
       <div className={"image"} key={key}>
-        <LazyLoadImage 
+        <LazyLoadImage
           className={"articleImage"}
           width="100%"
           src={block.image.url}
@@ -238,12 +237,12 @@ class Content extends Component {
   }
 
   renderHtml(block, key) {
-    if(
-      block.html.includes("hbl.fi/artikel/")
-      || block.html.includes("ostnyland.fi/artikel/")
-      || block.html.includes("vastranyland.fi/artikel/")
+    if (
+      block.html.includes("hbl.fi/artikel/") ||
+      block.html.includes("ostnyland.fi/artikel/") ||
+      block.html.includes("vastranyland.fi/artikel/")
     ) {
-      block.html = this.handleInternalLinks(block.html)
+      block.html = this.handleInternalLinks(block.html);
     }
     return (
       <div
@@ -256,29 +255,36 @@ class Content extends Component {
   }
 
   handleInternalLinks(htmlString) {
-    const validHostnames = ['www.hbl.fi', 'hbl.fi', 'www.ostnyland.fi', 'ostnyland.fi', 'www.vastranyland.fi', 'vastranyland.fi']
+    const validHostnames = [
+      "www.hbl.fi",
+      "hbl.fi",
+      "www.ostnyland.fi",
+      "ostnyland.fi",
+      "www.vastranyland.fi",
+      "vastranyland.fi",
+    ];
 
-    const $ = cheerio.load(htmlString, null, false)
-    const $links = $('a')
+    const $ = cheerio.load(htmlString, null, false);
+    const $links = $("a");
     $links.each((i, el) => {
       const $el = $(el);
 
       // Reporters every now and then don't include protocol in the url,
       // which URL() fails to handle.
-      let url = $el.attr('href');
-      if(!url.match(/^https?:/)) {
+      let url = $el.attr("href");
+      if (!url.match(/^https?:/)) {
         url = "https://" + url;
       }
-      const urlObj = new URL(url)
+      const urlObj = new URL(url);
 
-      if(validHostnames.includes(urlObj.hostname) && urlObj.pathname.startsWith('/artikel/')) {
-        let linkUuid = urlObj.pathname.slice('/article/'.length)
-        linkUuid = linkUuid.endsWith('/') ? linkUuid.slice(0, -1) : linkUuid
+      if (validHostnames.includes(urlObj.hostname) && urlObj.pathname.startsWith("/artikel/")) {
+        let linkUuid = urlObj.pathname.slice("/article/".length);
+        linkUuid = linkUuid.endsWith("/") ? linkUuid.slice(0, -1) : linkUuid;
 
-        $el.attr('href', '/article/' + linkUuid + this.props.queryString)
+        $el.attr("href", "/article/" + linkUuid + this.props.queryString);
       }
-    })
-    return $.html()
+    });
+    return $.html();
   }
 
   expandFactBox(key) {
@@ -299,7 +305,7 @@ class Content extends Component {
   renderFootnote(block, key) {
     return (
       <div className={"html text-footnote"} key={key}>
-        <i dangerouslySetInnerHTML={{__html: block.footnote}} />
+        <i dangerouslySetInnerHTML={{ __html: block.footnote }} />
       </div>
     );
   }
@@ -343,10 +349,13 @@ class Content extends Component {
               })
             : ""}
           <div className={"row"}>
-            {this.props.isPreview
-              ? <div className={"col-sm-12 fade-premium"}><PremiumBox paper={this.props.paper} /></div>
-              : ""
-            }
+            {this.props.isPreview ? (
+              <div className={"col-sm-12 fade-premium"}>
+                <PremiumBox paper={this.props.paper} />
+              </div>
+            ) : (
+              ""
+            )}
           </div>
           {this.renderAdOutsideMainBlock("mobbox1")}
         </div>

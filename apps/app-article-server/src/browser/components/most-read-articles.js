@@ -1,5 +1,4 @@
-import React, { Component, Fragment } from "react";
-import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
+import React, { Component } from "react";
 import MobileList from "./mobile-article-list";
 
 class MostReadArticles extends Component {

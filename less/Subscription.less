@@ -1,60 +1,62 @@
-@import (reference) '../less/ksf-colors';
-@import (reference) '../less/ksf-variables';
+@import (reference) "../less/ksf-colors";
+@import (reference) "../less/ksf-variables";
 
 .subscription--paper-name {
-    text-align: left;
+  text-align: left;
 }
 
 .subscription--container {
+  margin-top: 0;
+  > .grid--column-half {
+    @media @to-xlarge {
+      width: 100%;
+    }
+    @media @to-medium {
+      width: calc(6 / 12 * 100%);
+    }
+    @media @to-xsmall {
+      width: 100%;
+    }
+  }
+  .pause-subscription--container,
+  .temporary-address-change--container,
+  .delivery-reclamation--container {
     margin-top: 0;
-    > .grid--column-half {
-        @media @to-xlarge {
-            width: 100%;
-        }
-        @media @to-medium {
-            width: calc(6/12 * 100%);
-        }
-        @media @to-xsmall {
-            width: 100%;
-        }
+    @media @to-xlarge {
+      margin-top: 1.5em;
     }
-    .pause-subscription--container, .temporary-address-change--container, .delivery-reclamation--container {
-        margin-top: 0;
-        @media @to-xlarge {
-            margin-top: 1.5em;
-        }
-        @media @to-medium {
-            margin-top: 0;
-        }
-        @media @to-xsmall {
-            margin-top: 1.5em;
-        }
+    @media @to-medium {
+      margin-top: 0;
     }
+    @media @to-xsmall {
+      margin-top: 1.5em;
+    }
+  }
 }
 
 .subscription--container {
-    .description-list--container {
-	margin-top: 0;
-	ul {
-	    margin-top: 0;
-	    padding-left: 1em;
-	}
+  .description-list--container {
+    margin-top: 0;
+    ul {
+      margin-top: 0;
+      padding-left: 1em;
     }
+  }
 }
 
 .subscription--actions-container {
-    align-items: flex-end;
-    flex-direction: column;
+  align-items: flex-end;
+  flex-direction: column;
+  margin-top: 0;
+  @media @to-xlarge {
+    margin-top: 1.5em;
+  }
+  @media @to-medium {
     margin-top: 0;
-    @media @to-xlarge {
-        margin-top: 1.5em;
-    }
-    @media @to-medium {
-        margin-top: 0;
-    }
-    @media @to-xsmall {
-        margin-top: 1.5em;
-    }
+  }
+  @media @to-xsmall {
+    margin-top: 1.5em;
+  }
 }
 
 .subscription--success-container {
@@ -63,99 +65,99 @@
   flex-direction: row;
   margin-top: 0;
   @media @to-xlarge {
-      margin-top: 1.5em;
+    margin-top: 1.5em;
   }
   @media @to-medium {
-      margin-top: 0;
+    margin-top: 0;
   }
   @media @to-xsmall {
-      margin-top: 1.5em;
+    margin-top: 1.5em;
   }
 }
 
 .subscription--pause-icon {
-    .subscription--update-icon('../images/pause.svg');
+  .subscription--update-icon("../images/pause.svg");
 }
 
 .subscription--unpause-icon {
-    .subscription--update-icon('../images/start.svg');
+  .subscription--update-icon("../images/start.svg");
 }
 
 .subscription--temporary-address-change-icon {
-    .subscription--update-icon('../images/loc-point-map.svg');
+  .subscription--update-icon("../images/loc-point-map.svg");
 }
 
 .subscription--delete-temporary-address-change-icon {
-    .subscription--update-icon('../images/loc-point-map-cancel.svg');
+  .subscription--update-icon("../images/loc-point-map-cancel.svg");
 }
 
 .subscription--delivery-reclamation-icon {
-    .subscription--update-icon('../images/delivery-reclamation.svg');
+  .subscription--update-icon("../images/delivery-reclamation.svg");
 }
 
 .subscription--credit-card-update-icon {
-    .subscription--update-icon('../images/fin-card-front-back.svg');
+  .subscription--update-icon("../images/fin-card-front-back.svg");
 }
 
 .subscription--update-icon(@url) {
-    display: block;
-    width: 30px;
-    height: 30px;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-image: url(@url);
-    background-size: 20px;
-    cursor: pointer;
+  display: block;
+  width: 30px;
+  height: 30px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-image: url(@url);
+  background-size: 20px;
+  cursor: pointer;
 }
 
 .subscription--update-action-text {
-    cursor: pointer;
-    color: @dark-text;
+  cursor: pointer;
+  color: @dark-text;
 }
 
 .subscription--update-success {
-    min-height: 30px;
+  min-height: 30px;
 }
 
 .subscription--update-success:first-child {
-    margin-right: 0.5em;
+  margin-right: 0.5em;
 }
 
 .subscription--try-update-again {
-    color: red;
-    text-decoration: underline;
-    cursor: pointer;
+  color: red;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .subscription--error-container {
-    flex-direction: column;
+  flex-direction: column;
 }
 
 .subscription--action-container {
-    flex-direction: column;
+  flex-direction: column;
 }
 
 .subscription--action-item {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
 }
 
 .subscription--action-link {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
 }
 
 .subscription--edit-period-button {
-    cursor: pointer;
-    text-decoration: underline;
-    display: flex;
-    float: right;
+  cursor: pointer;
+  text-decoration: underline;
+  display: flex;
+  float: right;
 
-    .subscription--edit-text {
-	margin-top: 0.5em;
-    }
+  .subscription--edit-text {
+    margin-top: 0.5em;
+  }
 }

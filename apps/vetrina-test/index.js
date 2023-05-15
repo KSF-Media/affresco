@@ -1,9 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-// yup, welcome to react 16
-import createReactClass from "create-react-class";
-React.createClass = createReactClass;
 var Main = require("./output/VetrinaTest.Main/index.js");
 
 function main() {
@@ -111,7 +108,7 @@ var hblPremium = {
   },
 };
 
-var hbl365 = {
+window.hbl365 = {
   id: "HBL 365",
   description: (
     <div>

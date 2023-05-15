@@ -1,41 +1,44 @@
-@import (reference) 'ksf-colors';
+@import (reference) "ksf-colors";
 
 .delivery-reclamation--container {
-    h3 { margin-top: 0 };
-    justify-content: flex-end;
-    clear: both;
+  h3 {
+    margin-top: 0;
+  }
+  justify-content: flex-end;
+  clear: both;
 }
 
 .delivery-reclamation--close-icon {
-    justify-content: right;
-    align-items: center;
-    height: 1.5em;
-    .close-icon {
-	cursor: pointer;
-    }
-    width: 8.3%;
-    display: flex;
+  justify-content: right;
+  align-items: center;
+  height: 1.5em;
+  .close-icon {
+    cursor: pointer;
+  }
+  width: 8.3%;
+  display: flex;
 }
 
 .delivery-reclamation--submit-container {
-    margin-top: 1rem;
+  margin-top: 1rem;
 }
 
-.delivery-reclamation--submit-container:before, .delivery-reclamation--submit-container:after {
-    content: " ";
-    display: table;
+.delivery-reclamation--submit-container:before,
+.delivery-reclamation--submit-container:after {
+  content: " ";
+  display: table;
 }
 
 .delivery-reclamation--submit-container:after {
-    clear: both;
+  clear: both;
 }
 
 .delivery-reclamation--date-picker {
+  width: 100%;
+  .react-date-picker__wrapper {
     width: 100%;
-    .react-date-picker__wrapper {
-	width: 100%;
-	border-color: @grey-mediumlight;
-	border-radius: 3px;
-	padding: 3px;
-    }
+    border-color: @grey-mediumlight;
+    border-radius: 3px;
+    padding: 3px;
+  }
 }

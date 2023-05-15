@@ -1,33 +1,34 @@
-@import (reference) 'ksf-colors';
-@import 'ksf-utils';
-@import 'ksf-grid';
-
+@import (reference) "ksf-colors";
+@import "ksf-utils";
+@import "ksf-grid";
 
 .pause-subscription--container {
-    h3 { margin: 0 };
-    input[type=text] {
-        box-sizing: border-box;
-        width: 100%;
-    }
-    justify-content: flex-end;
-    clear: both;
+  h3 {
+    margin: 0;
+  }
+  input[type="text"] {
+    box-sizing: border-box;
+    width: 100%;
+  }
+  justify-content: flex-end;
+  clear: both;
 }
 
 .pause-subscription--close-icon {
-    justify-content: right;
-    align-items: center;
-    height: 1.5em;
-    .close-icon {
-        cursor: pointer;
-    }
+  justify-content: right;
+  align-items: center;
+  height: 1.5em;
+  .close-icon {
+    cursor: pointer;
+  }
 }
 
 .pause-subscription--date-picker {
+  width: 100%;
+  .react-date-picker__wrapper {
     width: 100%;
-    .react-date-picker__wrapper {
-        width: 100%;
-        border-color: @grey-mediumlight;
-        border-radius: 3px;
-        padding: 3px;
-    }
+    border-color: @grey-mediumlight;
+    border-radius: 3px;
+    padding: 3px;
+  }
 }

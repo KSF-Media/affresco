@@ -13,8 +13,10 @@ export function setCookie_(k, v) {
 }
 
 export function getValue_(k) {
-  const cookie = document.cookie.split('; ').find(function(row) {return row.startsWith(k+'=')});
-  return cookie ? cookie.split('=')[1] : null;
+  const cookie = document.cookie.split("; ").find(function (row) {
+    return row.startsWith(k + "=");
+  });
+  return cookie ? cookie.split("=")[1] : null;
 }
 
 export function deleteCookie_(k) {

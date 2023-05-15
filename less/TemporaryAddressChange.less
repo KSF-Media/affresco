@@ -1,53 +1,55 @@
-@import (reference) 'ksf-colors';
+@import (reference) "ksf-colors";
 
 .temporary-address-change--container {
-    h3 { margin-top: 0 };
-    input[type=text] {
-	box-sizing: border-box;
-	width: 100%;
-    }
-    justify-content: flex-end;
+  h3 {
+    margin-top: 0;
+  }
+  input[type="text"] {
+    box-sizing: border-box;
+    width: 100%;
+  }
+  justify-content: flex-end;
 
-    input[type=text] {
-	width: 100%;
-	font-size: 1em;
-	border-style: solid;
-	border-width: 1px;
-	border-color: @color-input-border;
-	padding: 8px 10px 8px;
-	background: @white;
-	box-sizing: border-box;
-    }
+  input[type="text"] {
+    width: 100%;
+    font-size: 1em;
+    border-style: solid;
+    border-width: 1px;
+    border-color: @color-input-border;
+    padding: 8px 10px 8px;
+    background: @white;
+    box-sizing: border-box;
+  }
 
-    .mitt-konto--note {
-	margin-bottom: 2ex;
-    }
+  .mitt-konto--note {
+    margin-bottom: 2ex;
+  }
 
-    .temporary-address-change--editing-summary {
-	margin-bottom: 2ex;
-    }
+  .temporary-address-change--editing-summary {
+    margin-bottom: 2ex;
+  }
 }
 
 .temporary-address-change--close-icon {
-    justify-content: right;
-    align-items: center;
-    height: 1.5em;
-    .close-icon {
-	cursor: pointer;
-    }
+  justify-content: right;
+  align-items: center;
+  height: 1.5em;
+  .close-icon {
+    cursor: pointer;
+  }
 }
 
 .temporary-address-change--date-picker {
+  width: 100%;
+  .react-date-picker__wrapper {
     width: 100%;
-    .react-date-picker__wrapper {
-	width: 100%;
-	border-color: @grey-mediumlight;
-	border-radius: 3px;
-	padding: 3px;
-    }
+    border-color: @grey-mediumlight;
+    border-radius: 3px;
+    padding: 3px;
+  }
 }
 
 .temporary-address-change--header {
-	display: grid;
-	grid-template-columns: [header] auto [close-icon] 1.5em;
+  display: grid;
+  grid-template-columns: [header] auto [close-icon] 1.5em;
 }

@@ -1,5 +1,4 @@
 import Election from "election";
-import { AreaType } from "election";
 
 const api = makeApiClient();
 

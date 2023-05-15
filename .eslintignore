@@ -1,0 +1,11 @@
+**/.cache
+**/.spago
+**/dist
+**/output
+.github
+.yarn
+.yarn-cache
+build
+infra
+packages/user/build.js
+scripts/app/gamAppAds.*

@@ -1,5 +1,4 @@
 import React from "react";
-import render from "react-dom";
 
 export default class Parliament extends React.Component {
   constructor(props) {

@@ -1,10 +1,10 @@
-import React, { Component, Fragment } from "react";
+import React, { Fragment } from "react";
 import PremiumBadge from "./badge";
 
 const ArticleType = (props) => {
   return (
     <span className="article-opinion-type">
-      {!!props.articleTypeDetails ? props.articleTypeDetails.title.toUpperCase() : ""}
+      {props.articleTypeDetails ? props.articleTypeDetails.title.toUpperCase() : ""}
     </span>
   );
 };
@@ -87,10 +87,10 @@ const ArticleDetails = (props) => {
                             style={{
                               backgroundImage:
                                 author.image && author.image.includes("imengine")
-                                ? `url(${author.image + "?width=740&height=850&function=hardcrop"})`
-                                : author.image
+                                  ? `url(${author.image + "?width=740&height=850&function=hardcrop"})`
+                                  : author.image
                                   ? `url(${author.image})`
-                                  : "none"
+                                  : "none",
                             }}
                           ></div>
                         </div>

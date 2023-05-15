@@ -1,22 +1,22 @@
 export function orderError(message) {
   return new OrderError(message);
-};
+}
 
 export function packageError(message) {
   return new PackageError(message);
-};
+}
 
 export function loginError(message) {
   return new LoginError(message);
-};
+}
 
 export function subscriptionError_(message) {
   return new SubscriptionError(message);
-};
+}
 
 export function userError(message) {
   return new UserError(message);
-};
+}
 
 class OrderError extends Error {
   constructor(message) {

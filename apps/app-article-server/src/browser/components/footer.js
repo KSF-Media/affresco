@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React from "react";
 
 const getBrandMessage = (brand) => {
   if (brand === "hbl") {
@@ -9,24 +9,24 @@ const getBrandMessage = (brand) => {
 const getSiteDomainName = (brand) => {
   switch (brand) {
     case "vn":
-      return "vastranyland"
+      return "vastranyland";
     case "on":
-      return "ostnyland"
+      return "ostnyland";
     default:
-      return "hbl"
+      return "hbl";
   }
-}
+};
 
 const Footer = (props) => {
   return (
     <div className={"footer"}>
       <h4 className={"headline"}>{getBrandMessage(props.brandValueName)}</h4>
-      <a href={`https://www.${getSiteDomainName(props.brandValueName)}.fi/sida/kontakt`}>
-        Ta kontakt
-      </a>
+      <a href={`https://www.${getSiteDomainName(props.brandValueName)}.fi/sida/kontakt`}>Ta kontakt</a>
       <br />
       <strong>KSF Media {new Date().getFullYear()}</strong>
-      <p><small>KSF Media ägs av Konstsamfundet</small></p>
+      <p>
+        <small>KSF Media ägs av Konstsamfundet</small>
+      </p>
     </div>
   );
 };

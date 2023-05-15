@@ -1,5 +1,4 @@
 import React from "react";
-import render from "react-dom";
 import { isMobile } from "react-device-detect";
 
 import Table from "./Table.js";
@@ -12,7 +11,7 @@ import AreaInfo from "./AreaInfo.js";
 
 import "../assets/less/app.less";
 
-import { getArea, getCountry } from "./Backend";
+import { getArea } from "./Backend";
 
 export default class App extends React.Component {
   constructor(props) {

@@ -1,3 +1,4 @@
+/* global __dirname */
 const express = require("express");
 const React = require("react");
 const ReactDOM = require("react-dom/server");
@@ -5,23 +6,22 @@ const app = express();
 const port = process.env.PORT || 8080;
 const axios = require("axios");
 const _ = require("lodash");
-const https = require("https");
 const UUID = require("uuid");
 
 import generateHtml from "./generateHtml";
 import insertAds from "./insertAds";
 import Article from "../browser/components/article";
 import ErrorPage from "../browser/components/error";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 app.use("/dist", express.static(`${__dirname}/../client`));
 
-app.get("/", async (req, res) =>{
-	res.send("/");
+app.get("/", async (req, res) => {
+  res.send("/");
 });
 
-app.get("/healthz", async (req, res) =>{
-	res.send("OK");
+app.get("/healthz", async (req, res) => {
+  res.send("OK");
 });
 
 app.get("/article/:id", async (req, res) => {
@@ -29,10 +29,10 @@ app.get("/article/:id", async (req, res) => {
   if (articleId && UUID.validate(articleId)) {
     const authHeaders = () => {
       if (req.headers.authuser && UUID.validate(req.headers.authuser) && req.headers.authorization) {
-	return {
-	  authuser: req.headers.authuser,
-	  authorization: req.headers.authorization,
-	};
+        return {
+          authuser: req.headers.authuser,
+          authorization: req.headers.authorization,
+        };
       }
     };
     const queryString = req._parsedUrl.search || "";
@@ -58,10 +58,10 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
   if (_.has(authHeaders, "authuser") && _.has(authHeaders, "authorization")) {
     requests.push(
       axios.get(process.env.PERSONA_URL + "/users/" + authHeaders.authuser, {
-	headers: { authorization: authHeaders.authorization },
-	validateStatus: function (httpStatus) {
-	  return httpStatus < 400 || httpStatus === 403;
-	},
+        headers: { authorization: authHeaders.authorization },
+        validateStatus: function (httpStatus) {
+          return httpStatus < 400 || httpStatus === 403;
+        },
       })
     );
   }
@@ -70,64 +70,64 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
     .all(requests)
     .then(
       axios.spread((...responses) => {
-	const articleResponse = responses[0].data;
-	let article;
-	let isPreviewArticle;
-	// If the response.data is an article already, meaning we can find the article id (uuid) there, great! We have an article
-	if (_.has(articleResponse, "uuid")) {
-	  article = articleResponse;
-	  isPreviewArticle = false;
-	  // Otherwise, it might be a preview article, so we need to dig a bit deeper into the JSON object
-	} else if (_.has(articleResponse, "not_entitled")) {
-	  article = _.get(articleResponse, "not_entitled.articlePreview");
-	  isPreviewArticle = true;
-	}
-	const user = _.get(responses[1], "data");
+        const articleResponse = responses[0].data;
+        let article;
+        let isPreviewArticle;
+        // If the response.data is an article already, meaning we can find the article id (uuid) there, great! We have an article
+        if (_.has(articleResponse, "uuid")) {
+          article = articleResponse;
+          isPreviewArticle = false;
+          // Otherwise, it might be a preview article, so we need to dig a bit deeper into the JSON object
+        } else if (_.has(articleResponse, "not_entitled")) {
+          article = _.get(articleResponse, "not_entitled.articlePreview");
+          isPreviewArticle = true;
+        }
+        const user = _.get(responses[1], "data");
 
-	const articleBodyWithAds = insertAds(article.body);
+        const articleBodyWithAds = insertAds(article.body);
 
-	const articleBody = articleBodyWithAds.map(block => {
-		return {
-			...block,
-			key: uuidv4(),
-		}
-	})
+        const articleBody = articleBodyWithAds.map((block) => {
+          return {
+            ...block,
+            key: uuidv4(),
+          };
+        });
 
-	article = {...article, body: articleBody};
+        article = { ...article, body: articleBody };
 
-	const articleJSX = (
-	  <Article
-	    title={article.title}
-	    mainImage={article.mainImage}
-	    body={article.body}
-	    tags={article.tags || []}
-	    relatedArticles={article.relatedArticles || []}
-	    preamble={article.preamble}
-	    articleType={article.articleType}
-	    articleTypeDetails={article.articleTypeDetails}
-	    publishingTime={article.publishingTime}
-	    updateTime={article.updateTime}
-	    authors={article.authors}
-	    premium={article.premium}
-			removeAds={article.removeAds}
-	    isPreview={isPreviewArticle}
-	    fontSize={queryParams.fontSize}
-	    darkModeEnabled={queryParams.mode === "dark"}
-	    queryString={queryString}
-	    paper={paper}
-	  />
-	);
+        const articleJSX = (
+          <Article
+            title={article.title}
+            mainImage={article.mainImage}
+            body={article.body}
+            tags={article.tags || []}
+            relatedArticles={article.relatedArticles || []}
+            preamble={article.preamble}
+            articleType={article.articleType}
+            articleTypeDetails={article.articleTypeDetails}
+            publishingTime={article.publishingTime}
+            updateTime={article.updateTime}
+            authors={article.authors}
+            premium={article.premium}
+            removeAds={article.removeAds}
+            isPreview={isPreviewArticle}
+            fontSize={queryParams.fontSize}
+            darkModeEnabled={darkModeEnabled}
+            queryString={queryString}
+            paper={paper}
+          />
+        );
 
-	const updatedArticle = _.merge(article, {
-	  isPreview: isPreviewArticle,
-	  fontSize: queryParams.fontSize,
-	  darkModeEnabled: queryParams.mode === "dark",
-	  queryString: queryString,
-	  paper: paper,
-	});
-	const markup = ReactDOM.renderToString(articleJSX);
-	const finalHtml = generateHtml(markup, updatedArticle, user);
-	res.send(finalHtml);
+        const updatedArticle = _.merge(article, {
+          isPreview: isPreviewArticle,
+          fontSize: queryParams.fontSize,
+          darkModeEnabled,
+          queryString: queryString,
+          paper: paper,
+        });
+        const markup = ReactDOM.renderToString(articleJSX);
+        const finalHtml = generateHtml(markup, updatedArticle, user);
+        res.send(finalHtml);
       })
     )
     .catch((errors) => {
@@ -136,9 +136,9 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
       // We might get some other error as well here, so let's log that also
       const errorMessage = _.get(errors, "response.data") || errors;
       console.warn("Failed to fetch article!", {
-	url: _.get(errors, "response.config.url"),
-	status: _.get(errors, "response.status"),
-	message: errorMessage,
+        url: _.get(errors, "response.config.url"),
+        status: _.get(errors, "response.status"),
+        message: errorMessage,
       });
       res.send(html);
     });
