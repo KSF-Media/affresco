@@ -4,7 +4,7 @@ if (typeof window !== "undefined") {
 
 export function _purchase(cusno, packageId, method, price) {
   const date = new Date();
-  dataLayer.push({
+  window.dataLayer.push({
     event: "purchase",
     ecommerce: {
       currency: "EUR",

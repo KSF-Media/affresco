@@ -1,8 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-import createReactClass from "create-react-class";
-React.createClass = createReactClass;
 var Main = require("./output/Prenumerera/index.js");
 
 function main() {
