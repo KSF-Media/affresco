@@ -1,8 +1,5 @@
 import React from "react";
-import render from "react-dom";
 import { sortBy } from "lodash";
-
-import { AreaResponse, Nominator, Status } from "election";
 
 export default class Chart extends React.Component {
   constructor(props) {
