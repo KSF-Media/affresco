@@ -2,6 +2,8 @@
 **/.spago
 **/dist
 **/output
+.github
 .yarn
+infra
 packages/user/build.js
 scripts/app/gamAppAds.*

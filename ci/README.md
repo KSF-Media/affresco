@@ -3,6 +3,7 @@
 All the CI for all the apps in this repo is run on [GitHub Actions](https://github.com/features/actions).
 
 We have two CI workflows:
+
 - one that runs on [pull requests](../.github/previews.yml)
 - one for [deploying production](../.github/production.yml)
 
@@ -19,6 +20,7 @@ should be edited when adding a new app. For documentation on the machinery that 
 use to generate the CI workflows, see [this file](./workflows.dhall)
 
 The two workflow are slightly different. They both:
+
 - setup the CI environment
 - check that the generated workflows are up to date with the Dhall source (do this with `make generate-ci-local`)
 - build all the apps
@@ -55,12 +57,15 @@ If you need to redirect `index.html` to the `/`, you can add a rewriting rule to
 Sometimes you need a nicer URL for the deployed frontend, e.g. as it's the case for Mitt Konto.
 
 In this situation you'll need to add a new CDN setup in Google Cloud. Steps:
+
 1. Create a new "Cloud CDN" resource backed by the `ksf-frontends` bucket
 2. For this you'll need to create new load balancer. You'll need to add a new "host and path rule", where:
-  - the host is the one you need for the app
-  - the path rules are:
-	- path `/` with a URL rewrite to `$deployDir/index.html` (note that `deployDir` is one of the configurations of an app, and ultimately the location of it in the bucket)
-	- path `/*` with a URL rewrite to `/$deployDir/` (note the slashes, they seem to be important)
+
+- the host is the one you need for the app
+- the path rules are:
+  - path `/` with a URL rewrite to `$deployDir/index.html` (note that `deployDir` is one of the configurations of an app, and ultimately the location of it in the bucket)
+  - path `/*` with a URL rewrite to `/$deployDir/` (note the slashes, they seem to be important)
+
 3. Create a new SSL certificate for the new host on this load balancer, and point a DNS A record to the IP of the load balancer
 4. Edit the `refreshCDNSteps` [source](./workflows.dhall) to include a `gcloud` command to clear the CDN cache on new deployments
 

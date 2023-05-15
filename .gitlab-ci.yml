@@ -76,14 +76,14 @@ app-article-build:
 # Build docker images
 app-article-docker-build:
   extends: .build-docker
-  needs: 
+  needs:
     - app-article-build
   variables: *app-article-ci-vars
 
 # Deploy Staging
 deploy-app-article-staging:
   extends: .deploy
-  needs: 
+  needs:
     - app-article-build
     - app-article-docker-build
   variables: *app-article-ci-vars
@@ -92,7 +92,7 @@ deploy-app-article-staging:
 
 deploy-app-article-production:
   extends: .deploy
-  needs: 
+  needs:
     - app-article-build
     - app-article-docker-build
   environment: production/$SERVICE_NAME
