@@ -20,9 +20,7 @@ class Content extends Component {
       if (blockType === "ad") {
         return this.renderAd(block, key);
       }
-      if (blockType === "paragraph") {
-        return this.renderParagraph(block, key);
-      } else if (blockType === "headline") {
+      if (blockType === "headline") {
         return this.renderHeadline(block, key);
       } else if (blockType === "image") {
         return this.renderImage(block, key);
@@ -49,25 +47,6 @@ class Content extends Component {
       }
     } else {
       console.log("couldn't render " + { blockType });
-    }
-  }
-
-  renderParagraph(block, key) {
-    return (
-      <p className={"paragraph"} key={key}>
-        {htmlToReactParser.parse(block.paragraph)}
-      </p>
-    );
-  }
-
-  getBrandQuoteIcon(paper) {
-    switch (paper) {
-      case "on":
-        return quoteIconON;
-      case "vn":
-        return quoteIconVN;
-      default:
-        return quoteIconHBL;
     }
   }
 

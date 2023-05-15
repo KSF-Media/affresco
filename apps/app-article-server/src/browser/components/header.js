@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React from "react";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
 
 const Header = (props) => {

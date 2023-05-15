@@ -1,3 +1,4 @@
+/* global __dirname */
 const express = require("express");
 const React = require("react");
 const ReactDOM = require("react-dom/server");
@@ -5,7 +6,6 @@ const app = express();
 const port = process.env.PORT || 8080;
 const axios = require("axios");
 const _ = require("lodash");
-const https = require("https");
 const UUID = require("uuid");
 
 import generateHtml from "./generateHtml";
@@ -112,7 +112,7 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
             removeAds={article.removeAds}
             isPreview={isPreviewArticle}
             fontSize={queryParams.fontSize}
-            darkModeEnabled={queryParams.mode === "dark"}
+            darkModeEnabled={darkModeEnabled}
             queryString={queryString}
             paper={paper}
           />
@@ -121,7 +121,7 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
         const updatedArticle = _.merge(article, {
           isPreview: isPreviewArticle,
           fontSize: queryParams.fontSize,
-          darkModeEnabled: queryParams.mode === "dark",
+          darkModeEnabled,
           queryString: queryString,
           paper: paper,
         });

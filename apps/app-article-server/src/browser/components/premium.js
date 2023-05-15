@@ -1,4 +1,5 @@
-import React, { Component } from "react";
+/* global Android */
+import React from "react";
 
 const PremiumBox = (props) => {
   return (

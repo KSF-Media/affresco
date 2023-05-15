@@ -1,5 +1,4 @@
 import React, { Component, Suspense } from "react";
-import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
 import Header from "./header";
 import Additional from "./article-additional";
 import ArticleDetails from "./article-details";
@@ -156,7 +155,7 @@ class Article extends Component {
   }
 }
 
-const Title = (props, state) => {
+const Title = (props) => {
   const classNames = new Map();
   classNames.set("1.06", "title-xs");
   classNames.set("1.5", "title-sm");

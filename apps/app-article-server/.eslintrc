@@ -1,0 +1,10 @@
+{
+  "overrides": [
+    {
+      "files": ["src/server"],
+      "env": {
+        "commonjs": true
+      }
+    }
+  ]
+}

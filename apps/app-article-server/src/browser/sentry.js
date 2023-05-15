@@ -8,4 +8,4 @@ Sentry.init({
 
 Sentry.setTag("appName", "app-article");
 
-exports.Sentry = Sentry;
+export { Sentry };

@@ -1,7 +1,6 @@
-import React, { Component } from "react";
+import React from "react";
 import { LazyLoadImage, trackWindowScroll } from "react-lazy-load-image-component";
 import hblDefaultImage from "../assets/images/hbl-fallback-img.png";
-const _ = require("lodash");
 
 const isArray = (value) => {
   return value && typeof value === "object" && value.constructor === Array;

@@ -1,7 +1,4 @@
 import React, { Component } from "react";
-import shareIcon from "../assets/images/share.png";
-import SvgIcon from "../svgIcon";
-import soundIcon from "../assets/images/sound.png";
 
 class Additional extends Component {
   constructor(props) {
@@ -9,9 +6,6 @@ class Additional extends Component {
   }
 
   componentDidMount() {}
-  onShare() {
-    Android.showIntent(process.env.SHARE_URL + this.state.uuid);
-  }
 
   render() {
     return (
