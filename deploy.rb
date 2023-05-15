@@ -117,6 +117,7 @@ else
   setup_env(app)
   if ENV['NODE_ENV'] == 'development'
     build_cmds_staging.each { |c| run_command(c) }
+    run_command('yarn run lint')
   else
     build_cmds_production.each { |c| run_command(c) }
   end
