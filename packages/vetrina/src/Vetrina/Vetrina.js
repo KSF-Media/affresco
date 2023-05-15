@@ -13,6 +13,8 @@ export function windowClose(w) {
   return function () {
     try {
       w.close();
-    } catch (e) {}
+    } catch (e) {
+      /* ignore errors from w being null */
+    }
   };
 }

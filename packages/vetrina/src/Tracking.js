@@ -20,7 +20,7 @@ export function transaction_(orderNumber, productId, productPriceInCents, produc
       default:
         brand = "";
     }
-    dataLayer.push({
+    window.dataLayer.push({
       event: "transaction",
       ecommerce: {
         purchase: {
