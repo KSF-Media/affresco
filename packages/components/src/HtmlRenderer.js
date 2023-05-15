@@ -23,7 +23,7 @@ export function renderHtmlInputWithHooksImpl(htmlInput, hooks) {
 
   // A catch-all hook
   processHooks.push({
-    shouldProcessNode: function (node) {
+    shouldProcessNode: function () {
       return true;
     },
     processNode: processNodeDefinitions.processDefaultNode,
