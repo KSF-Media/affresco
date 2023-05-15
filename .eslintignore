@@ -2,6 +2,7 @@
 **/.spago
 **/dist
 **/output
+./build
 .github
 .yarn
 infra
