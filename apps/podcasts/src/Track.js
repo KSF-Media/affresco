@@ -28,7 +28,7 @@ class Track extends React.Component {
     const trackDetails = this.state.expanded ? (
       <div>
         <div className="track-details-media">
-          <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src={trackUrl}></iframe>
+          <iframe width="100%" height="166" scrolling="no" frameBorder="no" allow="autoplay" src={trackUrl}></iframe>
         </div>
         <div className="track-details-description">{trackDescription}</div>
       </div>
