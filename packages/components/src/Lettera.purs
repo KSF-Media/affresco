@@ -10,7 +10,9 @@ import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json, toArray, toObject)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Array (foldl, partition, snoc)
+import Data.Date (Date, day, month, year)
 import Data.Either (Either(..), either, hush, isRight)
+import Data.Enum (fromEnum)
 import Data.Foldable (class Foldable, foldMap)
 import Data.Foldable as Foldable
 import Data.HTTP.Method (Method(..))
@@ -29,8 +31,8 @@ import KSF.Auth as Auth
 import KSF.Driver (getDriver)
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Platform(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
 import Lettera.Header as Cache
+import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Platform(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
 
 foreign import letteraBaseUrl :: String
 foreign import _encodeURIComponent :: String -> String
@@ -281,6 +283,22 @@ getLatest start limit paper = do
                                 <> "&limit=" <> show limit
                                 <> "&paper=" <> Paper.toString paper
                               )
+
+getByDay :: Int -> Int -> Date -> Paper -> Aff (LetteraResponse (Array ArticleStub))
+getByDay start limit date paper = do
+  let formattedDate = show (fromEnum (year date)) <> "-"
+                      <> show (fromEnum (month date)) <> "-"
+                      <> show (fromEnum (day date))
+      url = (letteraLatestUrl
+             <> "?start=" <> show start
+             <> "&limit=" <> show limit
+             <> "&from=" <> formattedDate <> "T00:00:00.000"
+             <> "&to=" <> formattedDate <> "T23:59:59.999"
+             <> "&paper=" <> Paper.toString paper
+            )
+  driver <- liftEffect getDriver
+  useResponse parseArticleStubs =<<
+    AX.get driver ResponseFormat.json url
 
 getByTag :: Int -> Int -> Tag -> Paper -> Aff (LetteraResponse (Array ArticleStub))
 getByTag start limit tag paper = do
