@@ -21,9 +21,14 @@ import Web.Socket.Event.MessageEvent (data_, fromEvent)
 import Web.Socket.WebSocket as WS
 import Debug
 
+type Result =
+  { token :: TokenResponse.AccessToken
+  , name :: String
+  }
+
 type Monitor =
   { monitor :: Aff String
-  , result :: Aff (Either String {token :: TokenResponse.AccessToken, name :: String})
+  , result :: Aff (Either String Result)
   }
 
 getMonitor :: Effect Monitor
