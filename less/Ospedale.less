@@ -1,0 +1,36 @@
+@import "Button";
+@import "Collapsed";
+@import "Navbar";
+@import "InputField";
+@import "Login";
+@import "Spinner";
+@import "ksf-fonts";
+@import "ksf-utils";
+@import "ksf-variables";
+
+.ospedale--row {
+    display: flex;
+
+    .input-checkbox--checkbox-container {
+	align-self: center;
+    }
+
+    .input-field--container {
+	flex: 1;
+    }
+}
+
+.ospedale--textarea {
+    label {
+	display: block;
+    }
+    textarea {
+	width: 100%;
+    }
+    textarea[name=preamble] {
+	height: 10em;
+    }
+    textarea[name=body] {
+	height: 20em;
+    }
+}
