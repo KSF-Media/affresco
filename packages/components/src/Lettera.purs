@@ -34,6 +34,7 @@ import Foreign.Object (lookup)
 import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
 import KSF.Driver (getDriver)
+import KSF.Helpers as Helpers
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import Lettera.Header as Cache
@@ -82,13 +83,11 @@ data LetteraError
   = ResponseError AX.Error
   | HttpError Int
   | ParseError
-  | Unreachable
 
 instance showLetteraError :: Show LetteraError where
   show (ResponseError err) = "ResponseError " <> AX.printError err
   show (HttpError code)    = "HttpError " <> show code
   show ParseError          = "ParseError"
-  show Unreachable         = "Unreachable"
 
 data LetteraResponse a = LetteraResponse
   { maxAge :: Maybe Int
@@ -292,42 +291,38 @@ getLatest start limit paper = do
                               )
 
 getByDay :: Int -> Int -> Date -> Paper -> Aff (LetteraResponse (Array ArticleStub))
-getByDay start limit date paper =
-  case toEnum 0 /\ toEnum 0 /\ toEnum 0 /\ toEnum 0
-       /\ toEnum 23 /\ toEnum 59 /\ toEnum 59 /\ toEnum 999 of
-    Just h1 /\ Just m1 /\ Just s1 /\ Just ms1
-    /\ Just h2 /\ Just m2 /\ Just s2 /\ Just ms2 -> do
-      let formatter = List.fromFoldable
-                      [ YearFull
-                      , Placeholder "-"
-                      , MonthTwoDigits
-                      , Placeholder "-"
-                      , DayOfMonthTwoDigits
-                      , Placeholder "T"
-                      , Hours24
-                      , Placeholder ":"
-                      , MinutesTwoDigits
-                      , Placeholder ":"
-                      , SecondsTwoDigits
-                      , Placeholder "."
-                      , Milliseconds
-                      , Placeholder "Z"
-                      ]
-          from = DateTime date (Time h1 m1 s1 ms1)
-          to = DateTime date (Time h2 m2 s2 ms2)
-          formattedFrom = format formatter from
-          formattedTo = format formatter to
-          url = (letteraLatestUrl
-                 <> "?start=" <> show start
-                 <> "&limit=" <> show limit
-                 <> "&from=" <> formattedFrom
-                 <> "&to=" <> formattedTo
-                 <> "&paper=" <> Paper.toString paper
-                )
-      driver <- liftEffect getDriver
-      useResponse parseArticleStubs =<<
-        AX.get driver ResponseFormat.json url
-    _ -> pure $ LetteraResponse { maxAge: Nothing, body: Left Unreachable }
+getByDay start limit date paper = do
+  let formatter = List.fromFoldable
+                  [ YearFull
+                  , Placeholder "-"
+                  , MonthTwoDigits
+                  , Placeholder "-"
+                  , DayOfMonthTwoDigits
+                  , Placeholder "T"
+                  , Hours24
+                  , Placeholder ":"
+                  , MinutesTwoDigits
+                  , Placeholder ":"
+                  , SecondsTwoDigits
+                  , Placeholder "."
+                  , Milliseconds
+                  , Placeholder "Z"
+                  ]
+      from = DateTime date Helpers.midnight
+      to = DateTime date Helpers.almostMidnight
+      formattedFrom = format formatter from
+      formattedTo = format formatter to
+      url = (letteraLatestUrl
+             <> "?start=" <> show start
+             <> "&limit=" <> show limit
+             <> "&from=" <> formattedFrom
+             <> "&to=" <> formattedTo
+             <> "&paper=" <> Paper.toString paper
+            )
+  driver <- liftEffect getDriver
+  traceM url
+  useResponse parseArticleStubs =<<
+    AX.get driver ResponseFormat.json url
 
 getByTag :: Int -> Int -> Tag -> Paper -> Aff (LetteraResponse (Array ArticleStub))
 getByTag start limit tag paper = do
