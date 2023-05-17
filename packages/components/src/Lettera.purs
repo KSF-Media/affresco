@@ -306,7 +306,6 @@ getByDay start limit date paper = do
              <> "&paper=" <> Paper.toString paper
             )
   driver <- liftEffect getDriver
-  traceM url
   useResponse parseArticleStubs =<<
     AX.get driver ResponseFormat.json url
 
