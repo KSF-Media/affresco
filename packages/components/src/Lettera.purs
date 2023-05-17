@@ -35,6 +35,7 @@ import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
 import KSF.Driver (getDriver)
 import KSF.Helpers as Helpers
+import KSF.LocalDateTime (localDateTimeFormatter)
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import Lettera.Header as Cache
@@ -292,22 +293,7 @@ getLatest start limit paper = do
 
 getByDay :: Int -> Int -> Date -> Paper -> Aff (LetteraResponse (Array ArticleStub))
 getByDay start limit date paper = do
-  let formatter = List.fromFoldable
-                  [ YearFull
-                  , Placeholder "-"
-                  , MonthTwoDigits
-                  , Placeholder "-"
-                  , DayOfMonthTwoDigits
-                  , Placeholder "T"
-                  , Hours24
-                  , Placeholder ":"
-                  , MinutesTwoDigits
-                  , Placeholder ":"
-                  , SecondsTwoDigits
-                  , Placeholder "."
-                  , Milliseconds
-                  , Placeholder "Z"
-                  ]
+  let formatter = localDateTimeFormatter 0
       from = DateTime date Helpers.midnight
       to = DateTime date Helpers.almostMidnight
       formattedFrom = format formatter from
