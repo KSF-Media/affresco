@@ -11,14 +11,19 @@ import Data.Argonaut.Core (Json, toArray, toObject)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Array (foldl, partition, snoc)
 import Data.Date (Date, day, month, year)
+import Data.DateTime (DateTime(..))
 import Data.Either (Either(..), either, hush, isRight)
-import Data.Enum (fromEnum)
+import Data.Enum (fromEnum, toEnum)
 import Data.Foldable (class Foldable, foldMap)
 import Data.Foldable as Foldable
+import Data.Formatter.DateTime (Formatter, FormatterCommand(..), format, unformat)
 import Data.HTTP.Method (Method(..))
+import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (un, unwrap)
+import Data.Time (Time(..))
 import Data.Traversable (traverse, traverse_)
+import Data.Tuple.Nested ((/\))
 import Data.UUID (UUID, toString)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -77,11 +82,13 @@ data LetteraError
   = ResponseError AX.Error
   | HttpError Int
   | ParseError
+  | Unreachable
 
 instance showLetteraError :: Show LetteraError where
   show (ResponseError err) = "ResponseError " <> AX.printError err
   show (HttpError code)    = "HttpError " <> show code
   show ParseError          = "ParseError"
+  show Unreachable         = "Unreachable"
 
 data LetteraResponse a = LetteraResponse
   { maxAge :: Maybe Int
@@ -285,20 +292,39 @@ getLatest start limit paper = do
                               )
 
 getByDay :: Int -> Int -> Date -> Paper -> Aff (LetteraResponse (Array ArticleStub))
-getByDay start limit date paper = do
-  let formattedDate = show (fromEnum (year date)) <> "-"
-                      <> show (fromEnum (month date)) <> "-"
-                      <> show (fromEnum (day date))
-      url = (letteraLatestUrl
-             <> "?start=" <> show start
-             <> "&limit=" <> show limit
-             <> "&from=" <> formattedDate <> "T00:00:00.000"
-             <> "&to=" <> formattedDate <> "T23:59:59.999"
-             <> "&paper=" <> Paper.toString paper
-            )
-  driver <- liftEffect getDriver
-  useResponse parseArticleStubs =<<
-    AX.get driver ResponseFormat.json url
+getByDay start limit date paper =
+  case toEnum 0 /\ toEnum 0 /\ toEnum 0 /\ toEnum 0
+       /\ toEnum 23 /\ toEnum 59 /\ toEnum 59 /\ toEnum 999 of
+    Just h1 /\ Just m1 /\ Just s1 /\ Just ms1
+    /\ Just h2 /\ Just m2 /\ Just s2 /\ Just ms2 -> do
+      let formatter = List.fromFoldable
+                      [ YearFull
+                      , Placeholder "-"
+                      , MonthTwoDigits
+                      , Placeholder "-"
+                      , DayOfMonthTwoDigits
+                      , Placeholder "T"
+                      , Hours24
+                      , Placeholder ":"
+                      , MinutesTwoDigits
+                      , Placeholder ":"
+                      , SecondsTwoDigits
+                      ]
+          from = DateTime date (Time h1 m1 s1 ms1)
+          to = DateTime date (Time h2 m2 s2 ms2)
+          formattedFrom = format formatter from
+          formattedTo = format formatter to
+          url = (letteraLatestUrl
+                 <> "?start=" <> show start
+                 <> "&limit=" <> show limit
+                 <> "&from=" <> formattedFrom
+                 <> "&to=" <> formattedTo
+                 <> "&paper=" <> Paper.toString paper
+                )
+      driver <- liftEffect getDriver
+      useResponse parseArticleStubs =<<
+        AX.get driver ResponseFormat.json url
+    _ -> pure $ LetteraResponse { maxAge: Nothing, body: Left Unreachable }
 
 getByTag :: Int -> Int -> Tag -> Paper -> Aff (LetteraResponse (Array ArticleStub))
 getByTag start limit tag paper = do
