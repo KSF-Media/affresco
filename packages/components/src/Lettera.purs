@@ -309,6 +309,8 @@ getByDay start limit date paper =
                       , MinutesTwoDigits
                       , Placeholder ":"
                       , SecondsTwoDigits
+                      , Placeholder "."
+                      , Milliseconds
                       , Placeholder "Z"
                       ]
           from = DateTime date (Time h1 m1 s1 ms1)
