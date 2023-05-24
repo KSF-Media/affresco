@@ -68,6 +68,9 @@ letteraMostReadUrl = letteraBaseUrl <> "/list/mostread/"
 letteraLatestUrl :: String
 letteraLatestUrl = letteraBaseUrl <> "/list/latest/"
 
+letteraByDayUrl :: String
+letteraByDayUrl = letteraBaseUrl <> "/article/by-day/"
+
 letteraCategoryUrl :: String
 letteraCategoryUrl = letteraBaseUrl <> "/categories"
 
@@ -291,20 +294,14 @@ getLatest start limit paper = do
                                 <> "&paper=" <> Paper.toString paper
                               )
 
-getByDay :: Int -> Int -> Date -> Paper -> Aff (LetteraResponse (Array ArticleStub))
-getByDay start limit date paper = do
+getByDay :: Date -> Paper -> Aff (LetteraResponse (Array ArticleStub))
+getByDay date paper = do
   let formatter = localDateTimeFormatter 0
-      from = DateTime date Helpers.midnight
-      to = DateTime date Helpers.almostMidnight
-      formattedFrom = format formatter from
-      formattedTo = format formatter to
-      url = (letteraLatestUrl
-             <> "?start=" <> show start
-             <> "&limit=" <> show limit
-             <> "&from=" <> formattedFrom
-             <> "&to=" <> formattedTo
-             <> "&paper=" <> Paper.toString paper
-            )
+      url = letteraByDayUrl
+            <> "/" <> show (fromEnum (year date))
+            <> "/" <> show (fromEnum (month date))
+            <> "/" <> show (fromEnum (day date))
+            <> "?paper=" <> Paper.toString paper
   driver <- liftEffect getDriver
   useResponse parseArticleStubs =<<
     AX.get driver ResponseFormat.json url
