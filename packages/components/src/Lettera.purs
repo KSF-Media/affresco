@@ -11,19 +11,14 @@ import Data.Argonaut.Core (Json, toArray, toObject)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Array (foldl, partition, snoc)
 import Data.Date (Date, day, month, year)
-import Data.DateTime (DateTime(..))
 import Data.Either (Either(..), either, hush, isRight)
-import Data.Enum (fromEnum, toEnum)
+import Data.Enum (fromEnum)
 import Data.Foldable (class Foldable, foldMap)
 import Data.Foldable as Foldable
-import Data.Formatter.DateTime (Formatter, FormatterCommand(..), format, unformat)
 import Data.HTTP.Method (Method(..))
-import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (un, unwrap)
-import Data.Time (Time(..))
 import Data.Traversable (traverse, traverse_)
-import Data.Tuple.Nested ((/\))
 import Data.UUID (UUID, toString)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -34,8 +29,6 @@ import Foreign.Object (lookup)
 import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
 import KSF.Driver (getDriver)
-import KSF.Helpers as Helpers
-import KSF.LocalDateTime (localDateTimeFormatter)
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import Lettera.Header as Cache
@@ -296,8 +289,7 @@ getLatest start limit paper = do
 
 getByDay :: Date -> Paper -> Aff (LetteraResponse (Array ArticleStub))
 getByDay date paper = do
-  let formatter = localDateTimeFormatter 0
-      url = letteraByDayUrl
+  let url = letteraByDayUrl
             <> "/" <> show (fromEnum (year date))
             <> "/" <> show (fromEnum (month date))
             <> "/" <> show (fromEnum (day date))
