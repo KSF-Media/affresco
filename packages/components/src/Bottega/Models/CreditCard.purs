@@ -38,15 +38,17 @@ data CreditCardRegisterState
   | CreditCardRegisterStarted
   | CreditCardRegisterCompleted
   | CreditCardRegisterFailed FailReason
+  | CreditCardRegisterScaRequired
   | CreditCardRegisterCanceled
   | CreditCardRegisterUnknownState
 
 parseCreditCardRegisterState :: String -> Maybe String -> CreditCardRegisterState
 parseCreditCardRegisterState state maybeFailReason =
     case state of
-      "created"   -> CreditCardRegisterCreated
-      "started"   -> CreditCardRegisterStarted
-      "completed" -> CreditCardRegisterCompleted
-      "failed"    -> CreditCardRegisterFailed $ maybe UnknownReason parseFailReason maybeFailReason
-      "canceled"  -> CreditCardRegisterCanceled
-      _           -> CreditCardRegisterUnknownState
+      "created"     -> CreditCardRegisterCreated
+      "started"     -> CreditCardRegisterStarted
+      "completed"   -> CreditCardRegisterCompleted
+      "failed"      -> CreditCardRegisterFailed $ maybe UnknownReason parseFailReason maybeFailReason
+      "scaRequired" -> CreditCardRegisterScaRequired
+      "canceled"    -> CreditCardRegisterCanceled
+      _             -> CreditCardRegisterUnknownState
