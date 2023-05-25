@@ -140,7 +140,7 @@ registerCreditCard self@{ setState, props: { logger, setWrapperState, window }, 
   creditCardRegister <- User.registerCreditCardFromExisting id
   case creditCardRegister of
     Right register@{ terminalUrl: Just url } -> do
-      let newState = state { updateState = RegisterCreditCard }
+      let newState = state { updateState = RegisterCreditCard, paymentTerminal = Just url.paymentTerminalUrl }
       liftEffect do
         case window of
           Just w -> do
