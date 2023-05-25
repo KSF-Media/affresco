@@ -1,31 +1,29 @@
 module KSF.Helpers where
 
-import Prelude
+import           Prelude
 
-import Control.Alt ((<|>))
-import Data.Date (Date, adjust)
-import Data.DateTime (DateTime(..))
-import Data.DateTime as DateTime
-import Data.Enum (toEnum)
-import Data.Formatter.DateTime (Formatter, FormatterCommand(..), format)
-import Data.Int (toNumber)
-import Data.List (fromFoldable)
-import Data.Maybe (Maybe(..), fromJust)
-import Data.String (Pattern(..))
-import Data.String as String
-import Data.Time (Time(..))
-import Data.Time.Duration (Days(..), Hours(..), negateDuration)
-import Effect (Effect)
-import Effect.Now as Now
-import Partial.Unsafe (unsafePartial)
+import           Control.Alt ((<|>))
+import           Data.Date               (Date, adjust)
+import           Data.DateTime           (DateTime (..))
+import           Data.DateTime           as DateTime
+import           Data.Enum               (toEnum)
+import           Data.Formatter.DateTime (Formatter, FormatterCommand (..),
+                                          format)
+import           Data.Int                (toNumber)
+import           Data.List               (fromFoldable)
+import           Data.Maybe              (Maybe (..), fromJust)
+import           Data.String             (Pattern (..))
+import           Data.String             as String
+import           Data.Time               (Time (..))
+import           Data.Time.Duration      (Days (..), Hours (..), negateDuration)
+import           Effect                  (Effect)
+import           Effect.Now              as Now
+import           Partial.Unsafe          (unsafePartial)
 
 foreign import getCurrentTZOffset_ :: Effect Int
 
 midnight :: Time
 midnight = unsafePartial $ fromJust $ Time <$> toEnum 0 <*> toEnum 0 <*> toEnum 0 <*> toEnum 0
-
-almostMidnight :: Time
-almostMidnight = unsafePartial $ fromJust $ Time <$> toEnum 23 <*> toEnum 59 <*> toEnum 59 <*> toEnum 999
 
 noon :: Time
 noon = unsafePartial $ fromJust $ Time <$> toEnum 12 <*> toEnum 0 <*> toEnum 0 <*> toEnum 0
