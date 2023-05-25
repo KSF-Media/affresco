@@ -27,6 +27,7 @@ data OrderState
   | OrderStarted
   | OrderCompleted
   | OrderFailed FailReason
+  | OrderScaRequired
   | OrderCanceled
   | OrderUnknownState
 
@@ -43,12 +44,13 @@ derive instance eqOrderState :: Eq OrderState
 parseOrderState :: String -> Maybe String -> OrderState
 parseOrderState state maybeFailReason =
     case state of
-      "created"   -> OrderCreated
-      "started"   -> OrderStarted
-      "completed" -> OrderCompleted
-      "failed"    -> OrderFailed $ maybe UnknownReason parseFailReason maybeFailReason
-      "canceled"  -> OrderCanceled
-      _           -> OrderUnknownState
+      "created"     -> OrderCreated
+      "started"     -> OrderStarted
+      "completed"   -> OrderCompleted
+      "failed"      -> OrderFailed $ maybe UnknownReason parseFailReason maybeFailReason
+      "scaRequired" -> OrderScaRequired
+      "canceled"    -> OrderCanceled
+      _             -> OrderUnknownState
 
 type NewOrder =
   { packageId      :: String

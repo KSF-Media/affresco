@@ -54,6 +54,7 @@ startOrder poller setState order = do
       case status of
         Right OrderCreated -> continue
         Right OrderStarted -> continue
+        Right OrderScaRequired -> continue
         _ -> pure $ Just unit
   AVar.put poller_ poller.poller
   AVar.take poller.lock
