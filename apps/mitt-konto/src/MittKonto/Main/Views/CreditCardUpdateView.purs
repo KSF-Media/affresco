@@ -18,7 +18,7 @@ import Effect.Exception (error)
 import KSF.Api.Subscription (Subsno)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CreditCard.Choice (choice) as Choice
-import KSF.CreditCard.Register (render) as Register
+import KSF.CreditCard.Register (render, scaRequired) as Register
 import KSF.Sentry as Sentry
 import KSF.User (getCreditCardRegister, registerCreditCardFromExisting) as User
 import KSF.User.Cusno (Cusno)
@@ -59,6 +59,8 @@ type State =
   { asyncWrapperState :: AsyncWrapper.Progress JSX
   , updateState       :: UpdateState
   , poller            :: Aff.Fiber Unit
+  , paymentTerminal   :: Maybe String
+  , scaShown          :: Boolean
   }
 
 type SetState = (State -> State) -> Effect Unit
@@ -66,6 +68,7 @@ type SetState = (State -> State) -> Effect Unit
 data UpdateState
   = ChooseCreditCard
   | RegisterCreditCard
+  | ScaRequired String
 
 creditCardUpdateView :: Component Props
 creditCardUpdateView = do
@@ -97,6 +100,8 @@ initialState =
   { asyncWrapperState: AsyncWrapper.Ready
   , poller: pure unit
   , updateState: ChooseCreditCard
+  , paymentTerminal: Nothing
+  , scaShown: false
   }
 
 render :: Self -> AVar Unit -> JSX
@@ -112,6 +117,7 @@ render self@{ setState, state: { asyncWrapperState, updateState }, props: { cred
                                         }
 
             RegisterCreditCard -> Register.render
+            ScaRequired url -> Register.scaRequired url
         ]
     }
   where
@@ -134,7 +140,7 @@ registerCreditCard self@{ setState, props: { logger, setWrapperState, window }, 
   creditCardRegister <- User.registerCreditCardFromExisting id
   case creditCardRegister of
     Right register@{ terminalUrl: Just url } -> do
-      let newState = state { updateState = RegisterCreditCard }
+      let newState = state { updateState = RegisterCreditCard, paymentTerminal = Just url.paymentTerminalUrl }
       liftEffect do
         case window of
           Just w -> do
@@ -180,6 +186,11 @@ pollRegister self@{ props: { cusno, subsno, logger } } closed oldCreditCard (Rig
       case reason of
         NetsIssuerError -> self.setState _ { asyncWrapperState = AsyncWrapper.Error "Betalning nekades av kortutgivaren. Vänligen kontakta din bank." }
         _ -> onError self
+    CreditCardRegisterScaRequired -> liftEffect do
+      case self.state.scaShown /\ self.state.paymentTerminal of
+        false /\ Just url -> do
+          self.setState _ { updateState = ScaRequired url, scaShown = true }
+        _ -> pure unit
     CreditCardRegisterCanceled -> liftEffect do
       track "cancel"
       onCancel self
