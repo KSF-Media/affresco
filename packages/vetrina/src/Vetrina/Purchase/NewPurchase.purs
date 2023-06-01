@@ -8,12 +8,12 @@ import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (all, foldMap, for_)
 import Data.Int as Int
-import Data.List.NonEmpty as NonEmptyList
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Nullable (toMaybe)
 import Data.Tuple as Tuple
-import Data.Validation.Semigroup (toEither, invalid, validation)
+import Data.Validation.Semigroup (toEither, validation)
 import Effect (Effect)
+import Effect.Aff (Aff)
 import Foreign.Object as Object
 import KSF.Api.Package (toSwedish)
 import KSF.Helpers (formatEur)
@@ -22,22 +22,21 @@ import KSF.InputField as InputField
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import KSF.PaymentMethod (paymentMethodOption)
-import KSF.User (PaymentMethod(..), User)
+import KSF.User (PaymentMethod(..))
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
 import KSF.Window (clearOpener)
-import React.Basic.Classic (JSX, make)
-import React.Basic.Classic as React
+import React.Basic (JSX)
+import React.Basic.Hooks as React
+import React.Basic.Hooks (Component, useState, (/\))
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (EventHandler, handler, handler_)
-import Vetrina.Types (AccountStatus(..), Product, ProductContent)
+import Vetrina.Purchase.NewPurchase.Order (Props, PurchaseInput, createNewAccount, loginToExistingAccount, mkPurchase)
+import Vetrina.Types (AccountStatus(..), ExistingAccountForm, FormInputField(..), NewAccountForm, OrderFailure, Product, ProductContent, PurchaseParameters)
 import Web.HTML as Web.HTML
 import Web.HTML.Window as Window
-import Web.HTML.Window (Window)
-
-type Self = React.Self Props State
 
 type State =
   { newAccountForm ::
@@ -55,103 +54,71 @@ type State =
   , showProductContents :: Boolean
   }
 
-type Props =
-  { accountStatus                 :: AccountStatus
-  , products                      :: Array Product
-  , errorMessage                  :: Maybe String
-  , mkPurchaseWithNewAccount      :: Maybe Window -> NewAccountForm -> Effect Unit
-  , mkPurchaseWithExistingAccount :: Maybe Window -> ExistingAccountForm -> Effect Unit
-  , mkPurchaseWithLoggedInAccount :: User -> Maybe Window -> { | PurchaseParameters } -> Effect Unit
-  , productSelection              :: Maybe Product
-  , onLogin                       :: EventHandler
-  , headline                      :: Maybe JSX
-  , paper                         :: Maybe Paper
-  , paymentMethod                 :: Maybe PaymentMethod -- ^ Pre-selected payment method
-  , paymentMethods                :: Array PaymentMethod
-  , onPaymentMethodChange         :: Maybe PaymentMethod -> Effect Unit
-  , onEmailChange                 :: Effect Unit
-  , customRender                  :: Maybe (JSX -> AccountStatus -> JSX)
-  }
+component :: Component Props
+component = do
+  window <- Web.HTML.window
+  React.component "NewPurchase" $ \props -> React.do
+    state /\ setState <- useState
+      { newAccountForm:
+          { emailAddress: case props.accountStatus of
+               ExistingAccount email -> Just email
+               _                     -> Nothing
+          , acceptLegalTerms: false
+          }
+      , existingAccountForm:
+          { emailAddress: Nothing
+          , password: Nothing
+          }
+      , serverErrors: []
+      , errorMessage: mempty
+        -- If there's already a selected product, pick that
+        -- or take the first item on the products list
+      , productSelection: props.productSelection <|> head props.products
+      , paymentMethod: props.paymentMethod
+      , showProductContents: false
+      }
+    let onSubmit = handler preventDefault $ \_ -> do
+          let withWindow :: forall r. (PurchaseInput r ->  Aff (Either OrderFailure User.User))
+                            -> PurchaseInput r -> Effect Unit
+              withWindow accountAction validForm = do
+                w <- Window.open "" "_blank" "" window
+                for_ w clearOpener
+                mkPurchase props w props.askAccountAlways validForm $ accountAction validForm
+          case props.accountStatus of
+            -- TODO: Validate `acceptLegalTerms` of `NewAccountForm`
+            NewAccount ->
+              validation
+                (\_ ->
+                  setState _
+                  { newAccountForm
+                    { emailAddress = state.newAccountForm.emailAddress <|> Just "" }})
+                (withWindow $ createNewAccount <<< _.emailAddress)
+                $ newAccountFormValidations state
+            ExistingAccount _ ->
+              validation
+                (\_ ->
+                  setState _
+                  { existingAccountForm
+                    { emailAddress = state.existingAccountForm.emailAddress <|> Just ""
+                    , password     = state.existingAccountForm.password     <|> Just ""
+                    }})
+                (withWindow $ \validForm -> loginToExistingAccount props.logger
+                                            validForm.emailAddress
+                                            validForm.password)
+                $ existingAccountFormValidations state
+            LoggedInAccount user ->
+              validation
+                (\_ -> pure unit)
+                (withWindow $ const $ pure $ Right user)
+                $ loggedInAccountFormValidations state
 
-data FormInputField
-  = EmailAddress
-  | Password
-  | ProductSelection
-  | PaymentMethod
+    pure $ render props state setState onSubmit
 
-derive instance eqNewAccountInputField :: Eq FormInputField
-instance validatableFieldNewAccountInputField :: Form.ValidatableField FormInputField where
-  validateField field value serverErrors = case field of
-    EmailAddress     -> Form.validateWithServerErrors serverErrors EmailAddress value Form.validateEmailAddress
-    Password         -> Form.validateEmptyField Password "Lösenord krävs." value
-    ProductSelection ->
-      -- As `validateField` works currently only with `Maybe Strings`, we need to manually
-      -- check the value here (for now). The `value` passed here is maybe the productSelection.id
-      if isNothing value
-      then invalid (NonEmptyList.singleton (Form.InvalidEmpty ProductSelection "")) -- TODO: Do we need an error message here?
-      else pure $ Just mempty
-    PaymentMethod    -> Form.validateEmptyField PaymentMethod "Betalningssätt krävs." value
-
-type PurchaseParameters =
-  ( productSelection :: Maybe Product
-  , paymentMethod    :: Maybe User.PaymentMethod
-  )
-
-type NewAccountForm =
-  { emailAddress     :: Maybe String
-  , acceptLegalTerms :: Boolean
-  | PurchaseParameters
-  }
-
-type ExistingAccountForm =
-  { emailAddress :: Maybe String
-  , password     :: Maybe String
-  | PurchaseParameters
-  }
-
-component :: React.Component Props
-component = React.createComponent "NewPurchase"
-
-newPurchase :: Props -> JSX
-newPurchase props = make component
-  { initialState: { newAccountForm:
-                      { emailAddress: Nothing
-                      , acceptLegalTerms: false
-                      }
-                  , existingAccountForm:
-                      { emailAddress: Nothing
-                      , password: Nothing
-                      }
-                  , serverErrors: []
-                  , errorMessage: foldMap formatErrorMessage props.errorMessage
-                  , productSelection: Nothing
-                  , paymentMethod: Nothing
-                  , showProductContents: false
-                  }
-  , render: maybe render (\f self -> f (form self) self.props.accountStatus) props.customRender
-  , didMount
-  }
-  props
-
-didMount :: Self -> Effect Unit
-didMount self = do
-  let maybeExistingUserEmail =
-        case self.props.accountStatus of
-          ExistingAccount email -> Just email
-          _                     -> Nothing
-  self.setState _ { paymentMethod = self.props.paymentMethod
-                  , productSelection =
-                      -- If there's already a selected product, pick that
-                      -- or take the first item on the products list
-                      self.props.productSelection <|> head self.props.products
-                  , existingAccountForm { emailAddress = maybeExistingUserEmail }
-                  }
-
-render :: Self -> JSX
-render self =
-  title self
-  <> newPurchaseLinks self
-  <> case self.props.accountStatus of
+render :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
+render props state setState onSubmit =
+  title props
+  <> newPurchaseLinks props
+  <> case props.accountStatus of
     LoggedInAccount user
       | isNothing $ toMaybe user.firstName ->
         DOM.div
@@ -159,54 +126,54 @@ render self =
           , children: [ DOM.text user.email ]
           }
     _ -> mempty
-  <> case self.props.accountStatus of
+  <> case props.accountStatus of
        NewAccount -> mempty
-       _ -> description self
-  <> form self
-  <> links self
-  <> if length self.props.products == 1
-     then productInformation self
+       _ -> description props
+  <> form props state setState onSubmit
+  <> links props
+  <> if length props.products == 1
+     then productInformation state setState
      else mempty
 
-title :: Self -> JSX
-title self =
+title :: Props -> JSX
+title props =
   let headlineText =
-        case self.props.accountStatus of
+        case props.accountStatus of
           ExistingAccount _    -> Just $ DOM.text "Du har redan ett KSF Media-konto"
           LoggedInAccount user -> Just $ DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
-          NewAccount -> self.props.headline
+          NewAccount -> props.headline
   in foldMap headline headlineText
   where
     headline child =
       DOM.div
-        { id: "tb-paywall--headline-" <> maybe "KSF" Paper.toString self.props.paper
-        , className: "vetrina--headline-" <> maybe "KSF" Paper.toString self.props.paper <>
-                     case self.props.accountStatus of
+        { id: "tb-paywall--headline-" <> maybe "KSF" Paper.toString props.paper
+        , className: "vetrina--headline-" <> maybe "KSF" Paper.toString props.paper <>
+                     case props.accountStatus of
                        NewAccount -> mempty
                        _          -> " vetrina--headline-existing-account"
-        , _data: Object.fromFoldable $ case self.props.accountStatus of
+        , _data: Object.fromFoldable $ case props.accountStatus of
                    NewAccount -> mempty
                    _          -> [ Tuple.Tuple "existing-account" "1" ]
         , children: [ child ]
         }
 
-description :: Self -> JSX
-description self =
+description :: Props -> JSX
+description props =
   DOM.p
-    { id: "tb-paywall--description-text-" <> maybe "KSF" Paper.toString self.props.paper
+    { id: "tb-paywall--description-text-" <> maybe "KSF" Paper.toString props.paper
     , className: "vetrina--description-text" <>
-                 case self.props.accountStatus of
+                 case props.accountStatus of
                        LoggedInAccount _ -> " vetrina--description-text-existing-account"
                        _                 -> mempty
     , children: Array.singleton $
-        case self.props.accountStatus of
+        case props.accountStatus of
           NewAccount        -> mempty
           ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
           LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
       }
 
-form :: Self -> JSX
-form self = DOM.form $
+form :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
+form props state setState onSubmit = DOM.form $
   { className: "vetrina--form"
   , onSubmit
     -- NOTE: We need to have `emailInput` here (opposed to in `children`),
@@ -214,66 +181,34 @@ form self = DOM.form $
     -- This will keep cursor focus in the input field.
   , children:
       -- Show dropdown if more than one product
-      [ if length self.props.products > 1
-        then productDropdown self.props.products
+      [ if length props.products > 1
+        then productDropdown props.products
         else mempty
-      , renderPaymentMethods self.props.paymentMethods
+      , renderPaymentMethods props.paymentMethods
        -- Don't show the product selection if we are asking the user to login
-      , if not isExistingAccount self.props.accountStatus
-           || isNothing self.state.productSelection
-        then foldMap _.description self.state.productSelection
+      , if not isExistingAccount props.accountStatus
+           || isNothing state.productSelection
+        then foldMap _.description state.productSelection
         else mempty
-      , self.state.errorMessage
-      , emailInput self self.props.accountStatus
+      , state.errorMessage
+      , emailInput props state setState
       ] <> children
   }
   where
     isExistingAccount (ExistingAccount _) = true
     isExistingAccount _ = false
 
-
-    onSubmit = handler preventDefault $ \_ -> do
-      window <- Web.HTML.window
-      let withWindow :: forall a. (Maybe Window -> a -> Effect Unit) -> a -> Effect Unit
-          withWindow f validForm = do
-            w <- Window.open "" "_blank" "" window
-            for_ w clearOpener
-            f w validForm
-      case self.props.accountStatus of
+    children = case props.accountStatus of
         NewAccount ->
-          validation
-            (\_ ->
-              self.setState _
-                { newAccountForm
-                  { emailAddress = self.state.newAccountForm.emailAddress <|> Just "" }})
-            (withWindow self.props.mkPurchaseWithNewAccount)
-            $ newAccountFormValidations self
-        ExistingAccount _ ->
-          validation
-            (\_ ->
-              self.setState _
-                { existingAccountForm
-                  { emailAddress = self.state.existingAccountForm.emailAddress <|> Just ""
-                  , password     = self.state.existingAccountForm.password     <|> Just ""
-                  }})
-            (withWindow self.props.mkPurchaseWithExistingAccount)
-            $ existingAccountFormValidations self
-        LoggedInAccount user ->
-          validation
-            (\_ -> pure unit)
-            (withWindow $ self.props.mkPurchaseWithLoggedInAccount user)
-            $ loggedInAccountFormValidations self
-    children = case self.props.accountStatus of
-        NewAccount ->
-          [ additionalFormRequirements self.props.accountStatus
-          , formSubmitButton self
+          [ additionalFormRequirements props.accountStatus
+          , formSubmitButton props state
           ]
         ExistingAccount _ ->
-          [ passwordInput self
-          , formSubmitButton self
+          [ passwordInput state setState
+          , formSubmitButton props state
           ]
         LoggedInAccount _ ->
-          [ formSubmitButton self ]
+          [ formSubmitButton props state ]
 
     additionalFormRequirements NewAccount = acceptTermsCheckbox
     additionalFormRequirements _ = mempty
@@ -286,15 +221,15 @@ form self = DOM.form $
           { className: "vetrina--payment-methods"
           , children:
               map mkPaymentMethodOption paymentMethods
-              `snoc` (if self.state.paymentMethod == Just PaperInvoice then paperInvoiceFee else mempty)
+              `snoc` (if state.paymentMethod == Just PaperInvoice then paperInvoiceFee else mempty)
           }
       else mempty
       where
         mkPaymentMethodOption p =
           paymentMethodOption
           (\newPaymentMethod -> do
-              self.props.onPaymentMethodChange newPaymentMethod
-              self.setState _ { paymentMethod = newPaymentMethod })
+              props.onPaymentMethodChange newPaymentMethod
+              setState _ { paymentMethod = newPaymentMethod })
           p
         paperInvoiceFee =
           DOM.div
@@ -311,8 +246,8 @@ form self = DOM.form $
           , onChange: handler targetValue
               \newProductSelection ->
                  let foundProduct = find ((_ == newProductSelection) <<< Just <<< _.id) products
-                 in self.setState _ { productSelection = foundProduct }
-          , value: fromMaybe "" $ _.id <$> self.state.productSelection
+                 in setState _ { productSelection = foundProduct }
+          , value: fromMaybe "" $ _.id <$> state.productSelection
           }
       where
         mkOption product =
@@ -349,15 +284,15 @@ form self = DOM.form $
         divWithClass className child = DOM.div { className, children: [ child ] }
 
 -- | Only show this when initial screen with new account
-newPurchaseLinks :: Self -> JSX
-newPurchaseLinks self =
-  case self.props.accountStatus of
-    NewAccount -> loginLink self
+newPurchaseLinks :: Props -> JSX
+newPurchaseLinks props =
+  case props.accountStatus of
+    NewAccount -> loginLink props
     _ -> mempty
 
-links :: Self -> JSX
-links self =
-  case self.props.accountStatus of
+links :: Props -> JSX
+links props =
+  case props.accountStatus of
     NewAccount        -> mempty -- Login link shown elsewhere
     ExistingAccount _ -> linksDiv $ resetPasswordLink <> subscribePagesLink
     LoggedInAccount _ -> linksDiv $ subscribePagesLink
@@ -372,8 +307,8 @@ resetPasswordLink :: Array JSX
 resetPasswordLink =
   mkLink "Glömt lösenordet?" "https://konto.ksfmedia.fi/#lösenord" "Klicka här"
 
-loginLink :: Self -> JSX
-loginLink self =
+loginLink :: Props -> JSX
+loginLink props =
   DOM.span
     { className: "vetrina--login-link"
     , children:
@@ -381,7 +316,7 @@ loginLink self =
         , DOM.span
             { className:"vetrina--login-callback"
             , children: [ DOM.text "Logga in för att fortsätta läsa" ]
-            , onClick: self.props.onLogin
+            , onClick: props.onLogin
             }
         ]
     }
@@ -402,8 +337,8 @@ mkLink linkDescription href linkText = Array.singleton $
         }
     ]
 
-formSubmitButton :: Self -> JSX
-formSubmitButton self =
+formSubmitButton :: Props -> State -> JSX
+formSubmitButton props state =
   DOM.input
     { type: "submit"
     , className: "vetrina--button"
@@ -411,14 +346,14 @@ formSubmitButton self =
     , value
     }
   where
-    value = case self.props.accountStatus of
+    value = case props.accountStatus of
       NewAccount        -> "Bekräfta och gå vidare"
       ExistingAccount _ -> "Logga in"
       LoggedInAccount _ -> "Bekräfta och gå vidare"
-    disabled = case self.props.accountStatus of
-      NewAccount        -> isFormInvalid $ newAccountFormValidations self
-      ExistingAccount _ -> isFormInvalid $ existingAccountFormValidations self
-      LoggedInAccount _ -> isFormInvalid $ loggedInAccountFormValidations self
+    disabled = case props.accountStatus of
+      NewAccount        -> isFormInvalid $ newAccountFormValidations state
+      ExistingAccount _ -> isFormInvalid $ existingAccountFormValidations state
+      LoggedInAccount _ -> isFormInvalid $ loggedInAccountFormValidations state
 
 isFormInvalid :: forall a. Form.ValidatedForm FormInputField a -> Boolean
 isFormInvalid validations
@@ -429,14 +364,14 @@ isFormInvalid validations
 formatErrorMessage :: String -> JSX
 formatErrorMessage = InputField.errorMessage
 
-emailInput :: Self -> AccountStatus -> JSX
-emailInput _ (LoggedInAccount _) = mempty
-emailInput self accountStatus =
-  let emailValue = self.state.existingAccountForm.emailAddress <|> self.state.newAccountForm.emailAddress
+emailInput :: Props -> State -> ((State -> State) -> Effect Unit) -> JSX
+emailInput {accountStatus: (LoggedInAccount _)} _ _ = mempty
+emailInput props state setState =
+  let emailValue = state.existingAccountForm.emailAddress <|> state.newAccountForm.emailAddress
   in DOM.div
      { className: "vetrina--input-wrapper vetrina--with-label"
      , children:
-         [ if accountStatus == NewAccount
+         [ if props.accountStatus == NewAccount
            then DOM.div
                   { className: "vetrina--step vetrina--create-account"
                   , children:
@@ -454,34 +389,34 @@ emailInput self accountStatus =
              , name: "emailAddress"
              , placeholder: "Fyll i din e-postadress"
              , onChange: onChange
-             , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress emailValue self.state.serverErrors
+             , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress emailValue state.serverErrors
              , value: emailValue
              }
          ]
      }
   where
-    onChange = case self.props.accountStatus of
+    onChange = case props.accountStatus of
       NewAccount -> \val ->
-         self.setState _
+         setState _
            { newAccountForm { emailAddress = val }
-           , serverErrors = Form.removeServerErrors EmailAddress self.state.serverErrors
+           , serverErrors = Form.removeServerErrors EmailAddress state.serverErrors
            , errorMessage = mempty
            }
       ExistingAccount _ -> \val -> do
         -- If email value is changed, we must consider it as another
         -- attempt of creating a new account (if an account with this email exists,
         -- and we are asking the user to log in right now, changing the email should cancel that)
-        self.props.onEmailChange
-        self.setState _
+        props.onEmailChange
+        setState _
           { existingAccountForm { emailAddress = Nothing, password = Nothing }
           , newAccountForm { emailAddress = val }
-          , serverErrors = Form.removeServerErrors EmailAddress self.state.serverErrors
+          , serverErrors = Form.removeServerErrors EmailAddress state.serverErrors
           , errorMessage = mempty
           }
       _ -> mempty
 
-passwordInput :: Self -> JSX
-passwordInput self =
+passwordInput :: State -> ((State -> State) -> Effect Unit) -> JSX
+passwordInput state setState =
   DOM.div
     { className: "vetrina--input-wrapper vetrina--with-label"
     , children:
@@ -490,11 +425,11 @@ passwordInput self =
             , placeholder: "Fyll i ditt lösenord"
             , label: Just "Lösenord"
             , name: "password"
-            , value: self.state.existingAccountForm.password
-            , onChange: \pw -> self.setState _ { existingAccountForm { password = pw } }
+            , value: state.existingAccountForm.password
+            , onChange: \pw -> setState _ { existingAccountForm { password = pw } }
             , validationError:
               Form.inputFieldErrorMessage $
-              Form.validateField Password self.state.existingAccountForm.password []
+              Form.validateField Password state.existingAccountForm.password []
             }
         ]
     }
@@ -527,8 +462,8 @@ acceptTermsCheckbox =
         ]
     }
 
-productInformation :: Self -> JSX
-productInformation self =
+productInformation :: State -> ((State -> State) -> Effect Unit) -> JSX
+productInformation state setState =
   DOM.div
     { className: "vetrina--product-container"
     , children: Array.singleton $
@@ -537,29 +472,29 @@ productInformation self =
           , children:
               [ DOM.div
                   { className: "vetrina--product-information__headline"
-                  , onClick: handler_ $ self.setState _ { showProductContents = not self.state.showProductContents }
+                  , onClick: handler_ $ setState _ { showProductContents = not state.showProductContents }
                   , children:
                       [ DOM.span
                          { className: "vetrina--product-information__name"
-                         , children: [ DOM.text $ foldMap _.name self.state.productSelection ]
+                         , children: [ DOM.text $ foldMap _.name state.productSelection ]
                          }
                      , DOM.span
                          { className: "vetrina--product-information__description"
                          , children:
-                             [ DOM.text $ foldMap (formatEur <<< _.priceCents) self.state.productSelection
+                             [ DOM.text $ foldMap (formatEur <<< _.priceCents) state.productSelection
                              , DOM.text "€/månad" -- TODO: Always maybe not month
                              ]
                          }
                      , DOM.span
                          { className: "vetrina--product-information__arrow-"
-                                      <> if self.state.showProductContents
+                                      <> if state.showProductContents
                                          then "down"
                                          else "up"
                          }
                      ]
                   }
-              ] <> if self.state.showProductContents
-                   then (foldMap (map renderProductContents) $ _.contents <$> self.state.productSelection)
+              ] <> if state.showProductContents
+                   then (foldMap (map renderProductContents) $ _.contents <$> state.productSelection)
                    else mempty
           }
     }
@@ -584,33 +519,34 @@ productInformation self =
             ]
         }
 
-newAccountFormValidations :: Self -> Form.ValidatedForm FormInputField NewAccountForm
-newAccountFormValidations self =
+newAccountFormValidations :: State -> Form.ValidatedForm FormInputField NewAccountForm
+newAccountFormValidations state =
   { emailAddress: _
   , productSelection: _
     -- TODO: Validate this and show error message. We are checking this on server side and with
     -- default browser validation. However, a custom JS validation is missing.
-  , acceptLegalTerms: self.state.newAccountForm.acceptLegalTerms
+  , acceptLegalTerms: state.newAccountForm.acceptLegalTerms
   , paymentMethod: _
   }
-  <$> Form.validateField EmailAddress self.state.newAccountForm.emailAddress []
-  <*> (Form.validateField ProductSelection (map _.id self.state.productSelection) [] *> pure self.state.productSelection)
-  <*> (Form.validateField PaymentMethod (map show self.state.paymentMethod) [] *> pure self.state.paymentMethod)
+  <$> Form.validateField EmailAddress state.newAccountForm.emailAddress []
+  <*> (Form.validateField ProductSelection (map _.id state.productSelection) [] *> pure state.productSelection)
+  <*> (Form.validateField PaymentMethod (map show state.paymentMethod) [] *> pure state.paymentMethod)
 
-existingAccountFormValidations :: Self -> Form.ValidatedForm FormInputField ExistingAccountForm
-existingAccountFormValidations self =
+existingAccountFormValidations :: State -> Form.ValidatedForm FormInputField ExistingAccountForm
+existingAccountFormValidations state =
   { emailAddress: _
   , password: _
   , productSelection: _
-  , paymentMethod: self.state.paymentMethod
+  , paymentMethod: state.paymentMethod
   }
-  <$> Form.validateField EmailAddress self.state.existingAccountForm.emailAddress []
-  <*> Form.validateField Password self.state.existingAccountForm.password []
-  <*> (Form.validateField ProductSelection (map _.id self.state.productSelection) [] *> pure self.state.productSelection)
+  <$> Form.validateField EmailAddress state.existingAccountForm.emailAddress []
+  <*> Form.validateField Password state.existingAccountForm.password []
+  <*> (Form.validateField ProductSelection (map _.id state.productSelection) [] *> pure state.productSelection)
 
-loggedInAccountFormValidations :: Self -> Form.ValidatedForm FormInputField { | PurchaseParameters }
-loggedInAccountFormValidations self =
+loggedInAccountFormValidations :: State -> Form.ValidatedForm FormInputField { | PurchaseParameters }
+loggedInAccountFormValidations state =
   { productSelection: _
-  , paymentMethod: self.state.paymentMethod
+  , paymentMethod: state.paymentMethod
   }
-  <$> (Form.validateField ProductSelection (map _.id self.state.productSelection) [] *> pure self.state.productSelection)
+  <$> (Form.validateField ProductSelection (map _.id state.productSelection) [] *> pure state.productSelection)
+

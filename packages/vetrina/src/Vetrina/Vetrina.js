@@ -8,11 +8,3 @@ export function scrollToVetrina() {
     // Missing from purescript-web-html
     vetrina.scrollIntoView({ block: "start", inline: "nearest", behavior: "smooth" });
 }
-
-export function windowClose(w) {
-  return function () {
-    try {
-      w.close();
-    } catch (e) {}
-  };
-}
