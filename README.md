@@ -75,4 +75,4 @@ Here, for example, a file `scripts/apps/appScript.js` is minified to `scripts/ap
 
 ### Adding a new deployment
 
-See the [CI README](./ci/README.md) for info about the CI setup, and how to add a new app
+See the [CI README](./ci/README.md) for info about the CI setup, and how to add a new app.
