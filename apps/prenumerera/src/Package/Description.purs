@@ -89,8 +89,8 @@ packageDescriptions = fromFoldable
       , brandLong: "HBL"
       , descriptionShort: " Digital"
       , descriptionLong: description
-          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, Ostnyland.fi"
-          , Tuple "Allt innehåll i våra nyhetsappar" "HBL Nyheter, VN Nyheter, ÖN Nyheter (iOS & Android)"
+          [ Tuple "Premium" "Alla artiklar på HBL.fi"
+          , Tuple "Allt innehåll i vår nyhetsapp" "HBL Nyheter (iOS & Android)"
           , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
           , Tuple "Digitala korsord" ""
           ]
