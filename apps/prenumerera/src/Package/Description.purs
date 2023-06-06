@@ -30,14 +30,14 @@ packageDescriptions = fromFoldable
   [ "HBL_P+D" /\
       { brand: HBL
       , brandLong: "HBL"
-      , descriptionShort: " Total"
+      , descriptionShort: " mån-sön"
       , descriptionLong: description
-          [ Tuple "Papperstidningen" "Tryckta tidningen HBL måndag-söndag"
-          , Tuple "E-tidningar" "HBL, Västra Nyland, Östnyland och digitala korsord på datorn"
-          , Tuple "E-tidningsappen HBL 365" "E-tidningarna HBL, Västra Nyland och Östnyland och digitala korsord på mobilen eller surfplattan"
-          , Tuple "Nyhetsappar" "Nyheter på mobilen och surfplattan, pushnotiser med HBL Nyheter, VN Nyheter och ÖN Nyheter"
-          , Tuple "Premium" "Alla artiklar på hbl.fi, vastranyland.fi och ostnyland.fi"
-          , Tuple "Digitalt månadsbrev" "Nyheter & förmåner"
+          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, Ostnyland.fi"
+          , Tuple "Allt innehåll i våra nyhetsappar" "HBL Nyheter, VN Nyheter, ÖN Nyheter (iOS & Android)"
+          , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
+          , Tuple "Digitala korsord" ""
+          , Tuple "E-tidningar" "Papperstidningar digitalt i appen HBL 365 och på webben (HBL, VN & ÖN)"
+          , Tuple "Papperstidningen" "Utgivningsfrekvens: mån-sön (7 dagar)"
           ]
       , ribbon: ribbon "7" "dagar med papper"
       , url: Nothing
@@ -49,14 +49,14 @@ packageDescriptions = fromFoldable
   , "HBL_P+D FR" /\
       { brand: HBL
       , brandLong: "HBL"
-      , descriptionShort: " Helg"
+      , descriptionShort: " fre-sön"
       , descriptionLong: description
-          [ Tuple "Papperstidningen" "Tryckta tidningen HBL fredag-söndag"
-          , Tuple "E-tidningar" "HBL, Västra Nyland, Östnyland och digitala korsord på datorn"
-          , Tuple "E-tidningsappen HBL 365" "E-tidningarna HBL, Västra Nyland och Östnyland och digitala korsord på mobilen eller surfplattan"
-          , Tuple "Nyhetsappar" "Nyheter på mobilen och surfplattan, pushnotiser med HBL Nyheter, VN Nyheter och ÖN Nyheter"
-          , Tuple "Premium" "Alla artiklar på hbl.fi, vastranyland.fi och ostnyland.fi"
-          , Tuple "Digitalt månadsbrev" "Nyheter & förmåner"
+          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, Ostnyland.fi"
+          , Tuple "Allt innehåll i våra nyhetsappar" "HBL Nyheter, VN Nyheter, ÖN Nyheter (iOS & Android)"
+          , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
+          , Tuple "Digitala korsord" ""
+          , Tuple "E-tidningar" "Papperstidningar digitalt i appen HBL 365 och på webben (HBL, VN & ÖN)"
+          , Tuple "Papperstidningen" "Utgivningsfrekvens: fre-sön (3 dagar)"
           ]
       , ribbon: ribbon "3" "dagar med papper"
       , url: Nothing
@@ -70,12 +70,12 @@ packageDescriptions = fromFoldable
       , brandLong: "HBL"
       , descriptionShort: " Söndag"
       , descriptionLong: description
-          [ Tuple "Papperstidningen" "Tryckta tidningen HBL söndagar"
-          , Tuple "E-tidningar" "HBL, Västra Nyland, Östnyland och digitala korsord på datorn"
-          , Tuple "E-tidningsappen HBL 365" "E-tidningarna HBL, Västra Nyland och Östnyland och digitala korsord på mobilen eller surfplattan"
-          , Tuple "Nyhetsappar" "Nyheter på mobilen och surfplattan, pushnotiser med HBL Nyheter, VN Nyheter och ÖN Nyheter"
-          , Tuple "Premium" "Alla artiklar på hbl.fi, vastranyland.fi och ostnyland.fi"
-          , Tuple "Digitalt månadsbrev" "Nyheter & förmåner"
+          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, Ostnyland.fi"
+          , Tuple "Allt innehåll i våra nyhetsappar" "HBL Nyheter, VN Nyheter, ÖN Nyheter (iOS & Android)"
+          , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
+          , Tuple "Digitala korsord" ""
+          , Tuple "E-tidningar" "Papperstidningar digitalt i appen HBL 365 och på webben (HBL, VN & ÖN)"
+          , Tuple "Papperstidningen" "Utgivningsfrekvens: Söndag (1 dag)"
           ]
       , ribbon: ribbon "1" "dag med papper"
       , url: Nothing
@@ -87,11 +87,12 @@ packageDescriptions = fromFoldable
   , "HBL WEBB" /\
       { brand: HBL
       , brandLong: "HBL"
-      , descriptionShort: " Premium"
+      , descriptionShort: " Digital"
       , descriptionLong: description
-          [ Tuple "Premium" "Alla artiklar på hbl.fi"
-          , Tuple "Nyhetsappen HBL Nyheter" "Nyheter på mobilen och surfplattan, pushnotiser"
-          , Tuple "Digitalt månadsbrev" "Nyheter & förmåner"
+          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, Ostnyland.fi"
+          , Tuple "Allt innehåll i våra nyhetsappar" "HBL Nyheter, VN Nyheter, ÖN Nyheter (iOS & Android)"
+          , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
+          , Tuple "Digitala korsord" ""
           ]
       , ribbon: DOM.text "unika artiklar varje dag"
       , url: Nothing
@@ -106,12 +107,12 @@ packageDescriptions = fromFoldable
       , brandLong: "Östnyland"
       , descriptionShort: ""
       , descriptionLong: description
-          [ Tuple "Papperstidningen" "Tryckta tidningen tisdag & fredag"
-          , Tuple "E-tidningen" "Läs e-tidningen på dator"
-          , Tuple "ÖN i HBL 365" "Östnyland som e-tidning i mobilen och på surfplattan"
-          , Tuple "ÖN Nyheter" "Alla artiklar i nyhetsappen ÖN Nyheter"
-          , Tuple "Premium" "Alla artiklar på ostnyland.fi"
-          , Tuple "Digitalt månadsbrev" "Nyheter & förmåner"
+          [ Tuple "Premium" "Alla artiklar på Ostnyland.fi"
+          , Tuple "Allt innehåll i våra nyhetsappar" "ÖN Nyheter (iOS & Android)"
+          , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
+          , Tuple "Digitala korsord" ""
+          , Tuple "E-tidningar" "Papperstidningar digitalt i appen HBL 365 och på webben (ÖN)"
+          , Tuple "Papperstidningen" "Tisdag och fredag"
           ]
       , ribbon: ribbon "2" "dagar med papper"
       , url: Nothing
@@ -125,12 +126,12 @@ packageDescriptions = fromFoldable
       , brandLong: "Östnyland"
       , descriptionShort: " + HBL"
       , descriptionLong: description
-          [ Tuple "Papperstidningen" "Östnyland 2 dagar & HBL 5 dagar"
-          , Tuple "E-tidningar" "Läs ÖN, HBL och VN på datorn"
-          , Tuple "E-tidningsappen HBL 365" "E-tidningar och digitala korsord på mobilen eller surfplattan"
-          , Tuple "Nyhetsappar" "Alla artiklar i nyhetsapparna ÖN Nyheter, HBL Nyheter och VN Nyheter"
-          , Tuple "Premium" "Alla artiklar på ostnyland.fi, hbl.fi och vastranyland.fi"
-          , Tuple "Digitalt månadsbrev" "Nyheter & förmåner"
+          [ Tuple "Premium" "Alla artiklar på HBL.fi, Ostnyland.fi, Vastranyland.fi"
+          , Tuple "Allt innehåll i våra nyhetsappar" "ÖN Nyheter, HBL Nyheter, VN Nyheter (iOS & Android)"
+          , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
+          , Tuple "Digitala korsord" ""
+          , Tuple "E-tidningar" "Papperstidningar digitalt i appen HBL 365 och på webben (ÖN, HBL & VN)"
+          , Tuple "Papperstidningen" "Östnyland 2 dagar & HBL 5 dagar"
           ]
       , ribbon: ribbon "2+5" "dagar med papper"
       , url: Nothing
@@ -141,14 +142,14 @@ packageDescriptions = fromFoldable
       }
   , "ÖNY_DIGI" /\
       { brand: ON
-      , brandLong: "ÖN Premium"
+      , brandLong: "ÖN Digital"
       , descriptionShort: ""
       , descriptionLong: description
-          [ Tuple "Premium" "Alla artiklar på ostnyland.fi"
-          , Tuple "ÖN Nyheter" "Alla artiklar i nyhetsappen ÖN Nyheter"
-          , Tuple "E-tidningen" "Läs e-tidningen på dator"
-          , Tuple "ÖN i HBL 365" "Östnyland som e-tidning i mobilen och på surfplattan"
-          , Tuple "Digitalt månadsbrev" "Nyheter & förmåner"
+          [ Tuple "Premium" "Alla artiklar Ostnyland.fi"
+          , Tuple "Allt innehåll i våra nyhetsap" "ÖN Nyheter (iOS & Android)"
+          , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
+          , Tuple "Digitala korsord" ""
+          , Tuple "E-tidningar" "Papperstidningar digitalt i appen HBL 365 och på webben (ÖN)"
           ]
       , ribbon: DOM.text "Alla dagar digitalt"
       , url: Nothing
@@ -163,12 +164,12 @@ packageDescriptions = fromFoldable
       , brandLong: "Västra Nyland"
       , descriptionShort: ""
       , descriptionLong: description
-          [ Tuple "Papperstidningen" "Tryckta tidningen tisdag & fredag"
-          , Tuple "E-tidningen" "Läs e-tidningen på dator"
-          , Tuple "VN i HBL 365" "Västra Nyland som e-tidning i mobilen och på surfplattan"
-          , Tuple "VN Nyheter" "Alla artiklar i nyhetsappen VN Nyheter"
-          , Tuple "Premium" "Alla artiklar på vastranyland.fi"
-          , Tuple "Digitalt månadsbrev" "Nyheter & förmåner"
+          [ Tuple "Premium" "Alla artiklar på Vastranyland.fi"
+          , Tuple "Allt innehåll i vår nyhetsapp" "VN Nyheter (iOS & Android)"
+          , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
+          , Tuple "Digitala korsord" ""
+          , Tuple "E-tidningen" "Papperstidningen digitalt i appen HBL 365 och på webben (VN)"
+          , Tuple "Papperstidningen" "Tisdag och fredag"
           ]
       , ribbon: ribbon "2" "dagar med papper"
       , url: Nothing
@@ -182,12 +183,12 @@ packageDescriptions = fromFoldable
       , brandLong: "Västra Nyland"
       , descriptionShort: " + HBL"
       , descriptionLong: description
-          [ Tuple "Papperstidningen" "Västra Nyland 2 dagar & HBL 5 dagar"
-          , Tuple "E-tidningen" "Läs VN, HBL och ÖN på datorn"
-          , Tuple "E-tidningsappen HBL 365" "E-tidningar och digitala korsord på mobilen eller surfplattan"
-          , Tuple "Nyhetsappar" "Alla artiklar i nyhetsapparna VN Nyheter, HBL Nyheter och ÖN Nyheter"
-          , Tuple "Premium" "Alla artiklar på vastranyland.fi, hbl.fi och ostnyland.fi"
-          , Tuple "Digitalt månadsbrev" "Nyheter & förmåner"
+          [ Tuple "Premium" "Alla artiklar på Vastranyland.fi, HBL.fi, Ostnyland.fi"
+          , Tuple "Allt innehåll i våra nyhetsappar" "VN Nyheter, HBL Nyheter, ÖN Nyheter (iOS & Android)"
+          , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
+          , Tuple "Digitala korsord" ""
+          , Tuple "E-tidningar" "Papperstidningar digitalt i appen HBL 365 och på webben (VN, HBL & ÖN)"
+          , Tuple "Papperstidningen" "Västra Nyland 2 dagar & HBL 5 dagar"
           ]
       , ribbon: ribbon "2+5" "dagar med papper"
       , url: Nothing
@@ -198,14 +199,14 @@ packageDescriptions = fromFoldable
       }
   , "VN_DIGI" /\
       { brand: VN
-      , brandLong: "VN Premium"
+      , brandLong: "VN Digital"
       , descriptionShort: ""
       , descriptionLong: description
-          [ Tuple "Premium" "Alla artiklar på vastranyland.fi"
-          , Tuple "VN Nyheter" "Alla artiklar i nyhetsappen VN Nyheter"
-          , Tuple "VN i HBL 365" "Västra Nyland som e-tidning i mobilen och på surfplattan"
-          , Tuple "E-tidningen" "Läs e-tidningen på dator"
-          , Tuple "Digitalt månadsbrev" "Nyheter & förmåner"
+          [ Tuple "Premium" "Alla artiklar på Vastranyland.fi"
+          , Tuple "Allt innehåll i vår nyhetsapp" "VN Nyheter (iOS & Android)"
+          , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
+          , Tuple "Digitala korsord" ""
+          , Tuple "E-tidningen" "Papperstidningen digitalt i appen HBL 365 och på webben (VN)"
           ]
       , ribbon: DOM.text "Alla dagar digitalt"
       , url: Nothing
@@ -233,13 +234,13 @@ packageDescriptions = fromFoldable
   , "HBL 365" /\
       { brand: HBL
       , brandLong: "HBL"
-      , descriptionShort: " 365"
+      , descriptionShort: " Digital Plus"
       , descriptionLong: description
-          [ Tuple "E-tidningsappen HBL 365" "E-tidningarna HBL, Västra Nyland, Östnyland och digitala korsord"
-          , Tuple "E-tidningar på dator" "HBL, Västra Nyland, Östnyland"
-          , Tuple "Nyhetsappar" "HBL Nyheter, VN Nyheter, ÖN Nyheter, pushnotiser"
-          , Tuple "Alla artiklar inkl. premium" "HBL.fi, Vastranyland.fi, Ostnyland.fi"
-          , Tuple "Digitalt månadsbrev" "Nyheter & förmåner"
+          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, Ostnyland.fi"
+          , Tuple "Allt innehåll i våra nyhetsappar" "HBL Nyheter, VN Nyheter, ÖN Nyheter (iOS & Android)"
+          , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
+          , Tuple "Digitala korsord" ""
+          , Tuple "E-tidningar" "Papperstidningar digitalt i appen HBL 365 och på webben (HBL, VN & ÖN)"
           ]
       , ribbon: React.fragment
           [ DOM.span_ [ DOM.text "första månaden" ], DOM.span_ [ DOM.strong_ [ DOM.text "1€" ] ] ]
