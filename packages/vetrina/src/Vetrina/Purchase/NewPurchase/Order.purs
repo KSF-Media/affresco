@@ -44,11 +44,11 @@ type Props =
   , products                      :: Array Product
   , askAccountAlways              :: Boolean
   , accessEntitlements            :: Set String
-  , logger                        :: Sentry.Logger
   , loading                       :: Maybe Spinner.Loading -> Maybe String -> Effect Unit
   , startOrder                    :: Maybe PaymentTerminalUrl -> Order -> User -> AccountStatus -> Effect Unit
   , purchaseError                 :: Maybe User -> Maybe AccountStatus -> Maybe Product -> PurchaseState -> Effect Unit
   , setRetryPurchase              :: (User -> Effect Unit) -> Effect Unit
+  , setUser                       :: AccountStatus -> User -> Effect Unit
   , productSelection              :: Maybe Product
   , onLogin                       :: EventHandler
   , headline                      :: Maybe JSX
@@ -63,14 +63,16 @@ type Props =
 mkPurchase
   :: forall r
   . Props
+  -> Sentry.Logger
   -> Maybe Window
   -> Boolean
   -> PurchaseInput r
   -> Aff (Either OrderFailure User.User)
   -> Effect Unit
-mkPurchase props window askAccount validForm affUser = do
+mkPurchase props logger window askAccount validForm affUser = do
   Aff.launchAff_ $ Spinner.withSpinner (loadingWithMessage validForm.paymentMethod) do
     eitherUser <- affUser
+    either (const $ pure unit) (liftEffect <<< props.setUser) eitherUser
     eitherOrder <- runExceptT do
 
       -- TODO: We could check for insufficient account before trying to create the order and
@@ -122,7 +124,7 @@ mkPurchase props window askAccount validForm affUser = do
         -- the window in case the further requests fail, Bottega's html responses should handle that.
         for_ window windowClose
         case err of
-          UnexpectedError e -> props.logger.error $ Error.orderError $ "Failed to place an order: " <> e
+          UnexpectedError e -> logger.error $ Error.orderError $ "Failed to place an order: " <> e
           _ -> pure unit
 
         let pError = props.purchaseError (hush eitherUser)
@@ -135,7 +137,7 @@ mkPurchase props window askAccount validForm affUser = do
             pError Nothing Nothing $ PurchaseFailed AuthenticationError
           InsufficientAccount -> do
             pError Nothing Nothing $ PurchaseFailed InsufficientAccount
-            props.setRetryPurchase $ mkPurchase props window true validForm <<< pure <<< Right
+            props.setRetryPurchase $ mkPurchase props logger window true validForm <<< pure <<< Right
           _ ->
             pError Nothing Nothing $ PurchaseFailed $ UnexpectedError ""
   where

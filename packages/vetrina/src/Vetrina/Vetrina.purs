@@ -46,15 +46,14 @@ type Props =
    -- If onClose is Nothing, the final button in `Completed` view will not be shown
   { onClose            :: Maybe (Effect Unit)
   , onLogin            :: EventHandler
-  -- Used to signal from the outside that user status has changed
   , user               :: Maybe User
+  , setUser            :: User -> Effect Unit
   , products           :: Array Product
   , unexpectedError    :: JSX
   , accessEntitlements :: Set String
   , headline           :: Maybe JSX
   , paper              :: Maybe Paper
   , paymentMethods     :: Array User.PaymentMethod
-  , loadingContainer   :: Maybe (JSX -> JSX)
   , customNewPurchase  :: Maybe (JSX -> AccountStatus -> JSX)
   , subscriptionExists :: JSX
   , askAccountAlways   :: Boolean
@@ -77,12 +76,6 @@ type State =
 type SetState = (State -> State) -> Effect Unit
 
 data Self = Self Props State SetState
-{-
-type Self = React.Self Props State
-
-
-type PrevState = { prevProps :: Props, prevState :: State }
--}
 
 type Components =
   { newPurchase :: JSX
@@ -95,7 +88,7 @@ component = do
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "vetrina"
   accountFormComponent <- mkAccountForm
-  newPurchaseComponent <- Purchase.NewPurchase.component
+  newPurchaseComponent <- Purchase.NewPurchase.component logger
   setPasswordComponent <- Purchase.SetPassword.component
   React.component "Vetrina" $ \props -> React.do
     let paymentMethod =
@@ -106,7 +99,7 @@ component = do
       { user: props.user
       , purchaseState: NewPurchase
       , poller: pure unit
-      , isLoading: Just Spinner.Loading -- Let's show spinner until user logged in
+      , isLoading: Nothing
       , loadingMessage: Nothing
       , accountStatus: maybe NewAccount LoggedInAccount props.user
       , productSelection: Nothing
@@ -168,10 +161,10 @@ component = do
           , products: props.products
           , askAccountAlways: props.askAccountAlways
           , accessEntitlements: props.accessEntitlements
-          , logger
           , startOrder
           , purchaseError
           , setRetryPurchase
+          , setUser: props.setUser
           , loading: loadingWithMessage
           , productSelection: state.productSelection
           , onLogin: props.onLogin
@@ -287,9 +280,7 @@ pollOrder logger setState _ (Left bottegaErr) = liftEffect do
 render :: Self -> Components -> JSX
 render (Self props state setState) components = vetrinaContainer state.purchaseState $
   if isJust state.isLoading
-  then if state.purchaseState == NewPurchase && isJust props.loadingContainer
-       then (fromMaybe identity props.loadingContainer) Spinner.loadingSpinner
-       else maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage state.loadingMessage
+  then maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage state.loadingMessage
   else case state.purchaseState of
     PurchasePolling -> maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage state.loadingMessage
     NewPurchase -> components.newPurchase
@@ -330,7 +321,9 @@ render (Self props state setState) components = vetrinaContainer state.purchaseS
         , purchasedProduct: state.productSelection
         }
   where
-    onRetry = setState _ { purchaseState = NewPurchase }
+    onRetry = setState _ { purchaseState = NewPurchase
+                         , scaShown = false
+                         }
 
 vetrinaContainer :: PurchaseState -> JSX -> JSX
 vetrinaContainer purchaseState child =
@@ -394,3 +387,37 @@ scaRequired (Just paymentTerminalUrl) setScaShown =
           ]
       ]
     }
+
+-- Render for initial state of Vetrina with no user data
+staticRender :: Maybe Paper -> Array Product -> Maybe JSX  -> JSX
+staticRender paper products headline = -- headline paper
+  vetrinaContainer NewPurchase $ Purchase.NewPurchase.render
+  { accountStatus: NewAccount
+  , products
+  , askAccountAlways: false
+  , accessEntitlements: mempty
+  , loading: \_ _ -> pure unit
+  , startOrder: \_ _ _ _ -> pure unit
+  , purchaseError: \_ _ _ _ -> pure unit
+  , setRetryPurchase: \_ -> pure unit
+  , setUser: \_ -> pure unit
+  , productSelection: Nothing
+  , onLogin: mempty
+  , headline
+  , paper
+  , paymentMethod: Nothing
+  , paymentMethods: []
+  , onPaymentMethodChange: \_ -> pure unit
+  , onEmailChange: pure unit
+  , customRender: Nothing
+  }
+  { newAccountForm: { emailAddress: Nothing, acceptLegalTerms: false }
+  , existingAccountForm: { emailAddress: Nothing, password: Nothing }
+  , serverErrors: []
+  , errorMessage: mempty
+  , productSelection: Nothing
+  , paymentMethod: Nothing
+  , showProductContents: false
+  }
+  (const $ pure unit)
+  mempty

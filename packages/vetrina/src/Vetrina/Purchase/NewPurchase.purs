@@ -22,6 +22,7 @@ import KSF.InputField as InputField
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import KSF.PaymentMethod (paymentMethodOption)
+import KSF.Sentry as Sentry
 import KSF.User (PaymentMethod(..))
 import KSF.User as User
 import KSF.ValidatableForm (isNotInitialized)
@@ -54,8 +55,8 @@ type State =
   , showProductContents :: Boolean
   }
 
-component :: Component Props
-component = do
+component :: Sentry.Logger -> Component Props
+component logger = do
   window <- Web.HTML.window
   React.component "NewPurchase" $ \props -> React.do
     state /\ setState <- useState
@@ -83,7 +84,7 @@ component = do
               withWindow accountAction validForm = do
                 w <- Window.open "" "_blank" "" window
                 for_ w clearOpener
-                mkPurchase props w props.askAccountAlways validForm $ accountAction validForm
+                mkPurchase props logger w props.askAccountAlways validForm $ accountAction validForm
           case props.accountStatus of
             -- TODO: Validate `acceptLegalTerms` of `NewAccountForm`
             NewAccount ->
@@ -102,7 +103,7 @@ component = do
                     { emailAddress = state.existingAccountForm.emailAddress <|> Just ""
                     , password     = state.existingAccountForm.password     <|> Just ""
                     }})
-                (withWindow $ \validForm -> loginToExistingAccount props.logger
+                (withWindow $ \validForm -> loginToExistingAccount logger
                                             validForm.emailAddress
                                             validForm.password)
                 $ existingAccountFormValidations state
