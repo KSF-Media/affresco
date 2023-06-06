@@ -48,7 +48,7 @@ type Props =
   , startOrder                    :: Maybe PaymentTerminalUrl -> Order -> User -> AccountStatus -> Effect Unit
   , purchaseError                 :: Maybe User -> Maybe AccountStatus -> Maybe Product -> PurchaseState -> Effect Unit
   , setRetryPurchase              :: (User -> Effect Unit) -> Effect Unit
-  , setUser                       :: AccountStatus -> User -> Effect Unit
+  , setUser                       :: User -> Effect Unit
   , productSelection              :: Maybe Product
   , onLogin                       :: EventHandler
   , headline                      :: Maybe JSX
