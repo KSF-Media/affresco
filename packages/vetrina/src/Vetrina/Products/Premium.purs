@@ -33,7 +33,7 @@ hblPremium =
       [ { title: "Premium"
         , description: "Alla artiklar på HBL.fi"
         }
-      , { title: "Allt innehåll i vårt nyhetsapp"
+      , { title: "Allt innehåll i vår nyhetsapp"
         , description: "HBL Nyheter (iOS & Android)"
         }
       , { title: "Nyhetsbrev"
@@ -73,7 +73,7 @@ vnPremium =
       [ { title: "Premium"
         , description: "Alla artiklar på Vastranyland.fi"
         }
-      , { title: "Allt innehåll i vårt nyhetsapp"
+      , { title: "Allt innehåll i vår nyhetsapp"
         , description: "VN Nyheter (iOS & Android)"
         }
       , { title: "Nyhetsbrev"
@@ -116,7 +116,7 @@ onPremium =
       [ { title: "Premium"
         , description: "Alla artiklar på Ostnyland.fi"
         }
-      , { title: "Allt innehåll i vårt nyhetsapp"
+      , { title: "Allt innehåll i vår nyhetsapp"
         , description: "ÖN Nyheter (iOS & Android)"
         }
       , { title: "Nyhetsbrev"
