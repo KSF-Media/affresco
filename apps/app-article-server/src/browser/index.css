@@ -1025,7 +1025,8 @@ html iframe {
   font-size: 1.3rem;
 }
 
-.adv-link {
+.adv-link,
+.adv-link:hover {
   display: block;
   padding: 0.75rem;
   color: black;
@@ -1033,7 +1034,8 @@ html iframe {
   background-color: #fff3e6;
 }
 
-.adv-link.darkMode {
+.adv-link.darkMode,
+.adv-link.darkMode:hover {
   background-color: #27797e;
   color: #ffffff;
 }
