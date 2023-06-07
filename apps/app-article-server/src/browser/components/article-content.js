@@ -348,7 +348,6 @@ class Content extends Component {
               : ""
             }
           </div>
-          {this.renderAdOutsideMainBlock("mobbox1")}
         </div>
       </div>
     );
