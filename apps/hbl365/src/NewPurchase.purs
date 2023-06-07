@@ -41,7 +41,7 @@ descriptionBox content =
             { className: "cta-text"
             , children:
                 [ DOM.text "PROVA "
-                , DOM.strong_ [ DOM.text "HBL 365" ]
+                , DOM.strong_ [ DOM.text "HBL Digital Plus" ]
                 , DOM.br {}
                 , DOM.text "FÖRSTA MÅNADEN"
                 , DOM.br {}

@@ -76,7 +76,7 @@ render product =
                                 { className: "container"
                                 , children:
                                     [ DOM.h1_ [ DOM.text "Alla KSF Medias tidningar i en app!" ]
-                                    , DOM.p_ [ DOM.text "Med HBL 365 kan du läsa den digitala versionen av papperstidningarna Hufvudstadsbladet, Västra Nyland och Östnyland i en och samma app." ]
+                                    , DOM.p_ [ DOM.text "Med HBL Digital Plus kan du ta del av alla nyheter digitalt, inklusive e-tidningar. Du kan utöver HBL också läsa Västra Nyland, Östnyland och HBL Junior. Läs papperstidningarna digitalt i appen HBL 365 eller på webben." ]
                                     ]
                                 }
                             ]
@@ -95,7 +95,7 @@ render product =
                     [ DOM.div
                         { className: "container tight"
                         , children:
-                            [ DOM.h2_ [ DOM.text "Vad är HBL 365?" ]
+                            [ DOM.h2_ [ DOM.text "Vad är appen HBL 365?" ]
                             , DOM.p
                                 { className: "large-text"
                                 , children: [ DOM.text "Appen HBL 365 är designad speciellt för e-tidningarna. I appen hittar man lätt de senaste numren av tidningarna Hufvudstadsbladet, Västra Nyland och Östnyland. Man kan läsa tidningsartiklarna i textvy, söka artiklar och tidningar, och till och med lyssna på artiklar." ]
