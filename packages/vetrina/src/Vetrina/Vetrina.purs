@@ -36,7 +36,8 @@ import KSF.User as User
 import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
-import React.Basic.Events (EventHandler, handler_)
+import React.Basic.DOM.Events (preventDefault)
+import React.Basic.Events (EventHandler, handler, handler_)
 import Record (merge)
 import Tracking as Tracking
 import Vetrina.Purchase.AccountForm (mkAccountForm)
@@ -131,6 +132,8 @@ type State =
   , products         :: Array Product
   , productSelection :: Maybe Product
   , paymentMethod    :: Maybe User.PaymentMethod
+  , paymentTerminal  :: Maybe String
+  , scaShown         :: Boolean
   , accountFormComponent :: AccountForm.Props -> JSX
   , retryPurchase :: User -> Effect Unit
   , paymentMethods :: Array User.PaymentMethod
@@ -146,6 +149,7 @@ data PurchaseState
   = NewPurchase
   | CapturePayment
   | ProcessPayment
+  | ScaRequired
   | PurchaseFailed OrderFailure
   | PurchaseSetPassword
   | PurchaseCompleted AccountStatus
@@ -191,6 +195,8 @@ initialState =
   , products: []
   , productSelection: Nothing
   , paymentMethod: Nothing
+  , paymentTerminal: Nothing
+  , scaShown: false
   , accountFormComponent: const mempty
   , retryPurchase: const $ pure unit
   , paymentMethods: mempty
@@ -311,6 +317,9 @@ pollOrder setState state@{ logger } (Right order) = do
       logger.log "Customer canceled order" Sentry.Info
       scrollToVetrina
       setState _ { purchaseState = NewPurchase }
+    OrderScaRequired -> do
+      liftEffect $ setState _ { purchaseState = ScaRequired }
+      pollOrder setState state =<< User.getOrder order.number
     OrderCreated      -> pollOrder setState state =<< User.getOrder order.number
     OrderUnknownState -> liftEffect do
       scrollToVetrina
@@ -335,6 +344,10 @@ render self = vetrinaContainer self $
     PurchasePolling -> maybe Spinner.loadingSpinner Spinner.loadingSpinnerWithMessage self.state.loadingMessage
     NewPurchase -> newPurchase
     CapturePayment -> netsTerminalModal
+    ScaRequired ->
+        if self.state.scaShown
+        then Spinner.loadingSpinner
+        else scaRequired self.state.paymentTerminal (\scaShown -> self.setState _ { scaShown = scaShown })
     ProcessPayment -> Spinner.loadingSpinner
     PurchaseFailed failure ->
       case failure of
@@ -507,6 +520,7 @@ mkPurchase self@{ state: { logger } } window askAccount validForm affUser =
               self.state { purchaseState = newPurchaseState
                          , user = hush eitherUser
                          , accountStatus = newAccountStatus
+                         , paymentTerminal = _.paymentTerminalUrl <$> paymentUrl
                          }
             newAccountStatus = either (const NewAccount) LoggedInAccount eitherUser
         self.setState \_ -> newState
@@ -635,6 +649,34 @@ netsTerminalModal =
     , children:
       [ DOM.div_
           [ DOM.text "Betalningen öppnas i ett nytt fönster. Följ anvisningarna i det nya fönstret. Du kommer vidare till bekräftelsen när betalningen genomförts. Vid problem ta kontakt med vår kundtjänst på pren@ksfmedia.fi."
+          ]
+      ]
+    }
+
+scaRequired :: Maybe String -> (Boolean -> Effect Unit) -> JSX
+scaRequired Nothing _ =
+    DOM.div
+      { className: "vetrina--payment-wrapper"
+      , children: [ DOM.div_ [ DOM.text "Något gick fel. Vänligen försök igen om en stund." ] ]
+      }
+scaRequired (Just paymentTerminalUrl) setScaShown =
+  let handleClick :: Effect Unit
+      handleClick = do
+        globalWindow <- Web.HTML.window
+        _ <- Window.open paymentTerminalUrl "_blank" "noopener" globalWindow
+        setScaShown true
+  in DOM.div
+    { className: "vetrina--payment-wrapper"
+    , children:
+      [ DOM.div_
+          [ DOM.text "Betalningen kräver ytterligare bekräftelse. Vänligen tryck på knappen nedan för att fortsätta."
+          , DOM.div_
+              [ DOM.button
+                  { className: "vetrina--button"
+                  , onClick: handler preventDefault $ const handleClick
+                  , children: [ DOM.text "Fortsätt" ]
+                  }
+              ]
           ]
       ]
     }

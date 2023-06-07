@@ -55,6 +55,7 @@ component = do
     orderState /\ setOrderState <- useState' $ Right OrderUnknownState
     netsUrl /\ setNetsUrl <- useState' Nothing
     error /\ setError <- useState' $ Right unit
+    scaShown /\ setScaShown <- useState' false
     paperInvoiceConfirmed /\ setPaperInvoiceConfirmed <- useState' false
     let needTerminal = method == CreditCard &&
                        (error *> orderState) == Right OrderCreated &&
@@ -107,8 +108,8 @@ component = do
     pure $ case method of
       PaperInvoice -> case paperInvoiceConfirmed of
         false -> renderPaperInvoice orderSummary startPaperInvoicePurchase
-        true -> renderPayment (error *> orderState) cancel netsUrl
-      CreditCard -> renderPayment (error *> orderState) cancel netsUrl
+        true -> renderPayment (error *> orderState) cancel scaShown setScaShown netsUrl
+      CreditCard -> renderPayment (error *> orderState) cancel scaShown setScaShown netsUrl
 
 renderPaperInvoice :: JSX -> Effect Unit -> JSX
 renderPaperInvoice summary confirm =
@@ -142,10 +143,10 @@ renderPaperInvoice summary confirm =
         ]
     }
 
-renderPayment :: Either BottegaError OrderState -> Effect Unit -> Maybe PaymentTerminalUrl -> JSX
+renderPayment :: Either BottegaError OrderState -> Effect Unit -> Boolean -> (Boolean -> Effect Unit) -> Maybe PaymentTerminalUrl -> JSX
 -- This should only happen during initialization
-renderPayment (Right OrderUnknownState) _ _ = initializing
-renderPayment (Right OrderCreated) cancel (Just _) =
+renderPayment (Right OrderUnknownState) _ _ _ _ = initializing
+renderPayment (Right OrderCreated) cancel _ _ (Just _) =
   DOM.div
     { className: "payment-terminal payment-terminal-msg"
     , children:
@@ -160,19 +161,21 @@ renderPayment (Right OrderCreated) cancel (Just _) =
             ]
         ]
     }
-renderPayment (Right OrderCreated) _ _ = loading
-renderPayment (Right OrderStarted) _ _ = loading
-renderPayment (Right OrderCanceled) _ _ =
+renderPayment (Right OrderCreated) _ _ _ _ = loading
+renderPayment (Right OrderStarted) _ _ _ _ = loading
+renderPayment (Right OrderCanceled) _ _ _ _ =
   errMsg "Beställningen avbrutits."
-renderPayment (Right (OrderFailed NetsCanceled)) _ _ =
+renderPayment (Right (OrderFailed NetsCanceled)) _ _ _ _ =
   errMsg "Beställningen avbrutits."
-renderPayment (Right (OrderFailed NetsIssuerError)) _ _ =
+renderPayment (Right OrderScaRequired) _ false setScaShown (Just url) = scaRequired url setScaShown
+renderPayment (Right OrderScaRequired) _ true _ _ = loading
+renderPayment (Right (OrderFailed NetsIssuerError)) _ _ _ _ =
   errMsg "Ett fel uppstod vid Nets."
-renderPayment (Right (OrderFailed SubscriptionExistsError)) _ _ =
+renderPayment (Right (OrderFailed SubscriptionExistsError)) _ _ _ _ =
   errMsg "Du har redan en prenumeration för denna produkt."
-renderPayment (Left BottegaTimeout) _ _ =
+renderPayment (Left BottegaTimeout) _ _ _ _ =
   errMsg "Timeout hände."
-renderPayment _ _ _ =
+renderPayment _ _ _ _ _ =
   errMsg "Något gick fel."
 
 initializing :: JSX
@@ -180,6 +183,27 @@ initializing = Spinner.loadingSpinnerWithMessage "Vänligen vänta. Vi behandlar
 
 loading :: JSX
 loading = Spinner.loadingSpinnerWithMessage "Vänligen vänta. Vi behandlar din beställning."
+
+scaRequired :: PaymentTerminalUrl -> (Boolean -> Effect Unit) -> JSX
+scaRequired { paymentTerminalUrl } setScaShown =
+  let handleClick :: Effect Unit
+      handleClick = do
+        globalWindow <- Web.HTML.window
+        _ <- Window.open paymentTerminalUrl "_blank" "noopener" globalWindow
+        setScaShown true
+  in DOM.div
+    { className: "payment-terminal payment-terminal-msg"
+    , children: [ DOM.div_ [ DOM.text "Betalningen kräver ytterligare bekräftelse. Vänligen tryck på knappen nedan för att fortsätta." ]
+                , DOM.div_
+                    [ DOM.button
+                        { className: "btn btn-cta"
+                        , onClick: handler preventDefault $ const handleClick
+                        , children: [ DOM.text "Fortsätt" ]
+                        }
+                    , DOM.text "."
+                    ]
+                ]
+    }
 
 errMsg :: String -> JSX
 errMsg msg =

@@ -129,7 +129,10 @@ let checkCISteps =
         , name = Some "Check CI script has been generated from Dhall"
         , run = Some
             ''
+              git config --global --add safe.directory $(pwd)
+              chmod 666 .github/workflows/*
               make
+              chmod 644 .github/workflows/*
               git diff --exit-code
             ''
         }

@@ -10,7 +10,9 @@ import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json, toArray, toObject)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Array (foldl, partition, snoc)
+import Data.Date (Date, day, month, year)
 import Data.Either (Either(..), either, hush, isRight)
+import Data.Enum (fromEnum)
 import Data.Foldable (class Foldable, foldMap)
 import Data.Foldable as Foldable
 import Data.HTTP.Method (Method(..))
@@ -29,8 +31,8 @@ import KSF.Auth as Auth
 import KSF.Driver (getDriver)
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Platform(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
 import Lettera.Header as Cache
+import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Platform(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
 
 foreign import letteraBaseUrl :: String
 foreign import _encodeURIComponent :: String -> String
@@ -58,6 +60,9 @@ letteraMostReadUrl = letteraBaseUrl <> "/list/mostread/"
 
 letteraLatestUrl :: String
 letteraLatestUrl = letteraBaseUrl <> "/list/latest/"
+
+letteraByDayUrl :: String
+letteraByDayUrl = letteraBaseUrl <> "/article/by-day"
 
 letteraCategoryUrl :: String
 letteraCategoryUrl = letteraBaseUrl <> "/categories"
@@ -281,6 +286,17 @@ getLatest start limit paper = do
                                 <> "&limit=" <> show limit
                                 <> "&paper=" <> Paper.toString paper
                               )
+
+getByDay :: Date -> Paper -> Aff (LetteraResponse (Array ArticleStub))
+getByDay date paper = do
+  let url = letteraByDayUrl
+            <> "/" <> show (fromEnum (year date))
+            <> "/" <> show (fromEnum (month date))
+            <> "/" <> show (fromEnum (day date))
+            <> "?paper=" <> Paper.toString paper
+  driver <- liftEffect getDriver
+  useResponse parseArticleStubs =<<
+    AX.get driver ResponseFormat.json url
 
 getByTag :: Int -> Int -> Tag -> Paper -> Aff (LetteraResponse (Array ArticleStub))
 getByTag start limit tag paper = do

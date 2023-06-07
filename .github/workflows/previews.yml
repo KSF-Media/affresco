@@ -3,7 +3,7 @@ env:
 jobs:
   check-ci:
     container:
-      image: ksfmedia/diskho:gha-1.1
+      image: ksfmedia/diskho:gha-1.2
       options: "--cpus 2"
     runs-on: ubuntu-latest
     steps:
@@ -11,11 +11,14 @@ jobs:
         uses: "actions/checkout@v2"
       - name: Check CI script has been generated from Dhall
         run: |2
+            git config --global --add safe.directory $(pwd)
+            chmod 666 .github/workflows/*
             make
+            chmod 644 .github/workflows/*
             git diff --exit-code
   deploy-gs:
     container:
-      image: ksfmedia/diskho:gha-1.1
+      image: ksfmedia/diskho:gha-1.2
       options: "--cpus 2"
     needs: check-ci
     runs-on: ubuntu-latest
