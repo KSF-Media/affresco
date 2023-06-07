@@ -24,6 +24,7 @@ class Article extends Component {
       isImageModalOpen: false,
       mostReadArticles: [],
       adsAreShown: adsAreShown,
+      paper: props.paper || "hbl",
     };
   }
 
@@ -49,6 +50,16 @@ class Article extends Component {
     axios(mostreadReq).then((res) => {
       this.setState({ mostReadArticles: res.data });
     });
+  }
+
+  renderFooterAd(adName) {
+    if (this.state.adsAreShown) {
+      return (
+        <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + adName.toLowerCase()}></div>
+      );
+    } else {
+      console.log("Ads have been removed for this article.");
+    }
   }
 
   render() {
@@ -132,13 +143,14 @@ class Article extends Component {
               />
             ) : (
               ""
-              )}
-              {this.state.adsAreShown && (
-                  <AdvertorialLiftup
-                    darkModeEnabled={this.props.darkModeEnabled}
-                    paper={this.props.paper}
-                  />
-              )}
+            )}
+            {this.state.adsAreShown && (
+                <AdvertorialLiftup
+                  darkModeEnabled={this.props.darkModeEnabled}
+                  paper={this.props.paper}
+                />
+            )}
+            {this.renderFooterAd("mobbox1")}
             {this.state.mostReadArticles.length > 0 ? (
               <Suspense fallback={<div>Laddar ...</div>}>
                 <MostReadArticles
