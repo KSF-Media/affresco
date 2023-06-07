@@ -33,7 +33,7 @@ hblPremium =
       [ { title: "Premium"
         , description: "Alla artiklar på HBL.fi"
         }
-      , { title: "Allt innehåll i våra nyhetsap"
+      , { title: "Allt innehåll i vårt nyhetsapp"
         , description: "HBL Nyheter (iOS & Android)"
         }
       , { title: "Nyhetsbrev"
@@ -73,7 +73,7 @@ vnPremium =
       [ { title: "Premium"
         , description: "Alla artiklar på Vastranyland.fi"
         }
-      , { title: "Allt innehåll i våra nyhetsap"
+      , { title: "Allt innehåll i vårt nyhetsapp"
         , description: "VN Nyheter (iOS & Android)"
         }
       , { title: "Nyhetsbrev"
@@ -114,9 +114,9 @@ onPremium =
       }
   , contents:
       [ { title: "Premium"
-        , description: "Alla artiklar Ostnyland.fi"
+        , description: "Alla artiklar på Ostnyland.fi"
         }
-      , { title: "Allt innehåll i våra nyhetsap"
+      , { title: "Allt innehåll i vårt nyhetsapp"
         , description: "ÖN Nyheter (iOS & Android)"
         }
       , { title: "Nyhetsbrev"
@@ -126,7 +126,7 @@ onPremium =
         , description: ""
         }
       , { title: "E-tidningar"
-        , description: "Papperstidningar digitalt i appen HBL 365 och på webben (ÖN)"
+        , description: "Papperstidningen digitalt i appen HBL 365 och på webben (ÖN)"
         }
       ]
   }
