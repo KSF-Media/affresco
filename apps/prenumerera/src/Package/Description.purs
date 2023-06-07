@@ -96,7 +96,7 @@ packageDescriptions = fromFoldable
           ]
       , ribbon: DOM.text "unika artiklar varje dag"
       , url: Nothing
-      , weekdays: "Alla artiklar på hbl.fi"
+      , weekdays: "Allt digitalt innehåll exkl. e-tidningen"
       , ordering: 1
       , image: "HBLPremium.png"
       , packageGroup: "Webb Premium"
@@ -116,7 +116,7 @@ packageDescriptions = fromFoldable
           ]
       , ribbon: ribbon "2" "dagar med papper"
       , url: Nothing
-      , weekdays: "tisdag och fredag"
+      , weekdays: "Papperstidningen tis & fre"
       , ordering: 2
       , image: "ON.png"
       , packageGroup: "Papperstidningen"
@@ -135,7 +135,7 @@ packageDescriptions = fromFoldable
           ]
       , ribbon: ribbon "2+5" "dagar med papper"
       , url: Nothing
-      , weekdays: "mån – sön"
+      , weekdays: "Papperstidningen mån-sön"
       , ordering: 3
       , image: "ON.png"
       , packageGroup: "2+5"
@@ -173,7 +173,7 @@ packageDescriptions = fromFoldable
           ]
       , ribbon: ribbon "2" "dagar med papper"
       , url: Nothing
-      , weekdays: "tisdag och fredag"
+      , weekdays: "Papperstidningen tis & fre"
       , ordering: 2
       , image: "VN.png"
       , packageGroup: "Papperstidningen"
@@ -192,7 +192,7 @@ packageDescriptions = fromFoldable
           ]
       , ribbon: ribbon "2+5" "dagar med papper"
       , url: Nothing
-      , weekdays: "mån – sön"
+      , weekdays: "Papperstidningen mån-sön"
       , ordering: 3
       , image: "VN.png"
       , packageGroup: "2+5"
@@ -210,7 +210,7 @@ packageDescriptions = fromFoldable
           ]
       , ribbon: DOM.text "Alla dagar digitalt"
       , url: Nothing
-      , weekdays: "allt digitalt innehåll"
+      , weekdays: "Allt digitalt innehåll"
       , ordering: 1
       , image: "vn_digi_premium.png"
       , packageGroup: "Webb Premium"
@@ -245,7 +245,7 @@ packageDescriptions = fromFoldable
       , ribbon: React.fragment
           [ DOM.span_ [ DOM.text "första månaden" ], DOM.span_ [ DOM.strong_ [ DOM.text "1€" ] ] ]
       , url: Just "https://customer.hbl.fi/hbl365"
-      , weekdays: "digitalt endast"
+      , weekdays: "Allt digitalt innehåll inkl. e-tidningar"
       , ordering: 2
       , image: "HBL365365.png"
       , packageGroup: "HBL 365"
