@@ -19,7 +19,6 @@ import KSF.Api.Package (toSwedish)
 import KSF.Helpers (formatEur)
 import KSF.Helpers as Helpers
 import KSF.InputField as InputField
-import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import KSF.PaymentMethod (paymentMethodOption)
 import KSF.Sentry as Sentry
@@ -113,7 +112,9 @@ component logger = do
                 (withWindow $ const $ pure $ Right user)
                 $ loggedInAccountFormValidations state
 
-    pure $ render props state setState onSubmit
+    pure $ case props.customRender of
+      Nothing -> render props state setState onSubmit
+      Just f -> f (form props state setState onSubmit) props.accountStatus
 
 render :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 render props state setState onSubmit =

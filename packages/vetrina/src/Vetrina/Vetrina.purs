@@ -3,6 +3,7 @@ module KSF.Vetrina where
 import Prelude
 
 import Bottega (BottegaError(..))
+import Bottega.Models.Order (OrderSource(..))
 import Control.Alt ((<|>))
 import Data.Array (filter, head, length, take)
 import Data.Either (Either(..))
@@ -55,6 +56,7 @@ type Props =
   , paper              :: Maybe Paper
   , paymentMethods     :: Array User.PaymentMethod
   , customNewPurchase  :: Maybe (JSX -> AccountStatus -> JSX)
+  , orderSource        :: OrderSource
   , subscriptionExists :: JSX
   , askAccountAlways   :: Boolean
   }
@@ -175,6 +177,7 @@ component = do
           , onPaymentMethodChange: \p -> setState _ { paymentMethod = p }
           , onEmailChange: setState _ { accountStatus = NewAccount }
           , customRender: props.customNewPurchase
+          , orderSource: props.orderSource
           }
 
         accountForm u = accountFormComponent
@@ -410,6 +413,7 @@ staticRender paper products headline = -- headline paper
   , onPaymentMethodChange: \_ -> pure unit
   , onEmailChange: pure unit
   , customRender: Nothing
+  , orderSource: PaywallSource
   }
   { newAccountForm: { emailAddress: Nothing, acceptLegalTerms: false }
   , existingAccountForm: { emailAddress: Nothing, password: Nothing }

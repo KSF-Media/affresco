@@ -3,7 +3,7 @@ module Vetrina.Purchase.NewPurchase.Order where
 import Prelude
 
 import Bottega (BottegaError(..))
-import Bottega.Models.Order (OrderSource(..))
+import Bottega.Models.Order (OrderSource)
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Except.Trans (except)
 import Data.Array as Array
@@ -40,24 +40,25 @@ foreign import windowClose :: Window -> Effect Unit
 type PurchaseInput r = { productSelection :: Maybe Product, paymentMethod :: Maybe PaymentMethod | r }
 
 type Props =
-  { accountStatus                 :: AccountStatus
-  , products                      :: Array Product
-  , askAccountAlways              :: Boolean
-  , accessEntitlements            :: Set String
-  , loading                       :: Maybe Spinner.Loading -> Maybe String -> Effect Unit
-  , startOrder                    :: Maybe PaymentTerminalUrl -> Order -> User -> AccountStatus -> Effect Unit
-  , purchaseError                 :: Maybe User -> Maybe AccountStatus -> Maybe Product -> PurchaseState -> Effect Unit
-  , setRetryPurchase              :: (User -> Effect Unit) -> Effect Unit
-  , setUser                       :: User -> Effect Unit
-  , productSelection              :: Maybe Product
-  , onLogin                       :: EventHandler
-  , headline                      :: Maybe JSX
-  , paper                         :: Maybe Paper
-  , paymentMethod                 :: Maybe PaymentMethod -- ^ Pre-selected payment method
-  , paymentMethods                :: Array PaymentMethod
-  , onPaymentMethodChange         :: Maybe PaymentMethod -> Effect Unit
-  , onEmailChange                 :: Effect Unit
-  , customRender                  :: Maybe (JSX -> AccountStatus -> JSX)
+  { accountStatus         :: AccountStatus
+  , products              :: Array Product
+  , askAccountAlways      :: Boolean
+  , accessEntitlements    :: Set String
+  , loading               :: Maybe Spinner.Loading -> Maybe String -> Effect Unit
+  , startOrder            :: Maybe PaymentTerminalUrl -> Order -> User -> AccountStatus -> Effect Unit
+  , purchaseError         :: Maybe User -> Maybe AccountStatus -> Maybe Product -> PurchaseState -> Effect Unit
+  , setRetryPurchase      :: (User -> Effect Unit) -> Effect Unit
+  , setUser               :: User -> Effect Unit
+  , productSelection      :: Maybe Product
+  , onLogin               :: EventHandler
+  , headline              :: Maybe JSX
+  , paper                 :: Maybe Paper
+  , paymentMethod         :: Maybe PaymentMethod -- ^ Pre-selected payment method
+  , paymentMethods        :: Array PaymentMethod
+  , onPaymentMethodChange :: Maybe PaymentMethod -> Effect Unit
+  , onEmailChange         :: Effect Unit
+  , customRender          :: Maybe (JSX -> AccountStatus -> JSX)
+  , orderSource           :: OrderSource
   }
 
 mkPurchase
@@ -101,7 +102,7 @@ mkPurchase props logger window askAccount validForm affUser = do
       when askAccount $
         throwError InsufficientAccount
 
-      order <- ExceptT $ createOrder user product PaywallSource
+      order <- ExceptT $ createOrder user product props.orderSource
       paymentUrl <- ExceptT $ payOrder order paymentMethod
       liftEffect do
         LocalStorage.setItem "productId" product.id -- for analytics

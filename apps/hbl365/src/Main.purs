@@ -3,18 +3,19 @@ module HBL365.Main where
 import Prelude
 
 import Data.Array as Array
-import Data.Either (Either)
+import Data.Either (Either(..), hush)
 import Data.Maybe (Maybe(..))
 import Data.Set as Set
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Exception (Error)
+import Effect.Exception (Error, error)
 import Effect.Unsafe (unsafePerformEffect)
 import HBL365.AnotherAccount (anotherAccount)
 import HBL365.Product (getProduct)
 import HBL365.NewPurchase as NewPurchase
 import KSF.Spinner as Spinner
+import KSF.User (User)
 import KSF.User as User
 import KSF.Vetrina as Vetrina
 import React.Basic (JSX)
@@ -38,17 +39,20 @@ jsApp = unsafePerformEffect app
 
 app :: Component {}
 app = do
+  vetrina <- Vetrina.component
   component "HBL365" \_ -> React.do
     product /\ setProduct <- useState' Nothing
+    user /\ setUser <- useState' Nothing
     useEffectOnce do
       addOnScroll
-      Aff.launchAff_ do
+      fib <- Aff.launchAff do
         liftEffect <<< setProduct <<< Just <<< map Array.singleton =<< getProduct
-      pure $ pure unit
-    pure $ render product
+        User.magicLogin Nothing $ hush >>> setUser
+      pure $ Aff.launchAff_ $ Aff.killFiber (error "cancel") fib
+    pure $ render vetrina user setUser product
 
-render :: Maybe (Either Error (Array Product)) -> JSX
-render product =
+render :: (Vetrina.Props -> JSX) -> Maybe User -> (Maybe User -> Effect Unit) -> Maybe (Either Error (Array Product)) -> JSX
+render vetrina user setUser product =
   React.fragment
     [ DOM.header_
         [ DOM.div
@@ -145,8 +149,8 @@ render product =
         , children:
             [ NewPurchase.descriptionBox Spinner.loadingSpinner ]
         }
-    renderProduct (Just prod) =
-      Vetrina.vetrina
+    renderProduct (Just (Right prod)) =
+      vetrina
         { onClose: Nothing
         , onLogin: mempty
         , products: prod
@@ -155,13 +159,15 @@ render product =
         , headline: Nothing
         , paper: Nothing
         , paymentMethods: [ User.CreditCard ]
-        , loadingContainer: Just NewPurchase.descriptionBox
         , customNewPurchase: Just NewPurchase.render
         , orderSource: PrenumereraSource -- TODO: find out if there is a more suitable value for this
         , subscriptionExists: anotherAccount
         , askAccountAlways: false
-        , user: Nothing
+        , user
+        , setUser: setUser <<< Just
         }
+    renderProduct (Just (Left _)) =
+      DOM.text "Något gick fel"
 
     imgLink href alt src =
       DOM.a
