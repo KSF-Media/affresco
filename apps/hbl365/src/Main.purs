@@ -2,6 +2,7 @@ module HBL365.Main where
 
 import Prelude
 
+import Bottega.Models.Order (OrderSource(..))
 import Data.Array as Array
 import Data.Either (Either(..), hush)
 import Data.Maybe (Maybe(..))
@@ -22,7 +23,6 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffectOnce, useState', (/\))
 import React.Basic.Hooks as React
-import Bottega.Models.Order (OrderSource(..))
 import Vetrina.Types (Product)
 
 foreign import appStore ::

@@ -2,6 +2,7 @@ module VetrinaTest.Main where
 
 import Prelude
 
+import Bottega.Models.Order (OrderSource(..))
 import Bottega.Models.PaymentMethod (PaymentMethod(..))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
@@ -44,6 +45,7 @@ app = do
         , customNewPurchase: Nothing
         , subscriptionExists: mempty
         , askAccountAlways: false
+        , orderSource: PaywallSource
         }
       true -> login
         { onMerge: pure unit
