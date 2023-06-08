@@ -1,19 +1,62 @@
 module VetrinaTest.Main where
 
-import KSF.Vetrina (Props, JSProps)
+import Prelude
+
+import Bottega.Models.Order (OrderSource(..))
+import Bottega.Models.PaymentMethod (PaymentMethod(..))
+import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
+import Data.Set as Set
+import Effect.Console (error)
+import Effect.Unsafe (unsafePerformEffect)
+import KSF.Paper (Paper(..))
+import KSF.User.Login as Login
 import KSF.Vetrina as Vetrina
+import KSF.Vetrina.Products.Premium (hblPremium)
 import React.Basic (JSX)
-import React.Basic.Classic as React
+import React.Basic.DOM.Events (capture_)
+import React.Basic.Hooks as React
+import React.Basic.Hooks (Component, useState', (/\))
 
-type State = { }
-type Self = React.Self Props State
+app :: Component {}
+app = do
+  vetrina <- Vetrina.component
+  login <- Login.login
+  React.component "VetrinaTest" \_ -> React.do
+    user /\ setUser <- useState' Nothing
+    loggingIn /\ setLoggingIn <- useState' false
+    let onUserFetch (Right u) = do
+          setLoggingIn false
+          setUser $ Just u
+        onUserFetch (Left _) = do
+          error "user fetch failed"
+    pure $ case loggingIn of
+      false -> vetrina
+        { onClose: Nothing
+        , onLogin: capture_ $ setLoggingIn true
+        , user
+        , setUser: setUser <<< Just
+        , products: [ hblPremium ]
+        , unexpectedError: mempty
+        , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
+        , headline: Nothing
+        , paper: Just HBL
+        , paymentMethods: [CreditCard]
+        , customNewPurchase: Nothing
+        , subscriptionExists: mempty
+        , askAccountAlways: false
+        , orderSource: PaywallSource
+        }
+      true -> login
+        { onMerge: pure unit
+        , onMergeCancelled: pure unit
+        , onRegister: pure unit
+        , onRegisterCancelled: pure unit
+        , onUserFetch
+        , onLogin: const $ pure unit
+        , paper: Just HBL
+        , disableSocialLogins: mempty
+        }
 
-jsComponent :: React.ReactComponent JSProps
-jsComponent = React.toReactComponent Vetrina.fromJSProps component { initialState: {}, render }
-
-component :: React.Component Props
-component = React.createComponent "VetrinaTest"
-
-render :: Self -> JSX
-render self =
-  Vetrina.vetrina self.props
+jsApp :: {} -> JSX
+jsApp = unsafePerformEffect app

@@ -2,13 +2,12 @@ module Vetrina.Types where
 
 import Prelude
 
-import Data.Array (mapMaybe)
-import Data.Either (Either(..))
-import Data.Foldable (fold)
-import Data.Maybe (Maybe(..))
-import Data.Nullable (Nullable, toMaybe)
-import KSF.Api.Package (Campaign, JSCampaign, fromJSCampaign)
+import Data.List.NonEmpty as NonEmptyList
+import Data.Maybe (Maybe(..), isNothing)
+import Data.Validation.Semigroup (invalid)
+import KSF.Api.Package (Campaign)
 import KSF.User as User
+import KSF.ValidatableForm as Form
 import React.Basic (JSX)
 
 data AccountStatus
@@ -21,11 +20,6 @@ instance eqAccountStatus :: Eq AccountStatus where
   eq (ExistingAccount _) (ExistingAccount _) = true
   eq (LoggedInAccount _) (LoggedInAccount _) = true
   eq _ _ = false
-
-type JSProductContent =
-  { title       :: Nullable String
-  , description :: Nullable String
-  }
 
 type ProductContent =
   { title       :: String
@@ -42,41 +36,63 @@ type Product =
   , contents                     :: Array ProductContent
   }
 
-type JSProduct =
-  { id                           :: Nullable String
-  , name                         :: Nullable String
-  , description                  :: Nullable JSX
-  , descriptionPurchaseCompleted :: Nullable JSX
-  , priceCents                   :: Nullable Int
-  , campaign                     :: Nullable JSCampaign
-  , contents                     :: Nullable (Array JSProductContent)
+data FormInputField
+  = EmailAddress
+  | Password
+  | ProductSelection
+  | PaymentMethod
+
+derive instance eqNewAccountInputField :: Eq FormInputField
+instance validatableFieldNewAccountInputField :: Form.ValidatableField FormInputField where
+  validateField field value serverErrors = case field of
+    EmailAddress     -> Form.validateWithServerErrors serverErrors EmailAddress value Form.validateEmailAddress
+    Password         -> Form.validateEmptyField Password "Lösenord krävs." value
+    ProductSelection ->
+      -- As `validateField` works currently only with `Maybe Strings`, we need to manually
+      -- check the value here (for now). The `value` passed here is maybe the productSelection.id
+      if isNothing value
+      then invalid (NonEmptyList.singleton (Form.InvalidEmpty ProductSelection "")) -- TODO: Do we need an error message here?
+      else pure $ Just mempty
+    PaymentMethod    -> Form.validateEmptyField PaymentMethod "Betalningssätt krävs." value
+
+type PurchaseParameters =
+  ( productSelection :: Maybe Product
+  , paymentMethod    :: Maybe User.PaymentMethod
+  )
+
+type NewAccountForm =
+  { emailAddress     :: Maybe String
+  , acceptLegalTerms :: Boolean
+  | PurchaseParameters
   }
 
-fromJSProduct :: JSProduct -> Maybe Product
-fromJSProduct jsProduct = do
-  id          <- toMaybe jsProduct.id
-  name        <- toMaybe jsProduct.name
-  priceCents  <- toMaybe jsProduct.priceCents
-  let description = fold $ toMaybe jsProduct.description
-  -- NOTE: Campaign validation needs to be done separately
-  let campaign = fromJSCampaign =<< toMaybe jsProduct.campaign
-  let descriptionPurchaseCompleted = fold $ toMaybe jsProduct.descriptionPurchaseCompleted
-      contents = mapMaybe fromJSProductContent $ fold $ toMaybe jsProduct.contents
-  pure { id, name, description, priceCents, campaign, descriptionPurchaseCompleted, contents }
-
-fromJSProductContent ::  JSProductContent -> Maybe ProductContent
-fromJSProductContent jsProduct =
-  { title: _
-  , description: _
+type ExistingAccountForm =
+  { emailAddress :: Maybe String
+  , password     :: Maybe String
+  | PurchaseParameters
   }
-  <$> toMaybe jsProduct.title
-  <*> toMaybe jsProduct.description
 
-parseJSCampaign :: JSProduct -> Either String (Maybe Campaign)
-parseJSCampaign jsProduct =
-  case toMaybe jsProduct.campaign of
-    Nothing -> Right Nothing
-    Just jsCampaign ->
-      case fromJSCampaign jsCampaign of
-        Just validCampaign -> Right $ Just validCampaign
-        Nothing            -> Left "Could not parse campaign"
+data OrderFailure
+  = EmailInUse String
+  | SubscriptionExists
+  | RefusedByIssuer
+  | InsufficientAccount
+  | InitializationError
+  | FormFieldError (Array FormInputField)
+  | AuthenticationError
+  | ServerError
+  | UnexpectedError String
+
+derive instance eqOrderFailure :: Eq OrderFailure
+
+data PurchaseState
+  = NewPurchase
+  | CapturePayment
+  | ProcessPayment
+  | ScaRequired
+  | PurchaseFailed OrderFailure
+  | PurchaseSetPassword
+  | PurchaseCompleted AccountStatus
+  | PurchasePolling
+
+derive instance eqPurchaseState :: Eq PurchaseState

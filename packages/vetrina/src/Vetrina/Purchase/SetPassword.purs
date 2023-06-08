@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Alt ((<|>))
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..), isJust, isNothing)
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -14,25 +14,19 @@ import KSF.Sentry as Sentry
 import KSF.Spinner as Spinner
 import KSF.User as User
 import KSF.ValidatableForm (class ValidatableField, ValidatedForm, inputFieldErrorMessage, isFormInvalid, validateField, validateForm, validatePassword, validatePasswordComparison)
-import React.Basic.Classic (JSX, make)
-import React.Basic.Classic as React
+import React.Basic (JSX)
+import React.Basic.Hooks as React
+import React.Basic.Hooks (Component, useState, useState', (/\))
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
-import React.Basic.Events (handler)
+import React.Basic.DOM.Events (capture_)
+import React.Basic.Events (EventHandler)
 
 type Props =
   { onSuccess :: Effect Unit
   , onError   :: User.UserError -> Effect Unit
-  , user      :: Maybe User.User
+  , user      :: User.User
   , logger    :: Sentry.Logger
   }
-
-type State =
-  { passwordForm :: PasswordForm
-  , isLoading    :: Maybe Spinner.Loading
-  }
-
-type Self = React.Self Props State
 
 type PasswordForm =
   { newPassword     :: Maybe String
@@ -50,50 +44,36 @@ instance validatableFieldPasswordFormField :: ValidatableField PasswordFormField
     confirmPw@(ConfirmPassword originalPassword) -> validatePasswordComparison NewPassword confirmPw originalPassword value
 
 
-component :: React.Component Props
-component = React.createComponent "PurchaseSetPassword"
+component :: Component Props
+component = do
+  React.component "PurchaseSetPassword" $ \props -> React.do
+    form /\ setForm <- useState { newPassword: Nothing
+                                , confirmPassword: Nothing
+                                }
+    isLoading /\ setIsLoading <- useState' Nothing
+    let onSubmit = capture_ (submitNewPassword props form setForm setIsLoading)
+    pure $ case isLoading of
+      Nothing -> render form setForm onSubmit
+      Just _ -> Spinner.loadingSpinner
 
-setPassword :: Props -> JSX
-setPassword = make component
-  { initialState: { passwordForm:
-                      { newPassword: Nothing
-                      , confirmPassword: Nothing
-                      }
-                  , isLoading: Nothing
-                  }
-  , render
-  }
+render :: PasswordForm -> ((PasswordForm -> PasswordForm) -> Effect Unit) -> EventHandler -> JSX
+render form setForm onSubmit =
+  DOM.h1
+    { className: "vetrina--headline"
+    , children:[ DOM.text "Tack för din beställning!" ]
+    }
+  <>
+  DOM.p
+    { className: "vetrina--description-text"
+    , children: [ DOM.text "Du är nästan klar! Skriv in önskat lösenord för ditt nya konto nedan." ]
+    }
+  <> setPasswordForm form setForm onSubmit
 
-didMount :: Self -> Effect Unit
-didMount { props } = do
-  when (isNothing props.user) do
-    -- TODO: Call onError?
-    props.logger.log "Did not get user to Purchase.SetPassword phase" Sentry.Warning
-
-render :: Self -> JSX
-render self =
-  if isJust self.state.isLoading
-  then Spinner.loadingSpinner
-  else
-    DOM.h1
-      { className: "vetrina--headline"
-      , children:[ DOM.text "Tack för din beställning!" ]
-      }
-    <> case self.props.user of
-        Just _ ->
-          DOM.p
-            { className: "vetrina--description-text"
-            , children: [ DOM.text "Du är nästan klar! Skriv in önskat lösenord för ditt nya konto nedan." ]
-            }
-          <> setPasswordForm self
-        _ -> DOM.text "SOMETHING WENT WRONG!"
-
-
-setPasswordForm :: Self -> JSX
-setPasswordForm self@{ state: { passwordForm } } =
+setPasswordForm :: PasswordForm -> ((PasswordForm -> PasswordForm) -> Effect Unit) -> EventHandler -> JSX
+setPasswordForm form setForm onSubmit =
   DOM.form
     { className: "vetrina--form"
-    , onSubmit: handler preventDefault $ (\_ -> submitNewPassword self $ formValidations self)
+    , onSubmit
     , children:
         [ DOM.div
             { className: "vetrina--input-wrapper"
@@ -104,49 +84,48 @@ setPasswordForm self@{ state: { passwordForm } } =
                    , type_: InputField.Password
                    , label: Nothing
                    , name: "password"
-                   , onChange: \val -> self.setState _ { passwordForm { newPassword = val } }
-                   , value: passwordForm.newPassword
-                   , validationError: inputFieldErrorMessage $ validateField NewPassword passwordForm.newPassword []
+                   , onChange: \val -> setForm _ { newPassword = val }
+                   , value: form.newPassword
+                   , validationError: inputFieldErrorMessage $ validateField NewPassword form.newPassword []
                    }
                 , InputField.inputField
                     { placeholder: "Bekräfta lösenord"
                     , type_: InputField.Password
                     , label: Nothing
                     , name: "confirmPassword"
-                    , onChange: \val -> self.setState _ { passwordForm { confirmPassword = val } }
-                    , value: passwordForm.confirmPassword
-                    , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword passwordForm.newPassword) passwordForm.confirmPassword []
+                    , onChange: \val -> setForm _ { confirmPassword = val }
+                    , value: form.confirmPassword
+                    , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword form.newPassword) form.confirmPassword []
                     }
                 ]
             }
         , DOM.input
             { type: "submit"
             , className: "vetrina--button vetrina--completed"
-            , disabled: isFormInvalid $ formValidations self
+            , disabled: isFormInvalid $ formValidations form
             , value: "Fortsätt"
             }
         ]
     }
 
-submitNewPassword :: Self -> ValidatedForm PasswordFormField PasswordForm -> Effect Unit
-submitNewPassword self@{ state: { passwordForm } } form =
-  validateForm form $
+submitNewPassword :: Props -> PasswordForm -> ((PasswordForm -> PasswordForm) -> Effect Unit) -> (Maybe Spinner.Loading -> Effect Unit) -> Effect Unit
+submitNewPassword props form setForm setIsLoading =
+  validateForm (formValidations form) $
     \eitherValidForm -> case eitherValidForm of
-      Left _ -> self.setState _ { passwordForm { newPassword = passwordForm.newPassword <|> Just "" } }
+      Left _ -> setForm _ { newPassword = form.newPassword <|> Just "" }
       Right validForm
-        | Just user <- self.props.user
-        , Just password <- validForm.newPassword
+        | Just password <- validForm.newPassword
         , Just confirmPassword <- validForm.confirmPassword
-        -> Aff.launchAff_ $ Spinner.withSpinner (self.setState <<< Spinner.setSpinner) do
-          eitherUser <- User.updatePassword user.uuid (Password password) (Password confirmPassword)
+        -> Aff.launchAff_ $ Spinner.withSpinner setIsLoading do
+          eitherUser <- User.updatePassword props.user.uuid (Password password) (Password confirmPassword)
           liftEffect $ case eitherUser of
-            Left err -> self.props.onError err
-            Right _  -> self.props.onSuccess
+            Left err -> props.onError err
+            Right _  -> props.onSuccess
         | otherwise ->
-          self.props.logger.log "Purchase.SetPassword: Tried to submit invalid password form" Sentry.Warning
+          props.logger.log "Purchase.SetPassword: Tried to submit invalid password form" Sentry.Warning
 
-formValidations :: Self -> ValidatedForm PasswordFormField PasswordForm
-formValidations { state: { passwordForm } } =
+formValidations :: PasswordForm -> ValidatedForm PasswordFormField PasswordForm
+formValidations passwordForm =
   { newPassword: _
   , confirmPassword: _
   }
