@@ -415,8 +415,9 @@ staticRender paper products headline = -- headline paper
   , customRender: Nothing
   , orderSource: PaywallSource
   }
-  { newAccountForm: { emailAddress: Nothing, acceptLegalTerms: false }
-  , existingAccountForm: { emailAddress: Nothing, password: Nothing }
+  { emailAddress: Nothing
+  , acceptLegalTerms: false
+  , password: Nothing
   , serverErrors: []
   , errorMessage: mempty
   , productSelection: Nothing

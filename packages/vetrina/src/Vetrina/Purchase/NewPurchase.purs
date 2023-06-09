@@ -39,14 +39,9 @@ import Web.HTML as Web.HTML
 import Web.HTML.Window as Window
 
 type State =
-  { newAccountForm ::
-       { emailAddress     :: Maybe String
-       , acceptLegalTerms :: Boolean
-       }
-  , existingAccountForm ::
-       { emailAddress :: Maybe String
-       , password     :: Maybe String
-       }
+  { emailAddress        :: Maybe String
+  , acceptLegalTerms    :: Boolean
+  , password            :: Maybe String
   , serverErrors        :: Array (Form.ValidationError FormInputField)
   , errorMessage        :: JSX
   , productSelection    :: Maybe Product
@@ -59,16 +54,11 @@ component logger = do
   window <- Web.HTML.window
   React.component "NewPurchase" $ \props -> React.do
     state /\ setState <- useState
-      { newAccountForm:
-          { emailAddress: case props.accountStatus of
-               ExistingAccount email -> Just email
-               _                     -> Nothing
-          , acceptLegalTerms: false
-          }
-      , existingAccountForm:
-          { emailAddress: Nothing
-          , password: Nothing
-          }
+      { emailAddress: case props.accountStatus of
+           ExistingAccount email -> Just email
+           _                     -> Nothing
+      , acceptLegalTerms: false
+      , password: Nothing
       , serverErrors: []
       , errorMessage: mempty
         -- If there's already a selected product, pick that
@@ -90,18 +80,16 @@ component logger = do
               validation
                 (\_ ->
                   setState _
-                  { newAccountForm
-                    { emailAddress = state.newAccountForm.emailAddress <|> Just "" }})
+                  { emailAddress = state.emailAddress <|> Just "" })
                 (withWindow $ createNewAccount <<< _.emailAddress)
                 $ newAccountFormValidations state
             ExistingAccount _ ->
               validation
                 (\_ ->
                   setState _
-                  { existingAccountForm
-                    { emailAddress = state.existingAccountForm.emailAddress <|> Just ""
-                    , password     = state.existingAccountForm.password     <|> Just ""
-                    }})
+                  { emailAddress = state.emailAddress <|> Just ""
+                  , password     = state.password     <|> Just ""
+                  })
                 (withWindow $ \validForm -> loginToExistingAccount logger
                                             validForm.emailAddress
                                             validForm.password)
@@ -369,38 +357,37 @@ formatErrorMessage = InputField.errorMessage
 emailInput :: Props -> State -> ((State -> State) -> Effect Unit) -> JSX
 emailInput {accountStatus: (LoggedInAccount _)} _ _ = mempty
 emailInput props state setState =
-  let emailValue = state.existingAccountForm.emailAddress <|> state.newAccountForm.emailAddress
-  in DOM.div
-     { className: "vetrina--input-wrapper vetrina--with-label"
-     , children:
-         [ if props.accountStatus == NewAccount
-           then DOM.div
-                  { className: "vetrina--step vetrina--create-account"
-                  , children:
-                      [ DOM.span
-                          { className: "vetrina--step__headline"
-                          , children: [ DOM.text "Skapa konto" ]
-                          }
-                      , DOM.text "STEG 1 / 2 KONTOINFORMATION"
-                      ]
-                  }
-           else mempty
-         , InputField.inputField
-             { type_: InputField.Email
-             , label: Just "E-postadress"
-             , name: "emailAddress"
-             , placeholder: "Fyll i din e-postadress"
-             , onChange: onChange
-             , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress emailValue state.serverErrors
-             , value: emailValue
-             }
-         ]
-     }
+  DOM.div
+    { className: "vetrina--input-wrapper vetrina--with-label"
+    , children:
+        [ if props.accountStatus == NewAccount
+          then DOM.div
+                 { className: "vetrina--step vetrina--create-account"
+                 , children:
+                     [ DOM.span
+                         { className: "vetrina--step__headline"
+                         , children: [ DOM.text "Skapa konto" ]
+                         }
+                     , DOM.text "STEG 1 / 2 KONTOINFORMATION"
+                     ]
+                 }
+          else mempty
+        , InputField.inputField
+            { type_: InputField.Email
+            , label: Just "E-postadress"
+            , name: "emailAddress"
+            , placeholder: "Fyll i din e-postadress"
+            , onChange: onChange
+            , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress state.emailAddress state.serverErrors
+            , value: state.emailAddress
+            }
+        ]
+    }
   where
     onChange = case props.accountStatus of
       NewAccount -> \val ->
          setState _
-           { newAccountForm { emailAddress = val }
+           { emailAddress = val
            , serverErrors = Form.removeServerErrors EmailAddress state.serverErrors
            , errorMessage = mempty
            }
@@ -410,8 +397,8 @@ emailInput props state setState =
         -- and we are asking the user to log in right now, changing the email should cancel that)
         props.onEmailChange
         setState _
-          { existingAccountForm { emailAddress = Nothing, password = Nothing }
-          , newAccountForm { emailAddress = val }
+          { emailAddress = val
+          , password = Nothing
           , serverErrors = Form.removeServerErrors EmailAddress state.serverErrors
           , errorMessage = mempty
           }
@@ -427,11 +414,11 @@ passwordInput state setState =
             , placeholder: "Fyll i ditt lösenord"
             , label: Just "Lösenord"
             , name: "password"
-            , value: state.existingAccountForm.password
-            , onChange: \pw -> setState _ { existingAccountForm { password = pw } }
+            , value: state.password
+            , onChange: \pw -> setState _ { password = pw }
             , validationError:
               Form.inputFieldErrorMessage $
-              Form.validateField Password state.existingAccountForm.password []
+              Form.validateField Password state.password []
             }
         ]
     }
@@ -527,10 +514,10 @@ newAccountFormValidations state =
   , productSelection: _
     -- TODO: Validate this and show error message. We are checking this on server side and with
     -- default browser validation. However, a custom JS validation is missing.
-  , acceptLegalTerms: state.newAccountForm.acceptLegalTerms
+  , acceptLegalTerms: state.acceptLegalTerms
   , paymentMethod: _
   }
-  <$> Form.validateField EmailAddress state.newAccountForm.emailAddress []
+  <$> Form.validateField EmailAddress state.emailAddress []
   <*> (Form.validateField ProductSelection (map _.id state.productSelection) [] *> pure state.productSelection)
   <*> (Form.validateField PaymentMethod (map show state.paymentMethod) [] *> pure state.paymentMethod)
 
@@ -541,8 +528,8 @@ existingAccountFormValidations state =
   , productSelection: _
   , paymentMethod: state.paymentMethod
   }
-  <$> Form.validateField EmailAddress state.existingAccountForm.emailAddress []
-  <*> Form.validateField Password state.existingAccountForm.password []
+  <$> Form.validateField EmailAddress state.emailAddress []
+  <*> Form.validateField Password state.password []
   <*> (Form.validateField ProductSelection (map _.id state.productSelection) [] *> pure state.productSelection)
 
 loggedInAccountFormValidations :: State -> Form.ValidatedForm FormInputField { | PurchaseParameters }
