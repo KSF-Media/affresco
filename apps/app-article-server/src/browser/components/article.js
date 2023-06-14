@@ -5,7 +5,6 @@ import Additional from "./article-additional";
 import ArticleDetails from "./article-details";
 import Content from "./article-content";
 import Footer from "./footer";
-import RelatedArticles from "./related-articles";
 import Lightbox from "react-image-lightbox";
 import "react-image-lightbox/style.css";
 import { AdvertorialLiftup } from "./advertorial-liftup.js"
@@ -138,16 +137,6 @@ class Article extends Component {
               queryString={this.props.queryString}
               adsAreShown={this.state.adsAreShown}
             />
-            {this.props.relatedArticles.length > 0 ? (
-              <RelatedArticles
-                relatedArticles={this.props.relatedArticles}
-                queryString={this.props.queryString}
-                darkModeEnabled={this.props.darkModeEnabled}
-                paper={this.props.paper}
-              />
-            ) : (
-              ""
-            )}
             {this.state.adsAreShown && (
                 <AdvertorialLiftup
                   darkModeEnabled={this.props.darkModeEnabled}

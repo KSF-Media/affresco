@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 const _ = require("lodash");
 import * as cheerio from 'cheerio';
+import MobileList from "./mobile-article-list";
 import PremiumBox from "./premium";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import 'react-lazy-load-image-component/src/effects/opacity.css';
@@ -21,7 +22,9 @@ class Content extends Component {
         return this.renderAd(block, key);
       }
       if (blockType === "paragraph") {
-        return this.renderParagraph(block, key);
+          return this.renderParagraph(block, key);
+      } else if (blockType === "related") {
+          return this.renderRelatedArticles(block, key);
       } else if (blockType === "headline") {
         return this.renderHeadline(block, key);
       } else if (blockType === "image") {
@@ -50,6 +53,24 @@ class Content extends Component {
     } else {
       console.log("couldn't render " + { blockType });
     }
+  }
+
+  renderRelatedArticles(block, key) {
+    return (
+      <div className={"relatedArticles "} key={key}>
+        <div className={"row"}>
+          <div className={"col-12"}>
+            <h3 className={`latest ${this.props.isDarkModeEnabled ? "darkMode" : ""}`}>Läs också</h3>
+          </div>
+        </div>
+        <MobileList
+          articles={block.related}
+          queryString={this.props.queryString}
+          darkModeEnabled={this.props.darkModeEnabled}
+          paper={this.props.paper}
+        />
+      </div>
+    );
   }
 
   renderParagraph(block, key) {
