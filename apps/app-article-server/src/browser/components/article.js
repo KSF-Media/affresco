@@ -44,10 +44,14 @@ class Article extends Component {
   };
 
   getMostReadArticles() {
+    const headers = {
+      "content-type": "application/json",
+      "Accept": "application/json",
+    };
     const mostreadReq =
       process.env.LETTERA_URL +
-      `/mostread?start=0&limit=10&paper=${this.props.paper}&onlySubscribers=${this.props.paper === "hbl"}`;
-    axios(mostreadReq).then((res) => {
+      `/list/mostread?start=0&limit=10&paper=${this.props.paper}&onlySubscribers=${this.props.paper === "hbl"}`;
+        axios.get(mostreadReq, {headers: headers}).then((res) => {
       this.setState({ mostReadArticles: res.data });
     });
   }

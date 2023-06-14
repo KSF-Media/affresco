@@ -5,7 +5,7 @@ const axios = require("axios");
 export function AdvertorialLiftup({ darkModeEnabled, paper }) {
   const [advertorial, setAdvertorial] = useState(null);
   useEffect(() => {
-    const advertorialsReq = process.env.LETTERA_V4_URL + "/list/active-advertorial?paper=" + paper;
+    const advertorialsReq = process.env.LETTERA_URL + "/list/active-advertorial?paper=" + paper;
     axios(advertorialsReq).then((res) => {
       setAdvertorial(res.data[Math.floor(Math.random() * res.data.length)]);
     });
