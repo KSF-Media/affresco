@@ -76,10 +76,6 @@ letteraSearchUrl = letteraBaseUrl <> "/list/search"
 letteraAdvertorialUrl :: String
 letteraAdvertorialUrl = letteraBaseUrl <> "/list/active-advertorial"
 
-letteraFallbackUrl :: String
---letteraFallbackUrl = letteraBaseUrl <> "/fallback"
-letteraFallbackUrl = "http://localhost:8081/v4/fallback"
-
 data LetteraError
   = ResponseError AX.Error
   | HttpError Int
@@ -235,7 +231,6 @@ getFrontpageHtml paper category cacheToken = do
         , responseFormat = AX.string
         }
   driver <- liftEffect getDriver
-  traceM {action:"getFrontpageHtml", request}
   useResponse (pure <<< pure) =<< AX.request driver request
 
 getBreakingNewsHtml :: Paper -> Maybe String -> Aff (LetteraResponse String)
@@ -272,7 +267,6 @@ getFrontpage paper start limit categoryId cacheToken = do
         , responseFormat = AX.json
         }
   driver <- liftEffect getDriver
-  traceM {action:"getFrontpage", request}
   useResponse parseArticleStubs =<< AX.request driver request
 
 getMostRead :: Int -> Int -> Maybe String -> Paper -> Boolean -> Aff (LetteraResponse (Array ArticleStub))

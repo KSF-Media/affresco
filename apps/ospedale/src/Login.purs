@@ -5,35 +5,40 @@ import Prelude
 import Control.Monad.Except.Trans (runExceptT)
 import Data.Argonaut as JSON
 import Data.Either (Either(..))
+import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
-import Debug (trace, traceM)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.AVar as AVar
 import Effect.Aff.AVar as Aff.AVar
+import Effect.Class (liftEffect)
 import Foreign as Foreign
 import Foreign.Object (lookup)
-import Ospedale.TokenResponse (TokenResponse)
-import Ospedale.TokenResponse as TokenResponse
+import Lettera.Fallback (fallbackMonitorIntrospect, fallbackMonitorUrl)
 import Web.Event.EventTarget (addEventListener, addEventListenerWithOptions, eventListener)
 import Web.Socket.Event.EventTypes (onClose, onMessage, onOpen)
 import Web.Socket.Event.MessageEvent (data_, fromEvent)
 import Web.Socket.WebSocket as WS
+import Web.Storage.Storage as Storage
 import Debug
+--import Data.Generic.Rep as Rep
+--import Data.Generic.Rep.Show (genericShow)
+--import Data.Storage (class Storable, StorageError(..))
 
-type Result =
-  { token :: TokenResponse.AccessToken
-  , name :: String
+type Session =
+  { session :: String
+  , email :: String
   }
 
 type Monitor =
   { monitor :: Aff String
-  , result :: Aff (Either String Result)
+  , result :: Aff (Either String Session)
   }
 
-getMonitor :: Effect Monitor
-getMonitor = do
-  ws <- WS.create "ws://localhost:8081/v4/fallback/login/monitor" []
+getMonitor :: Storage.Storage -> Effect Monitor
+getMonitor storage = do
+  traceM {fallbackMonitorUrl}
+  ws <- WS.create fallbackMonitorUrl []
   monitor <- AVar.empty
   result <- AVar.empty
   let et = WS.toEventTarget ws
@@ -43,12 +48,11 @@ getMonitor = do
                      , Just key <- getField "key" obj = tryPut key monitor
       useMessage obj | Just "MonitorSuccess" <- getField "tag" obj
                      , Just contents <- JSON.toObject =<< lookup "contents" obj
-                     , Just refreshURL <- getField "refreshURL" contents
-                     , Just name <- getField "name" contents
-                     , Just refreshToken <- TokenResponse.fromJSON =<< lookup "tokenResponse" contents = do
-        -- TODO the refresh token (and URL?) could be stored
-        token <- TokenResponse.maintainAccess refreshURL refreshToken
-        tryPut (Right {token, name}) result
+                     , Just email <- getField "email" contents
+                     , Just session <- getField "token" contents
+                     = do
+        Storage.setItem "ospedale-session" session storage
+        tryPut (Right {session, email}) result
       -- TODO
       useMessage obj | Just val <- getField "error" obj = tryPut (Left val) result
       useMessage _ = pure unit
@@ -80,3 +84,17 @@ getMonitor = do
   where
     tryPut :: forall a. a -> AVar.AVar a -> Effect Unit
     tryPut a ref = AVar.tryPut a ref *> pure unit
+
+removeSession :: Storage.Storage -> Effect Unit
+removeSession = Storage.removeItem "ospedale-session"
+
+recoverSession :: Storage.Storage -> Effect (Maybe (Aff (Maybe Session)))
+recoverSession storage = do
+  stored <- Storage.getItem "ospedale-session" storage
+  pure $ flip foldMap stored $ \session -> Just $ do
+    introspect <- fallbackMonitorIntrospect session
+    case introspect of
+      Right email -> pure $ Just {session, email}
+      _ -> do
+        liftEffect $ removeSession storage
+        pure Nothing

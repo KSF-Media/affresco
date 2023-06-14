@@ -9,34 +9,33 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception as Exception
 import KSF.Spinner as Spinner
+import Lettera.Fallback (fallbackLoginUrl)
 import Ospedale.Login as Login
-import Ospedale.TokenResponse (AccessToken)
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component, useEffectOnce, useState', (/\)) -- )
 import React.Basic.Hooks as React
-import Web.HTML as Web
+import Web.HTML (Window)
 import Web.HTML.Window as Window
+import Web.Storage.Storage (Storage)
 
 type Props =
-  { setUser :: {token :: AccessToken, name :: String} -> Effect Unit
+  { setSession :: Login.Session -> Effect Unit
   }
 
-component :: Component Props
-component = do
-  window <- Web.window
+component :: Window -> Storage -> Component Props
+component window storage = do
   let cancel = Aff.killFiber $ Exception.error "cancel"
   -- For now, make user login every time
-  monitor <- Login.getMonitor
-  React.component "OspetaleLogin" $ \ { setUser } -> React.do
+  monitor <- Login.getMonitor storage
+  React.component "OspedaleLogin" $ \ { setSession } -> React.do
     error /\ setError <- useState' Nothing
     token /\ setToken <- useState' Nothing
     useEffectOnce do
       fiber2 <- Aff.launchAff do
         liftEffect <<< setToken <<< Just =<< monitor.monitor
       fiber1 <- Aff.launchAff do
-        result <- monitor.result
-        liftEffect <<< either (setError <<< Just) setUser =<< monitor.result
+        liftEffect <<< either (setError <<< Just) setSession =<< monitor.result
       pure $ Aff.launchAff_ do
         cancel fiber1
         cancel fiber2
@@ -45,7 +44,7 @@ component = do
       {token: Just t} ->
         DOM.button
           { onClick: handler_ $
-                       void $ Window.open ("http://localhost:8081/v4/fallback/login?monitor=" <> t) "" "" window
+                       void $ Window.open (fallbackLoginUrl <> "?monitor=" <> t) "" "" window
           , children: [ DOM.text "Logga in" ]
           }
       _ -> Spinner.loadingSpinner

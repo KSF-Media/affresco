@@ -11,7 +11,7 @@
     "react-dom": "^16.12"
   },
   "scripts": {
-    "start": "parcel index.html -p 8001",
+    "start": "parcel index.html -p 8000",
     "build": "spago build && parcel build index.html --public-url ./ --no-source-maps",
     "test": "echo 'No testsuite configured'"
   }

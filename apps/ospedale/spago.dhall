@@ -39,6 +39,7 @@ You can edit this file as you like.
   , "web-events"
   , "web-html"
   , "web-socket"
+  , "web-storage"
   ]
 , packages = ../../packages.dhall
 , sources = [ "src/**/*.purs" ]

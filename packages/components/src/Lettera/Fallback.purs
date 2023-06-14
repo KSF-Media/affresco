@@ -5,12 +5,13 @@ import Prelude
 import Affjax (Response, defaultRequest, request, printError) as AX
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.RequestBody as AX.RequestBody
-import Affjax.ResponseFormat (json) as AX
+import Affjax.ResponseFormat (json, string) as AX
 import Affjax.StatusCode (StatusCode(..))
 import Data.Either (Either(..), either)
 import Data.Formatter.DateTime (format)
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..), maybe)
+import Data.String as String
 import Data.UUID (UUID)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -20,11 +21,37 @@ import KSF.Driver (getDriver)
 import KSF.Helpers (dateTimeFormatter)
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
-import Lettera (letteraFallbackUrl, parseArticlesWith)
+import Lettera (letteraBaseUrl, parseArticlesWith)
 import Lettera.Models (parseArticle)
 import Lettera.Models as Lettera
 
 data FallbackError = PermissionDenied | FallbackError String
+
+letteraFallbackUrl :: String
+letteraFallbackUrl = letteraBaseUrl <> "/fallback"
+
+fallbackSessionIntrospectUrl :: String
+fallbackSessionIntrospectUrl = letteraBaseUrl <> "/fallback/login/introspect"
+
+fallbackLoginUrl :: String
+fallbackLoginUrl = letteraBaseUrl <> "/fallback/login"
+
+fallbackMonitorUrl :: String
+fallbackMonitorUrl = "ws" <> String.drop 4 letteraBaseUrl <> "/fallback/login/monitor"
+
+fallbackMonitorIntrospect :: String -> Aff (Either FallbackError String)
+fallbackMonitorIntrospect token = do
+  let request = AX.defaultRequest
+        { url = fallbackSessionIntrospectUrl
+        , method = Left POST
+        , responseFormat = AX.string
+        , headers = [ RequestHeader "Authorization" ("Bearer " <> token) ]
+        }
+  driver <- liftEffect getDriver
+  introspectResponse <- AX.request driver request
+  case introspectResponse of
+    Left err -> pure $ Left $ FallbackError $ "Introspect AX error: " <> AX.printError err
+    Right response -> liftEffect $ handleFallbackResponse (pure <<< pure) response
 
 getFallbackArticles :: String -> Int -> Int -> Paper -> Aff (Either FallbackError (Array Lettera.Article))
 getFallbackArticles token start limit paper = do
