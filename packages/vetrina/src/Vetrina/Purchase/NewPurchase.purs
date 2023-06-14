@@ -299,13 +299,20 @@ resetPasswordLink =
 
 loginLink :: Props -> JSX
 loginLink props =
-  DOM.span
+  DOM.div
     { className: "vetrina--login-link"
     , children:
-        [ DOM.text "Redan prenumerant? "
+        [ DOM.p
+          { className: "vetrina--login-text"
+          , children: [ DOM.text "Detta är en låst artikel för prenumeranter. "]
+          }
+        , DOM.span
+          { className: "vetrina--login-text"
+          , children: [ DOM.text "Redan prenumerant? "]
+          }
         , DOM.span
             { className:"vetrina--login-callback"
-            , children: [ DOM.text "Logga in för att fortsätta läsa" ]
+            , children: [ DOM.text "Logga in här" ]
             , onClick: props.onLogin
             }
         ]
@@ -337,7 +344,7 @@ formSubmitButton props state =
     }
   where
     value = case props.accountStatus of
-      NewAccount        -> "Bekräfta och gå vidare"
+      NewAccount        -> "VIDARE"
       ExistingAccount _ -> "Logga in"
       LoggedInAccount _ -> "Bekräfta och gå vidare"
     disabled = case props.accountStatus of
@@ -360,21 +367,9 @@ emailInput props state setState =
   DOM.div
     { className: "vetrina--input-wrapper vetrina--with-label"
     , children:
-        [ if props.accountStatus == NewAccount
-          then DOM.div
-                 { className: "vetrina--step vetrina--create-account"
-                 , children:
-                     [ DOM.span
-                         { className: "vetrina--step__headline"
-                         , children: [ DOM.text "Skapa konto" ]
-                         }
-                     , DOM.text "STEG 1 / 2 KONTOINFORMATION"
-                     ]
-                 }
-          else mempty
-        , InputField.inputField
+        [ InputField.inputField
             { type_: InputField.Email
-            , label: Just "E-postadress"
+            , label: Just "Fyll i din e-post för att börja:"
             , name: "emailAddress"
             , placeholder: "Fyll i din e-postadress"
             , onChange: onChange

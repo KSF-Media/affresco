@@ -15,10 +15,7 @@ hblPremium =
         { id: "tb-paywall--product-text-hbl"
         , className: "vetrina--form-product-text"
         , children:
-            [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
-            , DOM.br {}
-            , DOM.text "Läs Hufvudstadsbladet gratis i en månad, därefter 9,99€ / månad tills vidare. Avsluta när du vill."
-            ]
+            [ DOM.text "Läs HBL digitalt gratis i en månad, därefter 9,99€ per månad. Avsluta enkelt när du vill." ]
         }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi."
   , campaign: Just
