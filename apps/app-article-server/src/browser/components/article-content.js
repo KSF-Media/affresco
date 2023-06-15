@@ -57,7 +57,7 @@ class Content extends Component {
 
   renderRelatedArticles(block, key) {
     return (
-      <figure class="article-element article-element__related">
+      <figure class="relatedArticles">
         <ul>
           {block.related.map((item, index) => {
             return (

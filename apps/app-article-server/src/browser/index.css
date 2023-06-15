@@ -538,69 +538,99 @@ h6 {
   stroke-width: 4;
 }
 
-.article-element__related {
+.relatedArticles {
   display: block;
   margin: 30px auto;
   padding: 0 30px 0 15px;
 }
 
-.article-element__related ul {
+.relatedArticles ul {
   list-style: none;
   margin: 0;
   padding: 0;
   margin-top: 5px;
 }
 
-.article-element__related ul li {
+.relatedArticles ul li {
   border-left: 4px solid;
   margin-bottom: 3px;
 }
 
-#HBL .article-element__related ul li {
+#HBL .relatedArticles ul li {
   border-color: #f07e26;
 }
 
-#VN .article-element__related ul li {
+#VN .relatedArticles ul li {
   border-color: #c90c0f;
 }
 
-#ON .article-element__related ul li {
+#ON .relatedArticles ul li {
   border-color: #518196;
 }
 
-#BRAND-NEUTRAL .article-element__related ul li {
+#BRAND-NEUTRAL .relatedArticles ul li {
   border-color: #00A1AB !important;
 }
 
-.article-element__related ul li a {
+.relatedArticles ul li a {
   display: inline-block;
   margin-left: 10px;
   text-decoration: none;
   color: var(--color-darker) !important;
 }
 
-.article-element__related ul li:first-child {
+.relatedArticles ul li:first-child {
   margin-top: 5px;
 }
 
-.article-element__related ul::before {
+.relatedArticles ul::before {
   content: "LÄS OCKSÅ";
 }
 
-#HBL .article-element__related ul::before {
+#HBL .relatedArticles ul::before {
   color: #f07e26;
 }
 
-#VN .article-element__related ul::before {
+#VN .relatedArticles ul::before {
   color: #c90c0f;
 }
 
-#ON .article-element__related ul::before {
+#ON .relatedArticles ul::before {
   color: #518196;
 }
 
-#BRAND-NEUTRAL .article-element__related ul::before {
+#BRAND-NEUTRAL .relatedArticles ul::before {
   color: #00A1AB !important;
+}
+
+.mostReadArticles {
+  margin-top: 20px;
+}
+
+.mostReadArticles .articleItem {
+  border-top: 1px solid #a8a8a8;
+  color: grey;
+}
+
+.mostReadArticles .articleItem a {
+  color: var(--color-article-item-heading);
+}
+
+.mostReadArticles .bottomLine {
+  border-top: 1px solid #a8a8a8;
+  /*margin-top:7px;*/
+  color: grey;
+}
+
+.mostReadArticles .latest {
+  font-family: "Duplex Sans Bold", sans-serif;
+}
+
+.mostReadArticlesItem,
+.mostReadArticlesItem:hover,
+.mostReadArticlesItem:active,
+.mostReadArticlesItem:visited,
+.mostReadArticlesItem:focus {
 }
 
 .content .image p i {
@@ -624,12 +654,12 @@ h6 {
   font-family: sans-serif;
 }
 
-.relatedArticles h3 {
+.mostReadArticles h3 {
   font-family: "Duplex Sans Bold", sans-serif;
   color: #363636;
 }
 
-.relatedArticles .articleItem {
+.mostReadArticles .articleItem {
   font-family: "Duplex Serif Bold", serif;
   color: #323232;
 }
@@ -799,7 +829,7 @@ h6 {
   display: block;
 }
 
-.relatedArticles .articleItem a.darkMode {
+.mostReadArticles .articleItem a.darkMode {
   color: rgba(255, 255, 255, 0.9);
 }
 
