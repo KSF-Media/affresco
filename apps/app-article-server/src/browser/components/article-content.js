@@ -147,8 +147,10 @@ class Content extends Component {
               z"/>
             </svg>
           </div>
+            {console.log(block)}
           <div className={`col-10 quote ${this.props.darkModeEnabled ? "darkMode" : ""}`} style={{ paddingLeft: "0px" }}>
-            {block.quote}
+              {block.quote.body}
+              {/* After the upgrade to Lettera V4, block.quote.author available. */}
           </div>
         </div>
       </div>
