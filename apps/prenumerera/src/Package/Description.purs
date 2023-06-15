@@ -108,10 +108,10 @@ packageDescriptions = fromFoldable
       , descriptionShort: ""
       , descriptionLong: description
           [ Tuple "Premium" "Alla artiklar på Ostnyland.fi"
-          , Tuple "Allt innehåll i våra nyhetsappar" "ÖN Nyheter (iOS & Android)"
+          , Tuple "Allt innehåll i vår nyhetsapp" "ÖN Nyheter (iOS & Android)"
           , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
           , Tuple "Digitala korsord" ""
-          , Tuple "E-tidningar" "Papperstidningar digitalt i appen HBL 365 och på webben (ÖN)"
+          , Tuple "E-tidningen" "Papperstidningen digitalt i appen HBL 365 och på webben (ÖN)"
           , Tuple "Papperstidningen" "Tisdag och fredag"
           ]
       , ribbon: ribbon "2" "dagar med papper"
@@ -146,10 +146,10 @@ packageDescriptions = fromFoldable
       , descriptionShort: ""
       , descriptionLong: description
           [ Tuple "Premium" "Alla artiklar Ostnyland.fi"
-          , Tuple "Allt innehåll i våra nyhetsap" "ÖN Nyheter (iOS & Android)"
+          , Tuple "Allt innehåll i vår nyhetsapp" "ÖN Nyheter (iOS & Android)"
           , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
           , Tuple "Digitala korsord" ""
-          , Tuple "E-tidningar" "Papperstidningar digitalt i appen HBL 365 och på webben (ÖN)"
+          , Tuple "E-tidningen" "Papperstidningen digitalt i appen HBL 365 och på webben (ÖN)"
           ]
       , ribbon: DOM.text "Alla dagar digitalt"
       , url: Nothing
