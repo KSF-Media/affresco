@@ -586,10 +586,10 @@ categoriesMap =
 newtype Tag = Tag String
 
 uriComponentToTag :: String -> Tag
-uriComponentToTag = Tag <<< String.replaceAll (String.Pattern "-") (String.Replacement " ")
+uriComponentToTag = Tag <<< String.replaceAll (String.Pattern "_") (String.Replacement " ")
 
 tagToURIComponent :: Tag -> String
-tagToURIComponent = String.replaceAll (String.Pattern " ") (String.Replacement "-") <<< un Tag
+tagToURIComponent = String.replaceAll (String.Pattern " ") (String.Replacement "_") <<< un Tag
 
 instance eqTag :: Eq Tag where
   eq (Tag a) (Tag b) = String.toLower a == String.toLower b
