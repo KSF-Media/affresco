@@ -121,9 +121,6 @@ render props state setState onSubmit =
        _ -> description props
   <> form props state setState onSubmit
   <> links props
-  <> if length props.products == 1
-     then productInformation state setState
-     else mempty
 
 title :: Props -> JSX
 title props =
@@ -200,7 +197,7 @@ form props state setState onSubmit = DOM.form $
         LoggedInAccount _ ->
           [ formSubmitButton props state ]
 
-    additionalFormRequirements NewAccount = acceptTermsCheckbox
+    additionalFormRequirements NewAccount = acceptTerms
     additionalFormRequirements _ = mempty
 
     renderPaymentMethods :: Array User.PaymentMethod -> JSX
@@ -419,89 +416,18 @@ passwordInput state setState =
     }
 
 
-acceptTermsCheckbox :: JSX
-acceptTermsCheckbox =
-  let id    = "accept-terms"
-      label =
-        DOM.span_ $
-          [ DOM.text "Jag godkänner KSF Medias " ]
-          <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "användarvillkor"
-          <> [ DOM.text " och bekräftar att jag har läst och förstått " ]
-          <> mkLink "" "https://www.ksfmedia.fi/dataskydd" "integritets-policyn"
-
-  in DOM.div
-    { className: "vetrina--checkbox-container"
-    , children:
-        [ DOM.input
-            { className: "vetrina--checkbox"
-            , type: "checkbox"
-            , id
-            , required: true
-            }
-        , DOM.label
-            { className: "vetrina--checkbox-label"
-            , htmlFor: id
-            , children: [ label ]
-            }
-        ]
-    }
-
-productInformation :: State -> ((State -> State) -> Effect Unit) -> JSX
-productInformation state setState =
+acceptTerms :: JSX
+acceptTerms =
   DOM.div
-    { className: "vetrina--product-container"
-    , children: Array.singleton $
-        DOM.div
-          { className: "vetrina--product-information"
-          , children:
-              [ DOM.div
-                  { className: "vetrina--product-information__headline"
-                  , onClick: handler_ $ setState _ { showProductContents = not state.showProductContents }
-                  , children:
-                      [ DOM.span
-                         { className: "vetrina--product-information__name"
-                         , children: [ DOM.text $ foldMap _.name state.productSelection ]
-                         }
-                     , DOM.span
-                         { className: "vetrina--product-information__description"
-                         , children:
-                             [ DOM.text $ foldMap (formatEur <<< _.priceCents) state.productSelection
-                             , DOM.text "€/månad" -- TODO: Always maybe not month
-                             ]
-                         }
-                     , DOM.span
-                         { className: "vetrina--product-information__arrow-"
-                                      <> if state.showProductContents
-                                         then "down"
-                                         else "up"
-                         }
-                     ]
-                  }
-              ] <> if state.showProductContents
-                   then (foldMap (map renderProductContents) $ _.contents <$> state.productSelection)
-                   else mempty
-          }
+    { className: "vetrina--terms-conditions"
+    , children:
+      [ DOM.text "Genom att klicka på \"Vidare\" godkänner du KSF Medias " ]
+          <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "prenumerationsvillkor"
+          <> [ DOM.text " och " ]
+          <> mkLink "" "https://www.ksfmedia.fi/dataskydd" "personuppgiftspolicy"
+          <> [ DOM.text ". ", DOM.br {} ]
+          <> [ DOM.text "Du uppger kortuppgifter i nästa steg." ]
     }
-  where
-    renderProductContents :: ProductContent -> JSX
-    renderProductContents productContent =
-      DOM.span
-        { className: "vetrina--product-information__contents"
-        , children:
-            [ DOM.strong
-                { className: "vetrina--product-information__contents-name"
-                , children: [ DOM.text productContent.title ]
-                }
-            , DOM.span
-                { className: "vetrina--product-information__contents-description"
-                , children: [ DOM.text productContent.description ]
-                }
-            , DOM.span
-                { className: "vetrina--product-information__checkmark"
-                , children: []
-                }
-            ]
-        }
 
 newAccountFormValidations :: State -> Form.ValidatedForm FormInputField NewAccountForm
 newAccountFormValidations state =
