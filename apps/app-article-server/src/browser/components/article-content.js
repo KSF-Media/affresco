@@ -57,19 +57,19 @@ class Content extends Component {
 
   renderRelatedArticles(block, key) {
     return (
-      <div className={"relatedArticles "} key={key}>
-        <div className={"row"}>
-          <div className={"col-12"}>
-            <h3 className={`latest ${this.props.isDarkModeEnabled ? "darkMode" : ""}`}>Läs också</h3>
-          </div>
-        </div>
-        <MobileList
-          articles={block.related}
-          queryString={this.props.queryString}
-          darkModeEnabled={this.props.darkModeEnabled}
-          paper={this.props.paper}
-        />
-      </div>
+      <figure class="article-element article-element__related">
+        <ul>
+          {block.related.map((item, index) => {
+            return (
+              <li key={index}>
+                <a href={"/article/" + item.uuid + this.props.queryString}>
+                  {item.title.length > 80 ? item.title.substring(0, 80) + "..." : item.title}
+                </a>
+              </li>
+            )
+          })}
+        </ul>
+      </figure>
     );
   }
 
@@ -147,7 +147,6 @@ class Content extends Component {
               z"/>
             </svg>
           </div>
-            {console.log(block)}
           <div className={`col-10 quote ${this.props.darkModeEnabled ? "darkMode" : ""}`} style={{ paddingLeft: "0px" }}>
               {block.quote.body}
               {/* After the upgrade to Lettera V4, block.quote.author available. */}
@@ -179,7 +178,7 @@ class Content extends Component {
     let byline = block.image.byline === null ? "" : block.image.byline;
     return (
       <div className={"image"} key={key}>
-        <LazyLoadImage 
+        <LazyLoadImage
           className={"articleImage"}
           width="100%"
           src={block.image.url}
