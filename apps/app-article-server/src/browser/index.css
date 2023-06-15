@@ -536,35 +536,69 @@ h6 {
   stroke-width: 4;
 }
 
-.relatedArticles .bottomLine {
-  border-top: 1px solid #a8a8a8;
-  /*margin-top:7px;*/
-  color: grey;
+.article-element__related {
+  display: block;
+  margin: 30px auto;
+  padding: 0 30px 0 15px;
 }
 
-.relatedArticles {
-  margin-top: 20px;
+.article-element__related ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-top: 5px;
 }
 
-.relatedArticles .articleItem {
-  border-top: 1px solid #a8a8a8;
-  color: grey;
+.article-element__related ul li {
+  border-left: 4px solid;
+  margin-bottom: 3px;
 }
 
-.relatedArticles .articleItem a {
-  color: var(--color-article-item-heading);
+#HBL .article-element__related ul li {
+  border-color: #f07e26;
 }
 
-.relatedArticles .latest {
-  font-family: "Duplex Sans Bold", sans-serif;
+#VN .article-element__related ul li {
+  border-color: #c90c0f;
 }
 
-.relatedArticlesItem,
-.relatedArticlesItem:hover,
-.relatedArticlesItem:active,
-.relatedArticlesItem:visited,
-.relatedArticlesItem:focus {
+#ON .article-element__related ul li {
+  border-color: #518196;
+}
+
+#BRAND-NEUTRAL .article-element__related ul li {
+  border-color: #00A1AB !important;
+}
+
+.article-element__related ul li a {
+  display: inline-block;
+  margin-left: 10px;
   text-decoration: none;
+  color: var(--text-color-darker);
+}
+
+.article-element__related ul li:first-child {
+  margin-top: 5px;
+}
+
+.article-element__related ul::before {
+  content: "LÄS OCKSÅ";
+}
+
+#HBL .article-element__related ul::before {
+  color: #f07e26;
+}
+
+#VN .article-element__related ul::before {
+  color: #c90c0f;
+}
+
+#ON .article-element__related ul::before {
+  color: #518196;
+}
+
+#BRAND-NEUTRAL .article-element__related ul::before {
+  color: #00A1AB !important;
 }
 
 .content .image p i {
