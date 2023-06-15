@@ -44,6 +44,7 @@
   --color-card-border: #d8d8d8;
   --color-bg: #fff;
   --color-footer: rgb(19, 19, 19);
+  --color-darker: #000;
 }
 
 [data-theme="dark"] {
@@ -55,6 +56,7 @@
   --color-card-border: rgb(19, 19, 19);
   --color-bg: #313639;
   --color-footer: #fff;
+  --color-darker: #fff;
 }
 
 /* Try to remove grey background sometimes present on hyperlinks */
@@ -574,7 +576,7 @@ h6 {
   display: inline-block;
   margin-left: 10px;
   text-decoration: none;
-  color: var(--text-color-darker);
+  color: var(--color-darker) !important;
 }
 
 .article-element__related ul li:first-child {
