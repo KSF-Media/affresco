@@ -245,11 +245,14 @@ getBreakingNewsHtml paper cacheToken = do
   driver <- liftEffect getDriver
   useResponse (pure <<< pure) =<< AX.request driver request
 
-parseArticleStubs :: Json -> Aff (Either LetteraError (Array ArticleStub))
-parseArticleStubs response
+parseArticlesWith :: forall a b. (Json -> Effect (Either b a)) -> Json -> Effect (Either LetteraError (Array a))
+parseArticlesWith f response
   | Just (responseArray :: Array Json) <- toArray response =
-      map (Right <<< takeRights) $ liftEffect $ traverse parseArticleStub responseArray
+      map (Right <<< takeRights) $ traverse f responseArray
   | otherwise = pure $ Left ParseError
+
+parseArticleStubs :: Json -> Aff (Either LetteraError (Array ArticleStub))
+parseArticleStubs = liftEffect <<< parseArticlesWith parseArticleStub
 
 getFrontpage :: Paper -> Maybe Int -> Maybe Int -> Maybe String -> Maybe String -> Aff (LetteraResponse (Array ArticleStub))
 getFrontpage paper start limit categoryId cacheToken = do

@@ -29,6 +29,7 @@ import React.Basic.Hooks (Component, useEffect, useEffectOnce, useState', (/\))
 import React.Basic.Hooks as React
 import Web.HTML as Web.HTML
 import Web.HTML.Location as Web.HTML.Location
+
 import Web.HTML.Window as Window
 
 type Props =

@@ -13,7 +13,6 @@ import KSF.Icons (papers)
 import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
 import KSF.Paper (Paper(..))
-import KSF.User (User)
 import React.Basic.Classic (JSX, make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
@@ -29,14 +28,14 @@ type Self = React.Self Props State
 type Props =
   { paper :: Paper
   , specialHelp :: Maybe JSX
-  , activeUser :: Maybe User
+  , activeUser :: Maybe String
   , logout :: Effect Unit
   }
 
 type JSProps =
   { paperCode :: String
   , specialHelp :: Nullable JSX
-  , activeUser :: Nullable User
+  , activeUser :: Nullable String
   , onLogout :: Effect Unit
   }
 
@@ -108,7 +107,7 @@ showUser { props: { activeUser } } =
                 { src: "https://cdn.ksfmedia.fi/prenumerera.ksfmedia.fi/images/icons/fa-user-circle-o.svg"
                 , alt: "User"
                 }
-            , DOM.text $ fromMaybe user.email $ Nullable.toMaybe user.firstName
+            , DOM.text user
             ]
         }
 
