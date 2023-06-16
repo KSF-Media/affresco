@@ -48,6 +48,22 @@ import Routing.Duplex as Duplex
 
 foreign import sentryDsn_ :: Effect String
 
+mkInitialState now = do
+  loginComponent <- Login.login
+  pure { paper: KSF
+       , adminMode: false
+       , activeUser: Nothing
+         -- Let's show the spinner while we try to magically login the user
+       , loading: Just Spinner.Loading
+       , showWelcome: true
+       , alert: Nothing
+       , payments: Nothing
+       , now: now
+       , news: News.render Nothing
+       , loginComponent
+       , window: Nothing
+       }
+
 app :: Component {}
 app = do
   router <- makeInterface
@@ -63,25 +79,11 @@ app = do
   paymentDetail <- Wrappers.routeWrapper router PaymentDetail.paymentDetail
   creditCardUpdate <- Wrappers.routeWrapper router CreditCardUpdateView.creditCardUpdateView
   now <- Now.nowDate
-  loginComponent <- Login.login
   timeout <- Timeout.newTimer
   userComponent <- Components.User.component router logger
 
-  let initialState =
-        { paper: KSF
-        , adminMode: false
-        , activeUser: Nothing
-        -- Let's show the spinner while we try to magically login the user
-        , loading: Just Spinner.Loading
-        , showWelcome: true
-        , alert: Nothing
-        , payments: Nothing
-        , now: now
-        , news: News.render Nothing
-        , loginComponent
-        , window: Nothing
-        }
   passwordReset <- Reset.resetPassword
+  initialState <- mkInitialState now
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState
     _ <- News.useNews $ \n -> setState _ { news = News.render n }
