@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 const _ = require("lodash");
 import * as cheerio from 'cheerio';
+import MobileList from "./mobile-article-list";
 import PremiumBox from "./premium";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import 'react-lazy-load-image-component/src/effects/opacity.css';
@@ -21,7 +22,9 @@ class Content extends Component {
         return this.renderAd(block, key);
       }
       if (blockType === "paragraph") {
-        return this.renderParagraph(block, key);
+          return this.renderParagraph(block, key);
+      } else if (blockType === "related") {
+          return this.renderRelatedArticles(block, key);
       } else if (blockType === "headline") {
         return this.renderHeadline(block, key);
       } else if (blockType === "image") {
@@ -50,6 +53,24 @@ class Content extends Component {
     } else {
       console.log("couldn't render " + { blockType });
     }
+  }
+
+  renderRelatedArticles(block, key) {
+    return (
+      <figure class="relatedArticles">
+        <ul>
+          {block.related.map((item, index) => {
+            return (
+              <li key={index}>
+                <a href={"/article/" + item.uuid + this.props.queryString}>
+                  {item.title.length > 80 ? item.title.substring(0, 80) + "..." : item.title}
+                </a>
+              </li>
+            )
+          })}
+        </ul>
+      </figure>
+    );
   }
 
   renderParagraph(block, key) {
@@ -127,7 +148,8 @@ class Content extends Component {
             </svg>
           </div>
           <div className={`col-10 quote ${this.props.darkModeEnabled ? "darkMode" : ""}`} style={{ paddingLeft: "0px" }}>
-            {block.quote}
+              {block.quote.body}
+              {/* After the upgrade to Lettera V4, block.quote.author available. */}
           </div>
         </div>
       </div>
@@ -156,7 +178,7 @@ class Content extends Component {
     let byline = block.image.byline === null ? "" : block.image.byline;
     return (
       <div className={"image"} key={key}>
-        <LazyLoadImage 
+        <LazyLoadImage
           className={"articleImage"}
           width="100%"
           src={block.image.url}

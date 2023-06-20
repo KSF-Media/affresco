@@ -9,7 +9,7 @@ class MostReadArticles extends Component {
 
   render() {
     return (
-      <div className={"relatedArticles"}>
+      <div className={"mostReadArticles"}>
         <div className={"row"}>
           <div className={"col-12"}>
             <h3 className={`latest ${this.props.darkModeEnabled ? "darkMode" : ""}`}>Andra läser</h3>

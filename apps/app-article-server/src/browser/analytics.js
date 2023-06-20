@@ -37,7 +37,7 @@ function pushLoadingArticleToGoogleTagManager(article, user) {
     push_data.analyticsCategory = article.analyticsCategory;
     push_data.analyticsSection = article.analyticsSection;
     push_data.app_os = navigator.userAgent.match(/Android/) ? "Android" : "iOS";
-    push_data.articlePriority = article.articlePriority;
+    push_data.articlePriority = article.priority;
   }
 
   window.dataLayer.push(push_data);
