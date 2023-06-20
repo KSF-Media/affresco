@@ -14,11 +14,13 @@ import Data.Monoid (guard)
 import Data.Nullable (toMaybe)
 import Data.String as String
 import Effect (Effect)
+import Effect.Uncurried (mkEffectFn1)
 import Foreign (unsafeToForeign)
 import KSF.Alert.Component (Alert)
 import KSF.Alert.Component as Alert
 import KSF.Footer.Component as Footer
 import KSF.Navbar.Component as Navbar
+import KSF.User as User
 import KSF.User.Cusno as Cusno
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as Views
@@ -40,6 +42,11 @@ navbarView { state } router logout isPersonating =
            { className: "nav--logout-limpet"
            , children:
                [ DOM.a
+                 { onClick: mkEffectFn1 (const User.openPaywall)
+                 , children: [ DOM.text "Öppna betalmur" ]
+                 , style: DOM.css { margin: "1rem" }
+                 }
+               , DOM.a
                    { onClick: (handler preventDefault $
                                const $ router.pushState (unsafeToForeign {}) "/sök")
                    , href: "/sök"

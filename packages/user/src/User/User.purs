@@ -1,55 +1,56 @@
 module KSF.User
-  ( UserError (..)
-  , User
+  ( ConflictingUser(..)
   , MergeInfo
+  , User
+  , UserError(..)
   , ValidationServerError
-  , ConflictingUser (..)
-  , module PersonaReExport
-  , module BottegaReExport
-  , module Address
-  , loginTraditional
-  , magicLogin
-  , loginIP
-  , logout
-  , someAuth
-  , facebookSdk
+  , createCusnoUser
+  , createDeliveryReclamation
+  , createOrder
   , createUser
   , createUserWithEmail
-  , createCusnoUser
-  , getUser
-  , fromPersonaUser
-  , isAdminUser
-  , updateUser
-  , setCusno
-  , updatePassword
-  , requestPasswordReset
-  , startPasswordReset
-  , updateForgottenPassword
-  , hasScope
-  , pauseSubscription
-  , editSubscriptionPause
-  , unpauseSubscription
-  , temporaryAddressChange
-  , editTemporaryAddressChange
-  , deleteTemporaryAddressChange
-  , createDeliveryReclamation
-  , searchUsers
-  , getPayments
-  , createOrder
-  , payOrder
-  , getOrder
-  , getCreditCards
-  , getCreditCard
   , deleteCreditCard
-  , registerCreditCardFromExisting
+  , deleteTemporaryAddressChange
+  , editSubscriptionPause
+  , editTemporaryAddressChange
+  , facebookSdk
+  , fromPersonaUser
+  , getCreditCard
   , getCreditCardRegister
+  , getCreditCards
+  , getOrder
   , getPackages
+  , getPayments
+  , getUser
   , getUserEntitlements
   , getUserEntitlementsLoadToken
   , getUserNewsletters
-  , updateUserNewsletters
+  , hasScope
+  , isAdminUser
+  , loginIP
+  , loginTraditional
+  , logout
+  , magicLogin
+  , module Address
   , module Api
+  , module BottegaReExport
+  , module PersonaReExport
   , module Subscription
+  , openPaywall
+  , pauseSubscription
+  , payOrder
+  , registerCreditCardFromExisting
+  , requestPasswordReset
+  , searchUsers
+  , setCusno
+  , someAuth
+  , startPasswordReset
+  , temporaryAddressChange
+  , unpauseSubscription
+  , updateForgottenPassword
+  , updatePassword
+  , updateUser
+  , updateUserNewsletters
   )
 where
 
@@ -67,6 +68,7 @@ import Data.Date (Date)
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
+import Data.JSDate (JSDate, fromTime, getTime, now)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (toNullable)
 import Data.Nullable as Nullable
@@ -758,3 +760,14 @@ callBottega f = do
 
 getPackages :: Aff (Array Package)
 getPackages = Bottega.getPackages
+
+openPaywall :: Effect Unit
+openPaywall = do
+  token <- requireToken
+  currentDate <- now
+  Aff.launchAff_ $ Persona.openPaywall token
+    { byPackageId: Nothing
+    , endAt: fromTime (getTime currentDate + 7.0 * 24.0 * 60.0 * 60.0 * 1000.0)
+    , onlyProducts: []
+    , startAt: currentDate
+    }

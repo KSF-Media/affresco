@@ -32,6 +32,7 @@ import Foreign.Object as Object
 import KSF.Api (AuthScope(..), InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
 import KSF.Api.Address (Address)
 import KSF.Api.Consent (GdprConsent, LegalConsent)
+import KSF.Api.Entitlements (AllowEntitlementsQuery)
 import KSF.Api.Error (ServerError)
 import KSF.Api.Search (SearchQuery, SearchResult, JanrainUser, FaroUser)
 import KSF.Api.Subscription (BaseSubscription, Subscription, PendingAddressChange, Subsno(..), isSubscriptionExpired)
@@ -47,6 +48,7 @@ import Simple.JSON (class ReadForeign, class WriteForeign)
 
 foreign import accountApi :: Api
 foreign import adminApi :: Api
+foreign import entitlementsApi :: Api
 foreign import loginApi :: Api
 foreign import usersApi :: Api
 foreign import rawJSONStringify :: Foreign -> String
@@ -86,6 +88,10 @@ getUser invalidateCache uuid auth = do
 getUserEntitlements :: UserAuth -> Aff (Array String)
 getUserEntitlements auth =
   callApi usersApi "usersUuidEntitlementGet" [ unsafeToForeign auth.userId ] $ authHeaders auth.userId auth
+
+openPaywall :: UserAuth -> AllowEntitlementsQuery -> Aff Unit
+openPaywall auth query = do
+  callApi entitlementsApi "entitlementsAllowPost" [ unsafeToForeign query ] $ authHeaders auth.userId auth
 
 updateUser :: UUID -> UserUpdate -> UserAuth -> Aff User
 updateUser uuid update auth = do
