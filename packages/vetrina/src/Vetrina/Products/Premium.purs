@@ -82,7 +82,7 @@ vnPremium =
       , { title: "Digitala korsord"
         , description: ""
         }
-      , { title: "E-tidningar"
+      , { title: "E-tidningen"
         , description: "Papperstidningen digitalt i appen HBL 365 och på webben (VN)"
         }
       ]
@@ -125,7 +125,7 @@ onPremium =
       , { title: "Digitala korsord"
         , description: ""
         }
-      , { title: "E-tidningar"
+      , { title: "E-tidningen"
         , description: "Papperstidningen digitalt i appen HBL 365 och på webben (ÖN)"
         }
       ]
