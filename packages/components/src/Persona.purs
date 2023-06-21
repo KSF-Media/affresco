@@ -91,7 +91,7 @@ getUserEntitlements auth =
 
 openPaywall :: UserAuth -> AllowEntitlementsQuery -> Aff Unit
 openPaywall auth query = do
-  callApi entitlementsApi "entitlementsAllowPost" [ unsafeToForeign query ] $ authHeaders auth.userId auth
+  callApi entitlementsApi "entitlementsAllowPost" [ unsafeToForeign query ] $ authHeaders UUID.emptyUUID auth
 
 updateUser :: UUID -> UserUpdate -> UserAuth -> Aff User
 updateUser uuid update auth = do

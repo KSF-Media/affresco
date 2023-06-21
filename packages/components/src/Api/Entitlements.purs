@@ -5,8 +5,7 @@ import Data.Maybe (Maybe)
 import Data.JSDate (JSDate)
 
 type AllowEntitlementsQuery =
-  { byPackageId :: Maybe String
-  , endAt :: JSDate
+  { endAt :: JSDate
   , onlyProducts :: Array String
   , startAt :: JSDate
   }

@@ -766,8 +766,7 @@ openPaywall = do
   token <- requireToken
   currentDate <- now
   Aff.launchAff_ $ Persona.openPaywall token
-    { byPackageId: Nothing
-    , endAt: fromTime (getTime currentDate + 7.0 * 24.0 * 60.0 * 60.0 * 1000.0)
+    { endAt: fromTime (getTime currentDate + 7.0 * 24.0 * 60.0 * 60.0 * 1000.0)
     , onlyProducts: []
     , startAt: currentDate
     }
