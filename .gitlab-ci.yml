@@ -9,8 +9,6 @@ variables:
 .app-article-ci-variables: &app-article-ci-vars
   SERVICE_NAME: app-article-server
   LETTERA_INTERNAL: "http://lettera/v4"
-  AAS_LETTERA_URL: "https://lettera.staging.ksfmedia.fi/v4"
-  AAP_LETTERA_URL: "https://lettera.api.ksfmedia.fi/v4"
 
 before_script:
   - eval `${CI_SCRIPTS}/prepare_stage_envvars.py ${CI_ENVIRONMENT_SLUG}`
