@@ -57,11 +57,11 @@ class Content extends Component {
 
   renderRelatedArticles(block, key) {
     return (
-      <figure class="relatedArticles">
+      <figure className="relatedArticles" key={key}>
         <ul>
           {block.related.map((item, index) => {
             return (
-              <li key={index}>
+              <li key={"related-article-" + index}>
                 <a href={"/article/" + item.uuid + this.props.queryString}>
                   {item.title.length > 80 ? item.title.substring(0, 80) + "..." : item.title}
                 </a>
