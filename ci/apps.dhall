@@ -55,24 +55,6 @@ let apps =
               ''
           }
         , App::{
-          , name = "Elections (EU)"
-          , buildDir = "elections"
-          , deployDir = "elections-eu"
-          , env = toMap
-              { ELECTION_BACKEND_URL = "https://elections-eu.api.ksfmedia.fi/v1"
-              , ELECTION_TYPE = "EU"
-              }
-          }
-        , App::{
-          , name = "Elections (Parliament)"
-          , buildDir = "elections"
-          , deployDir = "elections"
-          , env = toMap
-              { ELECTION_BACKEND_URL = "https://election.api.ksfmedia.fi/v1"
-              , ELECTION_TYPE = "PARLIAMENT"
-              }
-          }
-        , App::{
           , name = "HBL365"
           , buildDir = "hbl365"
           , deployDir = "hbl365"
