@@ -68,6 +68,7 @@ import Data.Date (Date)
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
+import Data.Int (toNumber)
 import Data.JSDate (JSDate, fromTime, getTime, now)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (toNullable)
@@ -761,12 +762,19 @@ callBottega f = do
 getPackages :: Aff (Array Package)
 getPackages = Bottega.getPackages
 
-openPaywall :: Effect Unit
-openPaywall = do
+openPaywall :: Int -> Int -> Int -> Effect Unit
+openPaywall days hours minutes = do
   token <- requireToken
   currentDate <- now
+  let
+    msPerDay  = 24.0 * msPerHour
+    msPerHour = 60.0 * msPerMin
+    msPerMin  = 60.0 * 1000.0
   Aff.launchAff_ $ Persona.openPaywall token
-    { endAt: fromTime (getTime currentDate + 7.0 * 24.0 * 60.0 * 60.0 * 1000.0)
+    { endAt: fromTime (getTime currentDate
+                       + toNumber days * msPerDay
+                       + toNumber hours * msPerHour
+                       + toNumber minutes * msPerMin)
     , onlyProducts: []
     , startAt: currentDate
     }

@@ -42,8 +42,9 @@ navbarView { state } router logout isPersonating =
            { className: "nav--logout-limpet"
            , children:
                [ DOM.a
-                 { onClick: mkEffectFn1 (const User.openPaywall)
-                 , children: [ DOM.text "Öppna betalmur" ]
+                 { onClick: (handler preventDefault $
+                             const $ router.pushState (unsafeToForeign {}) "/betalmur")
+                 , children: [ DOM.text "Hantera betalmur" ]
                  , style: DOM.css { margin: "1rem" }
                  }
                , DOM.a

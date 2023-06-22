@@ -27,6 +27,7 @@ import KSF.Tracking as Tracking
 import KSF.User as User
 import KSF.User.Login as Login
 import Foreign (unsafeToForeign)
+import MittKonto.Components.Paywall as Components.Paywall
 import MittKonto.Components.User as Components.User
 import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardUpdateView
 import MittKonto.Main.Elements as Elements
@@ -66,6 +67,7 @@ app = do
   loginComponent <- Login.login
   timeout <- Timeout.newTimer
   userComponent <- Components.User.component router logger
+  paywallComponent <- Components.Paywall.paywall router logger
 
   let initialState =
         { paper: KSF
@@ -203,6 +205,7 @@ app = do
             , state
             , setState
             }
+        paywallView = paywallComponent {}
         userContent = case route of
           MittKonto -> foldMap userView state.activeUser
           Search -> guard state.adminMode searchView
@@ -213,6 +216,7 @@ app = do
           PasswordRecovery3 -> passwordResetView Nothing
           PasswordRecoveryCode code -> passwordResetView $ Just code
           CreditCardUpdate subsno -> foldMap (creditCardUpdateView subsno) state.activeUser
+          Paywall -> paywallView
         content = if isNothing state.activeUser && needsLogin route
                   then Views.loginView { state, setState } (setUser (Nothing :: Maybe Days)) logger
                   else userContent
