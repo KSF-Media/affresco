@@ -1,4 +1,4 @@
-image: ksfmedia/diskho:lts-18.13
+image: ksfmedia/diskho:lts-20.5
 
 variables:
   DOCKER_DRIVER: overlay2
