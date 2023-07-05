@@ -156,10 +156,12 @@ type ArticleStubCommon =
   , premium   :: Boolean
   , removeAds :: Boolean
   , shareUrl  :: Maybe String
+  , authors   :: Array Author
   )
 
 type JSArticleStub =
   { publishingTime     :: String
+  , updateTime         :: Maybe String
   , tags               :: Array String
   , articleType        :: String
   , articleTypeDetails :: Maybe ArticleTypeDetails
@@ -168,6 +170,7 @@ type JSArticleStub =
 
 type ArticleStub =
   { publishingTime     :: Maybe LocalDateTime
+  , updateTime         :: Maybe LocalDateTime
   , tags               :: Array Tag
   , articleType        :: ArticleType
   , articleTypeDetails :: Maybe ArticleTypeDetails
@@ -262,10 +265,12 @@ articleToArticleStub a =
   , preamble: a.preamble
   , mainImage: a.mainImage
   , listImage: Nothing
+  , authors: a.authors
   , premium: a.premium
   , removeAds: a.removeAds
   , shareUrl: a.shareUrl
   , publishingTime: a.publishingTime
+  , updateTime: a.updateTime
   , tags: a.tags
   , articleType: a.articleType
   , articleTypeDetails: a.articleTypeDetails
@@ -304,6 +309,7 @@ articleStubToJson = encodeJson
                     <<< modify (Proxy :: Proxy "articleType") (fromMaybe "NyhetStor" <<< flip lookup articleTypes)
                     <<< modify (Proxy :: Proxy "tags") (map unwrap)
                     <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
+                    <<< modify (Proxy :: Proxy "updateTime") (foldMap formatLocalDateTime)
 
 parseArticleWith :: forall a b. DecodeJson b => (b -> Effect a) -> Json -> Effect (Either String a)
 parseArticleWith parseFn articleResponse = do
@@ -343,6 +349,7 @@ parseArticleStubWithoutLocalizing =
   parseArticlePure
     \jsStub -> pure $
                jsStub { publishingTime = parseLocalDateTime jsStub.publishingTime
+                      , updateTime     = parseLocalDateTime jsStub.updateTime
                       , tags           = map Tag jsStub.tags
                       , articleType    = fromMaybe NyhetStor $ lookup jsStub.articleType $ map swap articleTypes
                       }
@@ -379,10 +386,12 @@ parseDateTime :: String -> Maybe DateTime
 parseDateTime = hush <<< unformat dateTimeFormatter
 
 fromJSArticleStub :: JSArticleStub -> Effect ArticleStub
-fromJSArticleStub jsStub@{ uuid, publishingTime, tags, articleType } = do
+fromJSArticleStub jsStub@{ uuid, publishingTime, updateTime, tags, articleType } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
+  localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
   pure jsStub
     { publishingTime = localPublishingTime
+    , updateTime = localUpdateTime
     , tags = map Tag tags
     , articleType = fromMaybe NyhetStor $ lookup articleType $ map swap articleTypes
     }

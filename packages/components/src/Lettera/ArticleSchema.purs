@@ -6,7 +6,7 @@ import Prelude
 import Data.Maybe (Maybe(..), maybe)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Encode.Class (encodeJson)
-import Lettera.Models (Article)
+import Lettera.Models (ArticleStub)
 import KSF.LocalDateTime (formatLocalDateTime)
 
 -- https://developers.google.com/search/docs/appearance/structured-data/paywalled-content
@@ -31,7 +31,7 @@ type JsonLdArticle
           }
     }
 
-articleToJsonLd :: Article -> JsonLdArticle
+articleToJsonLd :: ArticleStub -> JsonLdArticle
 articleToJsonLd article =
   { "@context": "https://schema.org"
   , "@type": "NewsArticle"
@@ -57,5 +57,5 @@ articleToJsonLd article =
              else Nothing
   }
 
-renderAsJsonLd :: Article -> Json
+renderAsJsonLd :: ArticleStub -> Json
 renderAsJsonLd article = encodeJson $ articleToJsonLd article
