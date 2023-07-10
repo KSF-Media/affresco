@@ -762,8 +762,8 @@ callBottega f = do
 getPackages :: Aff (Array Package)
 getPackages = Bottega.getPackages
 
-openPaywall :: Int -> Int -> Int -> Effect Unit
-openPaywall days hours minutes = do
+openPaywall :: Int -> Int -> Int -> Array String -> Effect Unit
+openPaywall days hours minutes products = do
   token <- requireToken
   currentDate <- now
   let
@@ -775,6 +775,6 @@ openPaywall days hours minutes = do
                        + toNumber days * msPerDay
                        + toNumber hours * msPerHour
                        + toNumber minutes * msPerMin)
-    , onlyProducts: []
+    , onlyProducts: products
     , startAt: currentDate
     }
