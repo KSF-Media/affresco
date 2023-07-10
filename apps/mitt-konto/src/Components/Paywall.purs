@@ -36,19 +36,16 @@ initialProducts =
   ]
 
 paywall :: PushStateInterface -> Sentry.Logger -> Component Props
-paywall _router logger = do
+paywall _router _logger = do
   component "Paywall" \ {} -> React.do
     days     /\ setDays     <- useState' 0
     hours    /\ setHours    <- useState' 0
     minutes  /\ setMinutes  <- useState' 0
     products /\ setProducts <- useState initialProducts
     let
+      selection = map (\p -> p.name) $ filter (\p -> p.selected) products
       submitHandler :: EventHandler
-      submitHandler = handler_
-        $ when (not $ null selection)
-        $ User.openPaywall days hours minutes (map (\p -> p.name) $ selection)
-        where
-          selection = filter (\p -> p.selected) products
+      submitHandler = handler_ $ User.openPaywall days hours minutes selection
     pure $ DOM.div
       { children:
         [ DOM.h1_ [ DOM.text "Öppna betalmur" ]
@@ -59,6 +56,7 @@ paywall _router logger = do
         , DOM.button
             { children: [ DOM.text "Skicka" ]
             , onClick: submitHandler
+            , disabled: days + hours + minutes == 0 || null selection
             }
         ]
       }
@@ -83,6 +81,7 @@ renderDays days setDays =
             { type: "text"
             , value: show days
             , onChange: setNumber 365 setDays
+            , style: DOM.css { width: "2rem" }
             }
         , DOM.text " dagar"
         ]
@@ -97,6 +96,7 @@ renderHours hours setHours =
             { type: "text"
             , value: show hours
             , onChange: setNumber 23 setHours
+            , style: DOM.css { width: "2rem" }
             }
         , DOM.text " timmar"
         ]
@@ -111,6 +111,7 @@ renderMinutes minutes setMinutes =
             { type: "text"
             , value: show minutes
             , onChange: setNumber 59 setMinutes
+            , style: DOM.css { width: "2rem" }
             }
         , DOM.text " minuter"
         ]
