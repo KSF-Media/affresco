@@ -90,30 +90,8 @@ getUserEntitlements auth =
   callApi usersApi "usersUuidEntitlementGet" [ unsafeToForeign auth.userId ] $ authHeaders auth.userId auth
 
 getPaywallOpenings :: UserAuth -> Aff (Array PaywallOpening)
-getPaywallOpenings _auth =
-  pure [ { id: 59
-         , startAt: jsdate
-             { year: 2023.0
-             , month: 7.0
-             , day: 11.0
-             , hour: 8.0
-             , minute: 4.0
-             , second: 16.0
-             , millisecond: 300.0
-             }
-         , endAt: jsdate
-             { year: 2023.0
-             , month: 7.0
-             , day: 11.0
-             , hour: 16.0
-             , minute: 4.0
-             , second: 16.0
-             , millisecond: 300.0
-             }
-         , onlyToProducts: []
-         }
-       ]
-  -- callApi entitlementsApi "entitlementsAllowGet" [] $ authHeaders UUID.emptyUUID auth
+getPaywallOpenings auth =
+  callApi entitlementsApi "entitlementsAllowGet" [] $ authHeaders UUID.emptyUUID auth
 
 openPaywall :: UserAuth -> AllowEntitlementsQuery -> Aff Unit
 openPaywall auth query =

@@ -11,7 +11,7 @@ import Effect.Class (liftEffect)
 import Effect.Exception (error)
 import Effect.Uncurried (mkEffectFn1)
 import Data.JSDate (JSDate, now, toUTCString)
-import KSF.Api.Entitlements (PaywallOpening)
+import KSF.Api.Entitlements (PaywallOpening(..))
 import KSF.Sentry as Sentry
 import KSF.Spinner (loadingSpinner)
 import KSF.User as User
@@ -173,11 +173,11 @@ renderCurrentOpenings
   -> JSX
 renderCurrentOpenings setEra openings =
   let
-    renderOpening opening = DOM.tr
+    renderOpening (PaywallOpening opening) = DOM.tr
       { children:
           [ DOM.td_ [ DOM.text (show opening.id) ]
-          , DOM.td_ [ DOM.text (toUTCString opening.startAt) ]
-          , DOM.td_ [ DOM.text (toUTCString opening.endAt) ]
+          , DOM.td_ [ DOM.text opening.startAt ]
+          , DOM.td_ [ DOM.text opening.endAt ]
           , DOM.td_ [ DOM.text (show opening.onlyToProducts) ]
           , DOM.td_
               [ DOM.button
