@@ -6,14 +6,20 @@ import Data.Array (filter, findIndex, modifyAt, null)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Effect (Effect)
+import Effect.Aff as Aff
+import Effect.Class (liftEffect)
+import Effect.Exception (error)
 import Effect.Uncurried (mkEffectFn1)
+import Data.JSDate (JSDate, now, toUTCString)
+import KSF.Api.Entitlements (PaywallOpening)
 import KSF.Sentry as Sentry
+import KSF.Spinner (loadingSpinner)
 import KSF.User as User
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetValue)
 import React.Basic.Events (EventHandler, handler, handler_)
-import React.Basic.Hooks (Component, component, useState, useState', (/\))
+import React.Basic.Hooks (Component, component, useEffect, useState, useState', (/\))
 import React.Basic.Hooks as React
 import Routing.PushState (PushStateInterface)
 
@@ -37,18 +43,29 @@ initialProducts =
 
 paywall :: PushStateInterface -> Sentry.Logger -> Component Props
 paywall _router _logger = do
+  currentDate <- now
   component "Paywall" \ {} -> React.do
     days     /\ setDays     <- useState' 0
     hours    /\ setHours    <- useState' 0
     minutes  /\ setMinutes  <- useState' 0
     products /\ setProducts <- useState initialProducts
+    openings /\ setOpenings <- useState' Nothing
+    era      /\ setEra      <- useState 0
+    useEffect era $ do
+      fiber <- Aff.launchAff $
+        liftEffect <<< setOpenings <<< Just =<< User.getPaywallOpenings
+      pure $ Aff.launchAff_ $ Aff.killFiber (error "component closed") fiber
     let
       selection = map (\p -> p.name) $ filter (\p -> p.selected) products
       submitHandler :: EventHandler
-      submitHandler = handler_ $ User.openPaywall days hours minutes selection
+      submitHandler = handler_ $ Aff.launchAff_ $ do
+        User.openPaywall days hours minutes selection
+        liftEffect $ setEra (_ + 1)
     pure $ DOM.div
       { children:
-        [ DOM.h1_ [ DOM.text "Öppna betalmur" ]
+        [ DOM.h1_ [ DOM.text "Betalmur inställningar" ]
+        , DOM.hr {}
+        , DOM.h2_ [ DOM.text "Öppna betalmur" ]
         , renderDays     days     setDays
         , renderHours    hours    setHours
         , renderMinutes  minutes  setMinutes
@@ -58,6 +75,9 @@ paywall _router _logger = do
             , onClick: submitHandler
             , disabled: days + hours + minutes == 0 || null selection
             }
+        , DOM.hr {}
+        , DOM.h2_ [ DOM.text "Nuvarande betalmur öppningar" ]
+        , maybe loadingSpinner renderCurrentOpenings openings
         ]
       }
 
@@ -130,20 +150,53 @@ renderProducts
   -> ((Products -> Products) -> Effect Unit)
   -> JSX
 renderProducts products setProducts =
-  DOM.label
-    { children:
-      [ DOM.ul { children: map renderProduct products } ]
-    }
+  DOM.ul { children: map renderProduct products }
   where
     renderProduct { name, label, selected } =
-      DOM.li
-        { children:
-            [ DOM.input
-              { type: "checkbox"
-              , value: name
-              , checked: selected
-              , onChange: mkEffectFn1 (\_ -> setProducts (toggleProduct name))
+      DOM.li_
+      [ DOM.label
+          { children:
+              [ DOM.input
+                  { type: "checkbox"
+                  , value: name
+                  , checked: selected
+                  , onChange: mkEffectFn1 (\_ -> setProducts (toggleProduct name))
+                  }
+              , DOM.text label
+              ]
+          }
+      ]
+
+renderCurrentOpenings :: Array PaywallOpening -> JSX
+renderCurrentOpenings openings =
+  let
+    renderOpening opening = DOM.tr
+      { children:
+          [ DOM.td_ [ DOM.text (show opening.id) ]
+          , DOM.td_ [ DOM.text (toUTCString opening.startAt) ]
+          , DOM.td_ [ DOM.text (toUTCString opening.endAt) ]
+          , DOM.td_ [ DOM.text (show opening.onlyToProducts) ]
+          , DOM.td_ [ DOM.text "radera" ]
+          ]
+      }
+  in
+    DOM.table
+      { children:
+          [ DOM.thead
+              { children:
+                  [ DOM.tr
+                      { children:
+                          [ DOM.th_ [ DOM.text "ID" ]
+                          , DOM.th_ [ DOM.text "Från" ]
+                          , DOM.th_ [ DOM.text "Till" ]
+                          , DOM.th_ [ DOM.text "Produkter" ]
+                          , DOM.th_ []
+                          ]
+                      }
+                  ]
               }
-            , DOM.text label
-            ]
-        }
+          , DOM.tbody
+              { children: map renderOpening openings
+              }
+          ]
+      }

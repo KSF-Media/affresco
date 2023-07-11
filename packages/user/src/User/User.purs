@@ -10,6 +10,7 @@ module KSF.User
   , createUser
   , createUserWithEmail
   , deleteCreditCard
+  , deletePaywallOpening
   , deleteTemporaryAddressChange
   , editSubscriptionPause
   , editTemporaryAddressChange
@@ -21,6 +22,7 @@ module KSF.User
   , getOrder
   , getPackages
   , getPayments
+  , getPaywallOpenings
   , getUser
   , getUserEntitlements
   , getUserEntitlementsLoadToken
@@ -94,6 +96,7 @@ import Foreign.Object (Object)
 import KSF.Api (AuthScope, InvalidateCache, UserAuth)
 import KSF.Api (Token(..), Password, UserAuth, oauthToken, parseToken) as Api
 import KSF.Api.Address (Address) as Address
+import KSF.Api.Entitlements (PaywallOpening)
 import KSF.Api.Error as Api.Error
 import KSF.Api.Package (Package)
 import KSF.Api.Search (SearchQuery, SearchResult)
@@ -762,15 +765,20 @@ callBottega f = do
 getPackages :: Aff (Array Package)
 getPackages = Bottega.getPackages
 
-openPaywall :: Int -> Int -> Int -> Array String -> Effect Unit
+getPaywallOpenings :: Aff (Array PaywallOpening)
+getPaywallOpenings = do
+  token <- liftEffect requireToken
+  Persona.getPaywallOpenings token
+
+openPaywall :: Int -> Int -> Int -> Array String -> Aff Unit
 openPaywall days hours minutes products = do
-  token <- requireToken
-  currentDate <- now
+  token <- liftEffect requireToken
+  currentDate <- liftEffect now
   let
     msPerDay  = 24.0 * msPerHour
     msPerHour = 60.0 * msPerMin
     msPerMin  = 60.0 * 1000.0
-  Aff.launchAff_ $ Persona.openPaywall token
+  Persona.openPaywall token
     { endAt: fromTime (getTime currentDate
                        + toNumber days * msPerDay
                        + toNumber hours * msPerHour
@@ -778,3 +786,7 @@ openPaywall days hours minutes products = do
     , onlyProducts: products
     , startAt: currentDate
     }
+
+deletePaywallOpening :: Int -> Aff Unit
+deletePaywallOpening id =
+  Persona.deletePaywallOpening id =<< requireToken
