@@ -766,9 +766,8 @@ getPackages :: Aff (Array Package)
 getPackages = Bottega.getPackages
 
 getPaywallOpenings :: Aff (Array PaywallOpening)
-getPaywallOpenings = do
-  token <- liftEffect requireToken
-  Persona.getPaywallOpenings token
+getPaywallOpenings =
+  Persona.getPaywallOpenings =<< requireToken
 
 openPaywall :: Int -> Int -> Int -> Array String -> Aff Unit
 openPaywall days hours minutes products = do

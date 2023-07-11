@@ -7,7 +7,7 @@ import Data.Array (mapMaybe, catMaybes, filter)
 import Data.Date (Date)
 import Data.Date as Date
 import Data.Generic.Rep (class Generic)
-import Data.JSDate (JSDate, toDate)
+import Data.JSDate (JSDate, jsdate, toDate)
 import Data.Map (fromFoldable)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable, toNullable, toMaybe)
@@ -90,8 +90,29 @@ getUserEntitlements auth =
   callApi usersApi "usersUuidEntitlementGet" [ unsafeToForeign auth.userId ] $ authHeaders auth.userId auth
 
 getPaywallOpenings :: UserAuth -> Aff (Array PaywallOpening)
-getPaywallOpenings auth =
-  pure []
+getPaywallOpenings _auth =
+  pure [ { id: 59
+         , startAt: jsdate
+             { year: 2023.0
+             , month: 7.0
+             , day: 11.0
+             , hour: 8.0
+             , minute: 4.0
+             , second: 16.0
+             , millisecond: 300.0
+             }
+         , endAt: jsdate
+             { year: 2023.0
+             , month: 7.0
+             , day: 11.0
+             , hour: 16.0
+             , minute: 4.0
+             , second: 16.0
+             , millisecond: 300.0
+             }
+         , onlyToProducts: []
+         }
+       ]
   -- callApi entitlementsApi "entitlementsAllowGet" [] $ authHeaders UUID.emptyUUID auth
 
 openPaywall :: UserAuth -> AllowEntitlementsQuery -> Aff Unit

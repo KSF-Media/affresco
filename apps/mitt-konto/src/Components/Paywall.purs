@@ -77,7 +77,7 @@ paywall _router _logger = do
             }
         , DOM.hr {}
         , DOM.h2_ [ DOM.text "Nuvarande betalmur öppningar" ]
-        , maybe loadingSpinner renderCurrentOpenings openings
+        , maybe loadingSpinner (renderCurrentOpenings setEra) openings
         ]
       }
 
@@ -167,8 +167,11 @@ renderProducts products setProducts =
           }
       ]
 
-renderCurrentOpenings :: Array PaywallOpening -> JSX
-renderCurrentOpenings openings =
+renderCurrentOpenings
+  :: ((Int -> Int) -> Effect Unit)
+  -> Array PaywallOpening
+  -> JSX
+renderCurrentOpenings setEra openings =
   let
     renderOpening opening = DOM.tr
       { children:
@@ -176,7 +179,14 @@ renderCurrentOpenings openings =
           , DOM.td_ [ DOM.text (toUTCString opening.startAt) ]
           , DOM.td_ [ DOM.text (toUTCString opening.endAt) ]
           , DOM.td_ [ DOM.text (show opening.onlyToProducts) ]
-          , DOM.td_ [ DOM.text "radera" ]
+          , DOM.td_
+              [ DOM.button
+                  { children: [DOM.text "radera"]
+                  , onClick: mkEffectFn1 $ \_ -> Aff.launchAff_ $ do
+                      User.deletePaywallOpening 59
+                      liftEffect $ setEra (_ + 1)
+                  }
+              ]
           ]
       }
   in
