@@ -1,16 +1,11 @@
 module KSF.Api.Entitlements where
 
 import Prelude
-import Control.Monad.Except.Trans (ExceptT(..), except)
-import Data.Either (Either(..))
-import Data.Identity (Identity(..))
 import Data.JSDate (JSDate)
-import Data.List.Types (List(..), NonEmptyList(..))
-import Data.Maybe (Maybe(..), maybe)
-import Data.NonEmpty (NonEmpty(..))
-import Foreign (Foreign, ForeignError(..), MultipleErrors)
-import Foreign.Object (Object, lookup)
-import Simple.JSON
+import Data.Maybe (Maybe(..))
+import Foreign (Foreign, ForeignError(..), fail)
+import Foreign.Object (lookup)
+import Simple.JSON (class ReadForeign, readImpl)
 
 type AllowEntitlementsQuery =
   { endAt :: JSDate
@@ -46,4 +41,4 @@ instance readPaywallOpening :: ReadForeign PaywallOpening where
         endAt <- readImpl z
         pure $ PaywallOpening { id, onlyToProducts, startAt, endAt }
       _ ->
-        except $ Left $ NonEmptyList $ NonEmpty (ForeignError "unable to process paywall opening") Nil
+        fail (ForeignError "unable to process paywall opening")
