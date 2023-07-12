@@ -29,16 +29,16 @@ type Products = Array Product
 
 initialProducts :: Products
 initialProducts =
-  [ { name: "hbl-365", label: "HBL 365", selected: false }
-  , { name: "hbl-epaper", label: "HBL e-tidning", selected: false }
-  , { name: "hbl-web", label: "HBL webbplats", selected: false }
-  , { name: "junior-epaper", label: "HBL Junior e-tidning", selected: false }
-  , { name: "on-365", label: "Östra Nyland 365", selected: false }
-  , { name: "on-epaper", label: "Östra Nyland e-tidning", selected: false }
-  , { name: "on-web", label: "Östra Nyland webbplats", selected: false }
-  , { name: "vn-365", label: "Västra Nyland 365", selected: false }
-  , { name: "vn-epaper", label: "Västra Nyland e-tidning", selected: false }
-  , { name: "vn-web", label: "Västra Nyland webbplats", selected: false }
+  [ { name: "hbl-365", label: "HBL-artiklar i appen HBL 365", selected: false }
+  , { name: "hbl-epaper", label: "HBL e-tidning (e-tidningen i appen och på webben)", selected: false }
+  , { name: "hbl-web", label: "HBL Premiumartiklar på hbl.fi", selected: false }
+  , { name: "junior-epaper", label: "HBL Junior (e-tidningen i appen och på webben)", selected: false }
+  , { name: "on-365", label: "Östnyland-artiklar i appen HBL 365", selected: false }
+  , { name: "on-epaper", label: "Östnyland e-tidning (e-tidningen i appen och på webben)", selected: false }
+  , { name: "on-web", label: "Östnyland Premiumartiklar på ostnyland.fi", selected: false }
+  , { name: "vn-365", label: "Västra Nyland-artiklar i appen HBL 365", selected: false }
+  , { name: "vn-epaper", label: "Västra Nyland e-tidning (e-tidningen i appen och på webben)", selected: false }
+  , { name: "vn-web", label: "Västra Nyland Premiumartiklar på vastranyland.fi", selected: false }
   ]
 
 paywall :: PushStateInterface -> Sentry.Logger -> Component Props
@@ -87,7 +87,7 @@ paywall _router _logger = do
             , disabled: days + hours + minutes == 0 || null selection
             }
         , DOM.hr {}
-        , DOM.h2_ [ DOM.text "Nuvarande betalväggsöppningar" ]
+        , DOM.h2_ [ DOM.text "Just nu öppna betalväggar" ]
         , maybe loadingSpinner (renderCurrentOpenings deletionHandler) openings
         ]
       }
@@ -163,7 +163,7 @@ renderProducts
 renderProducts products setProducts =
   DOM.dl
     { children:
-        DOM.dt_ [ DOM.text "produkter"] : map renderProduct products
+        DOM.dt_ [ DOM.text "Markera var du vill öppna betalväggen"] : map renderProduct products
     , style: DOM.css { listStyleType: "none" }
     }
   where
@@ -202,7 +202,7 @@ renderCurrentOpenings mkHandler openings =
                         "Alla") ]
           , DOM.td_
               [ DOM.button
-                  { children: [DOM.text "radera"]
+                  { children: [DOM.text "Radera"]
                   , onClick: mkHandler opening.id
                   }
               ]
@@ -216,7 +216,7 @@ renderCurrentOpenings mkHandler openings =
             [ DOM.th { children: [ DOM.text "ID" ] }
             , DOM.th { children: [ DOM.text "Från" ] }
             , DOM.th { children: [ DOM.text "Till" ] }
-            , DOM.th { children: [ DOM.text "Produkter" ] }
+            , DOM.th { children: [ DOM.text "Plats" ] }
             , DOM.th { children: [] }
             ]
           ]
