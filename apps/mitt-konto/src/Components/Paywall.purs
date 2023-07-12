@@ -2,7 +2,7 @@ module MittKonto.Components.Paywall where
 
 import Prelude
 
-import Data.Array ((:), filter, findIndex, modifyAt, null)
+import Data.Array ((:), filter, findIndex, length, modifyAt, null)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Effect (Effect)
@@ -58,6 +58,9 @@ paywall _router _logger = do
       deletionHandler id = handler_ $ Aff.launchAff_ $ do
         User.deletePaywallOpening id
         liftEffect $ setEra (_ + 1)
+      selectAllHandler :: EventHandler
+      selectAllHandler = handler_ $ setProducts $
+        map (\p -> p { selected = true })
       submitHandler :: EventHandler
       submitHandler = handler_ $ Aff.launchAff_ $ do
         User.openPaywall days hours minutes selection
@@ -71,6 +74,11 @@ paywall _router _logger = do
         , renderHours    hours    setHours
         , renderMinutes  minutes  setMinutes
         , renderProducts products setProducts
+        , DOM.button
+            { children: [ DOM.text "Alla" ]
+            , onClick: selectAllHandler
+            , disabled: length selection == length products
+            }
         , DOM.button
             { children: [ DOM.text "Skicka" ]
             , onClick: submitHandler
