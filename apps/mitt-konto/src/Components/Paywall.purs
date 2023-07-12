@@ -9,7 +9,6 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
-import Effect.Uncurried (mkEffectFn1)
 import KSF.Api.Entitlements (PaywallOpening)
 import KSF.Sentry as Sentry
 import KSF.Spinner (loadingSpinner)
@@ -166,7 +165,7 @@ renderProducts products setProducts =
                   { type: "checkbox"
                   , value: name
                   , checked: selected
-                  , onChange: mkEffectFn1 (\_ -> setProducts (toggleProduct name))
+                  , onChange: handler_ $ setProducts (toggleProduct name)
                   }
               , DOM.text label
               ]
