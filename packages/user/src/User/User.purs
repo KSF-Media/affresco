@@ -71,7 +71,7 @@ import Data.Either (Either(..), either)
 import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
 import Data.Int (toNumber)
-import Data.JSDate (JSDate, fromTime, getTime, now)
+import Data.JSDate (fromTime, getTime, now)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (toNullable)
 import Data.Nullable as Nullable

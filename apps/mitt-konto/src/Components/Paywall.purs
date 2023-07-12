@@ -2,7 +2,7 @@ module MittKonto.Components.Paywall where
 
 import Prelude
 
-import Data.Array ((:), filter, findIndex, head, modifyAt, null)
+import Data.Array ((:), filter, findIndex, modifyAt, null)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Effect (Effect)
@@ -10,8 +10,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
 import Effect.Uncurried (mkEffectFn1)
-import Data.JSDate (JSDate, now, toUTCString)
-import KSF.Api.Entitlements (PaywallOpening(..))
+import KSF.Api.Entitlements (PaywallOpening)
 import KSF.Sentry as Sentry
 import KSF.Spinner (loadingSpinner)
 import KSF.User as User
@@ -43,7 +42,6 @@ initialProducts =
 
 paywall :: PushStateInterface -> Sentry.Logger -> Component Props
 paywall _router _logger = do
-  currentDate <- now
   component "Paywall" \ {} -> React.do
     days     /\ setDays     <- useState' 0
     hours    /\ setHours    <- useState' 0

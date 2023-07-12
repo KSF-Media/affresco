@@ -7,7 +7,7 @@ import Data.Array (mapMaybe, catMaybes, filter)
 import Data.Date (Date)
 import Data.Date as Date
 import Data.Generic.Rep (class Generic)
-import Data.JSDate (JSDate, jsdate, toDate)
+import Data.JSDate (JSDate, toDate)
 import Data.Map (fromFoldable)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable, toNullable, toMaybe)
