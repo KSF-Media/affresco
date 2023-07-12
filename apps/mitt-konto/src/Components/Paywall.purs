@@ -2,7 +2,7 @@ module MittKonto.Components.Paywall where
 
 import Prelude
 
-import Data.Array (filter, findIndex, modifyAt, null)
+import Data.Array ((:), filter, findIndex, head, modifyAt, null)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Effect (Effect)
@@ -150,10 +150,14 @@ renderProducts
   -> ((Products -> Products) -> Effect Unit)
   -> JSX
 renderProducts products setProducts =
-  DOM.ul { children: map renderProduct products }
+  DOM.dl
+    { children:
+        DOM.dt_ [ DOM.text "produkter"] : map renderProduct products
+    , style: DOM.css { listStyleType: "none" }
+    }
   where
     renderProduct { name, label, selected } =
-      DOM.li_
+      DOM.dl_
       [ DOM.label
           { children:
               [ DOM.input
@@ -173,7 +177,7 @@ renderCurrentOpenings
   -> JSX
 renderCurrentOpenings setEra openings =
   let
-    renderOpening (PaywallOpening opening) = DOM.tr
+    renderOpening opening = DOM.tr
       { children:
           [ DOM.td_ [ DOM.text (show opening.id) ]
           , DOM.td_ [ DOM.text opening.startAt ]
@@ -183,7 +187,7 @@ renderCurrentOpenings setEra openings =
               [ DOM.button
                   { children: [DOM.text "radera"]
                   , onClick: mkEffectFn1 $ \_ -> Aff.launchAff_ $ do
-                      User.deletePaywallOpening 59
+                      User.deletePaywallOpening opening.id
                       liftEffect $ setEra (_ + 1)
                   }
               ]
@@ -209,4 +213,5 @@ renderCurrentOpenings setEra openings =
               { children: map renderOpening openings
               }
           ]
+      , style: DOM.css { borderSpacing: "1rem" }
       }
