@@ -10,7 +10,7 @@ import Simple.JSON (class ReadForeign, readImpl)
 
 type AllowEntitlementsQuery =
   { endAt :: JSDate
-  , onlyProducts :: Array String
+  , onlyToProducts :: Array String
   , startAt :: JSDate
   }
 

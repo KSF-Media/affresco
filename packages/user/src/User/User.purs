@@ -782,7 +782,7 @@ openPaywall days hours minutes products = do
                        + toNumber days * msPerDay
                        + toNumber hours * msPerHour
                        + toNumber minutes * msPerMin)
-    , onlyProducts: products
+    , onlyToProducts: products
     , startAt: currentDate
     }
 

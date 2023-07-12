@@ -3,8 +3,10 @@ module MittKonto.Components.Paywall where
 import Prelude
 
 import Data.Array ((:), filter, findIndex, length, modifyAt, null)
+import Data.Foldable (intercalate)
 import Data.Int (fromString)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Nullable (toMaybe)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -191,7 +193,13 @@ renderCurrentOpenings mkHandler openings =
           [ DOM.td_ [ DOM.text (show opening.id) ]
           , DOM.td_ [ DOM.text opening.startAt ]
           , DOM.td_ [ DOM.text opening.endAt ]
-          , DOM.td_ [ DOM.text (show opening.onlyToProducts) ]
+          , DOM.td_
+              [ DOM.text
+                  (case toMaybe opening.onlyToProducts of
+                      Just ps | length ps < length initialProducts ->
+                        intercalate ", " ps
+                      _ ->
+                        "Alla") ]
           , DOM.td_
               [ DOM.button
                   { children: [DOM.text "radera"]
