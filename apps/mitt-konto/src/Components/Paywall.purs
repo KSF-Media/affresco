@@ -55,6 +55,10 @@ paywall _router _logger = do
       pure $ Aff.launchAff_ $ Aff.killFiber (error "component closed") fiber
     let
       selection = map (\p -> p.name) $ filter (\p -> p.selected) products
+      deletionHandler :: Int -> EventHandler
+      deletionHandler id = handler_ $ Aff.launchAff_ $ do
+        User.deletePaywallOpening id
+        liftEffect $ setEra (_ + 1)
       submitHandler :: EventHandler
       submitHandler = handler_ $ Aff.launchAff_ $ do
         User.openPaywall days hours minutes selection
@@ -75,7 +79,7 @@ paywall _router _logger = do
             }
         , DOM.hr {}
         , DOM.h2_ [ DOM.text "Nuvarande betalmur öppningar" ]
-        , maybe loadingSpinner (renderCurrentOpenings setEra) openings
+        , maybe loadingSpinner (renderCurrentOpenings deletionHandler) openings
         ]
       }
 
@@ -170,10 +174,10 @@ renderProducts products setProducts =
       ]
 
 renderCurrentOpenings
-  :: ((Int -> Int) -> Effect Unit)
+  :: (Int -> EventHandler)
   -> Array PaywallOpening
   -> JSX
-renderCurrentOpenings setEra openings =
+renderCurrentOpenings mkHandler openings =
   let
     renderOpening opening = DOM.tr
       { children:
@@ -184,9 +188,7 @@ renderCurrentOpenings setEra openings =
           , DOM.td_
               [ DOM.button
                   { children: [DOM.text "radera"]
-                  , onClick: mkEffectFn1 $ \_ -> Aff.launchAff_ $ do
-                      User.deletePaywallOpening opening.id
-                      liftEffect $ setEra (_ + 1)
+                  , onClick: mkHandler opening.id
                   }
               ]
           ]
