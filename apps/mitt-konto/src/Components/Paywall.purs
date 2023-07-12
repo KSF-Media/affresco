@@ -69,9 +69,9 @@ paywall _router _logger = do
         liftEffect $ setEra (_ + 1)
     pure $ DOM.div
       { children:
-        [ DOM.h1_ [ DOM.text "Betalmur inställningar" ]
+        [ DOM.h1_ [ DOM.text "Inställningar för betalvägg" ]
         , DOM.hr {}
-        , DOM.h2_ [ DOM.text "Öppna betalmur" ]
+        , DOM.h2_ [ DOM.text "Öppna betalvägg" ]
         , renderDays     days     setDays
         , renderHours    hours    setHours
         , renderMinutes  minutes  setMinutes
@@ -87,7 +87,7 @@ paywall _router _logger = do
             , disabled: days + hours + minutes == 0 || null selection
             }
         , DOM.hr {}
-        , DOM.h2_ [ DOM.text "Nuvarande betalmur öppningar" ]
+        , DOM.h2_ [ DOM.text "Nuvarande betalväggsöppningar" ]
         , maybe loadingSpinner (renderCurrentOpenings deletionHandler) openings
         ]
       }
@@ -211,22 +211,16 @@ renderCurrentOpenings mkHandler openings =
   in
     DOM.table
       { children:
-          [ DOM.thead
-              { children:
-                  [ DOM.tr
-                      { children:
-                          [ DOM.th_ [ DOM.text "ID" ]
-                          , DOM.th_ [ DOM.text "Från" ]
-                          , DOM.th_ [ DOM.text "Till" ]
-                          , DOM.th_ [ DOM.text "Produkter" ]
-                          , DOM.th_ []
-                          ]
-                      }
-                  ]
-              }
-          , DOM.tbody
-              { children: map renderOpening openings
-              }
+        [ DOM.thead_
+          [ DOM.tr_
+            [ DOM.th { children: [ DOM.text "ID" ] }
+            , DOM.th { children: [ DOM.text "Från" ] }
+            , DOM.th { children: [ DOM.text "Till" ] }
+            , DOM.th { children: [ DOM.text "Produkter" ] }
+            , DOM.th { children: [] }
+            ]
           ]
+        , DOM.tbody_ $ map renderOpening openings
+        ]
       , style: DOM.css { borderSpacing: "1rem" }
       }

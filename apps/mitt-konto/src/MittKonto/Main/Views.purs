@@ -42,7 +42,7 @@ navbarView { state } router logout isPersonating =
                [ DOM.a
                  { onClick: (handler preventDefault $
                              const $ router.pushState (unsafeToForeign {}) "/betalmur")
-                 , children: [ DOM.text "Hantera betalmur" ]
+                 , children: [ DOM.text "Hantera betalvägg" ]
                  , style: DOM.css { margin: "1rem" }
                  }
                , DOM.a
