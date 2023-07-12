@@ -100,10 +100,10 @@ renderDays days setDays =
   DOM.label
     { children:
         [ DOM.input
-            { type: "text"
+            { type: "number"
             , value: show days
             , onChange: setNumber 365 setDays
-            , style: DOM.css { width: "2rem" }
+            , style: DOM.css { width: "3rem" }
             }
         , DOM.text " dagar"
         ]
@@ -115,10 +115,10 @@ renderHours hours setHours =
   DOM.label
     { children:
         [ DOM.input
-            { type: "text"
+            { type: "number"
             , value: show hours
             , onChange: setNumber 23 setHours
-            , style: DOM.css { width: "2rem" }
+            , style: DOM.css { width: "3rem" }
             }
         , DOM.text " timmar"
         ]
@@ -130,10 +130,10 @@ renderMinutes minutes setMinutes =
   DOM.label
     { children:
         [ DOM.input
-            { type: "text"
+            { type: "number"
             , value: show minutes
             , onChange: setNumber 59 setMinutes
-            , style: DOM.css { width: "2rem" }
+            , style: DOM.css { width: "3rem" }
             }
         , DOM.text " minuter"
         ]
