@@ -47,7 +47,7 @@ routes = root $ G.sum
   , "PasswordRecovery3": hash "l%F6senord" G.noArgs
   , "CreditCardUpdate": "prenumerationer" `prefix` subsno segment `suffix` "kreditkort" `suffix` "uppdatera"
   , "Search": "sök" `prefix` end G.noArgs
-  , "Paywall": "betalmur" `prefix` end G.noArgs
+  , "Paywall": "betalvägg" `prefix` end G.noArgs
   , "MittKonto": end G.noArgs
   }
 
