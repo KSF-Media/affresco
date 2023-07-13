@@ -40,6 +40,12 @@ navbarView { state } router logout isPersonating =
            { className: "nav--logout-limpet"
            , children:
                [ DOM.a
+                 { onClick: (handler preventDefault $
+                             const $ router.pushState (unsafeToForeign {}) "/betalvägg")
+                 , children: [ DOM.text "Hantera betalvägg" ]
+                 , style: DOM.css { margin: "1rem" }
+                 }
+               , DOM.a
                    { onClick: (handler preventDefault $
                                const $ router.pushState (unsafeToForeign {}) "/sök")
                    , href: "/sök"
