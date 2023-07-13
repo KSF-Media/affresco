@@ -98,7 +98,7 @@ setNumber max setter = handler targetValue \value ->
   maybe (pure unit) setter (value >>= fromString >>= handleBounds)
   where
     handleBounds n
-      | n < 1     = Just 0
+      | n < 0     = Just 0
       | n > max   = Just max
       | otherwise = Just n
 
