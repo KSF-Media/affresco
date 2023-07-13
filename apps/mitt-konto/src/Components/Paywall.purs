@@ -17,7 +17,7 @@ import KSF.Spinner (loadingSpinner)
 import KSF.User as User
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (targetValue)
+import React.Basic.DOM.Events (capture_, targetValue)
 import React.Basic.Events (EventHandler, handler, handler_)
 import React.Basic.Hooks (Component, component, useEffect, useState, useState', (/\))
 import React.Basic.Hooks as React
@@ -61,13 +61,13 @@ paywall _router _logger = do
         User.deletePaywallOpening id
         liftEffect $ setEra (_ + 1)
       selectAllHandler :: EventHandler
-      selectAllHandler = handler_ $ setProducts $
+      selectAllHandler = capture_ $ setProducts $
         map (\p -> p { selected = true })
       submitHandler :: EventHandler
-      submitHandler = handler_ $ Aff.launchAff_ $ do
+      submitHandler = capture_ $ Aff.launchAff_ $ do
         User.openPaywall days hours minutes selection
         liftEffect $ setEra (_ + 1)
-    pure $ DOM.div
+    pure $ DOM.form
       { children:
         [ DOM.h1_ [ DOM.text "Inställningar för betalvägg" ]
         , DOM.hr {}
@@ -83,13 +83,14 @@ paywall _router _logger = do
             }
         , DOM.button
             { children: [ DOM.text "Skicka" ]
-            , onClick: submitHandler
+            , type: "submit"
             , disabled: days + hours + minutes == 0 || null selection
             }
         , DOM.hr {}
         , DOM.h2_ [ DOM.text "Just nu öppna betalväggar" ]
         , maybe loadingSpinner (renderCurrentOpenings deletionHandler) openings
         ]
+      , onSubmit: submitHandler
       }
 
 setNumber :: Int -> (Int -> Effect Unit) -> EventHandler
