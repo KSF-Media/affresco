@@ -55,14 +55,14 @@ paywall _router _logger = do
         liftEffect <<< setOpenings <<< Just =<< User.getPaywallOpenings
       pure $ Aff.launchAff_ $ Aff.killFiber (error "component closed") fiber
     let
-      selection = map (\p -> p.name) $ filter (\p -> p.selected) products
+      selection = map _.name $ filter _.selected products
       deletionHandler :: Int -> EventHandler
       deletionHandler id = handler_ $ Aff.launchAff_ $ do
         User.deletePaywallOpening id
         liftEffect $ setEra (_ + 1)
       selectAllHandler :: EventHandler
       selectAllHandler = capture_ $ setProducts $
-        map (\p -> p { selected = true })
+        map _{ selected = true }
       submitHandler :: EventHandler
       submitHandler = capture_ $ Aff.launchAff_ $ do
         User.openPaywall days hours minutes selection
