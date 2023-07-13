@@ -770,21 +770,18 @@ getPaywallOpenings =
   Persona.getPaywallOpenings =<< requireToken
 
 openPaywall :: Int -> Int -> Int -> Array String -> Aff Unit
-openPaywall days hours minutes products = do
+openPaywall days hours minutes onlyToProducts = do
   token <- liftEffect requireToken
-  currentDate <- liftEffect now
+  startAt <- liftEffect now
   let
     msPerDay  = 24.0 * msPerHour
     msPerHour = 60.0 * msPerMin
     msPerMin  = 60.0 * 1000.0
-  Persona.openPaywall token
-    { endAt: fromTime (getTime currentDate
-                       + toNumber days * msPerDay
-                       + toNumber hours * msPerHour
-                       + toNumber minutes * msPerMin)
-    , onlyToProducts: products
-    , startAt: currentDate
-    }
+    endAt = fromTime (getTime startAt
+                      + toNumber days * msPerDay
+                      + toNumber hours * msPerHour
+                      + toNumber minutes * msPerMin)
+  Persona.openPaywall token { startAt, endAt, onlyToProducts }
 
 deletePaywallOpening :: Int -> Aff Unit
 deletePaywallOpening id =
