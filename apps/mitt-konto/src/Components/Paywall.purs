@@ -29,16 +29,13 @@ type Products = Array Product
 
 initialProducts :: Products
 initialProducts =
-  [ { name: "hbl-365", label: "HBL-artiklar i appen HBL 365", selected: false }
-  , { name: "hbl-epaper", label: "HBL e-tidning (e-tidningen i appen och på webben)", selected: false }
-  , { name: "hbl-web", label: "HBL Premiumartiklar på hbl.fi", selected: false }
-  , { name: "junior-epaper", label: "HBL Junior (e-tidningen i appen och på webben)", selected: false }
-  , { name: "on-365", label: "Östnyland-artiklar i appen HBL 365", selected: false }
-  , { name: "on-epaper", label: "Östnyland e-tidning (e-tidningen i appen och på webben)", selected: false }
-  , { name: "on-web", label: "Östnyland Premiumartiklar på ostnyland.fi", selected: false }
-  , { name: "vn-365", label: "Västra Nyland-artiklar i appen HBL 365", selected: false }
-  , { name: "vn-epaper", label: "Västra Nyland e-tidning (e-tidningen i appen och på webben)", selected: false }
-  , { name: "vn-web", label: "Västra Nyland Premiumartiklar på vastranyland.fi", selected: false }
+  [ { name: "hbl-epaper", label: "HBL e-tidningen på webben", selected: false }
+  , { name: "hbl-web", label: "HBL premiumartiklar", selected: false }
+  , { name: "on-epaper", label: "Östnyland e-tidningen på webben", selected: false }
+  , { name: "on-web", label: "Östnyland premiumartiklar", selected: false }
+  , { name: "vn-epaper", label: "Västra Nyland e-tidningen på webben", selected: false }
+  , { name: "vn-web", label: "Västra Nyland premiumartiklar", selected: false }
+  , { name: "junior-epaper", label: "HBL Junior e-tidningen på webben", selected: false }
   ]
 
 paywall :: PushStateInterface -> Sentry.Logger -> Component Props
