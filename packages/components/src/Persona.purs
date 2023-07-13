@@ -93,8 +93,8 @@ getPaywallOpenings :: UserAuth -> Aff (Array PaywallOpening)
 getPaywallOpenings auth =
   callApi entitlementsApi "entitlementsAllowGet" [] $ authHeaders UUID.emptyUUID auth
 
-openPaywall :: UserAuth -> AllowEntitlementsQuery -> Aff Unit
-openPaywall auth query =
+openPaywall :: AllowEntitlementsQuery -> UserAuth -> Aff Unit
+openPaywall query auth =
   callApi entitlementsApi "entitlementsAllowPost" [ unsafeToForeign query ] $ authHeaders UUID.emptyUUID auth
 
 deletePaywallOpening :: Int -> UserAuth -> Aff Unit

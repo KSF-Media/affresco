@@ -781,7 +781,7 @@ openPaywall days hours minutes onlyToProducts = do
                       + toNumber days * msPerDay
                       + toNumber hours * msPerHour
                       + toNumber minutes * msPerMin)
-  Persona.openPaywall token { startAt, endAt, onlyToProducts }
+  Persona.openPaywall { startAt, endAt, onlyToProducts } token
 
 deletePaywallOpening :: Int -> Aff Unit
 deletePaywallOpening id =
