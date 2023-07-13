@@ -1,12 +1,7 @@
 module KSF.Api.Entitlements where
 
-import Prelude
 import Data.JSDate (JSDate)
-import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable)
-import Foreign (Foreign, ForeignError(..), fail)
-import Foreign.Object (lookup)
-import Simple.JSON (class ReadForeign, readImpl)
 
 type AllowEntitlementsQuery =
   { endAt :: JSDate
