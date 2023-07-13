@@ -95,11 +95,8 @@ paywall _router _logger = do
 
 setNumber :: Int -> (Int -> Effect Unit) -> EventHandler
 setNumber max setter = handler targetValue \value ->
-  maybe (pure unit) setter (value >>= handleEmpty >>= fromString >>= handleBounds)
+  maybe (pure unit) setter (value >>= fromString >>= handleBounds)
   where
-    handleEmpty s = Just case s of
-      "" -> "0"
-      _  -> s
     handleBounds n
       | n < 1     = Just 0
       | n > max   = Just max
