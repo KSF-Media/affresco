@@ -2,16 +2,17 @@ module MittKonto.Components.Paywall where
 
 import Prelude
 
-import Data.Array ((:), filter, findIndex, length, modifyAt, null)
+import Data.Array ((:), filter, findIndex, length, modifyAt)
 import Data.Date (Date)
 import Data.DateTime (DateTime(..), date, time)
 import Data.Enum (class BoundedEnum, fromEnum, toEnum)
 import Data.Foldable (intercalate)
-import Data.Int (fromString, toNumber)
+import Data.Formatter.DateTime (FormatterCommand(..), format)
+import Data.Int (fromString)
+import Data.List (fromFoldable)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
-import Data.Time (Time, hour, millisecond, minute, second, setHour, setMillisecond, setMinute, setSecond)
-import Data.Time.Duration (Days(..), Hours(..), Minutes(..))
+import Data.Time (Time, hour, minute, setHour, setMinute)
 import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -19,7 +20,6 @@ import Effect.Class (liftEffect)
 import Effect.Exception (error)
 import Effect.Now (nowDateTime)
 import KSF.Api.Entitlements (PaywallOpening)
-import KSF.Helpers as Helpers
 import KSF.Sentry as Sentry
 import KSF.Spinner (loadingSpinner)
 import KSF.User as User
@@ -52,15 +52,22 @@ paywall :: PushStateInterface -> Sentry.Logger -> Component Props
 paywall _router _logger = do
   rightNow <- nowDateTime
   let initialDate = date rightNow
-      initialTime = setMillisecond (millisecond Helpers.midnight)
-                    <<< setSecond (second Helpers.midnight)
-                    $ time rightNow
+      initialTime = time rightNow
+      formatter = fromFoldable
+                  [ YearFull
+                  , Placeholder "-"
+                  , MonthTwoDigits
+                  , Placeholder "-"
+                  , DayOfMonthTwoDigits
+                  , Placeholder "T"
+                  , Hours24
+                  , Placeholder ":"
+                  , MinutesTwoDigits
+                  ]
+      initialDateTimeString = format formatter (DateTime initialDate initialTime)
   component "Paywall" \ {} -> React.do
-    startDate /\ setStartDate <- useState' initialDate
-    startTime /\ setStartTime <- useState' initialTime
-    days     /\ setDays     <- useState' 0
-    hours    /\ setHours    <- useState' 0
-    minutes  /\ setMinutes  <- useState' 0
+    startAt  /\ setStartAt  <- useState' initialDateTimeString
+    endAt    /\ setEndAt    <- useState' initialDateTimeString
     products /\ setProducts <- useState initialProducts
     openings /\ setOpenings <- useState' Nothing
     era      /\ setEra      <- useState 0
@@ -80,29 +87,18 @@ paywall _router _logger = do
       submitHandler :: EventHandler
       submitHandler = capture_ $ Aff.launchAff_ $ do
         User.openPaywall
-          (DateTime startDate startTime)
-          (Days $ toNumber days)
-          (Hours $ toNumber hours)
-          (Minutes $ toNumber minutes)
-          selectedProducts
+          { startAt: startAt <> ":00.000Z"
+          , endAt: endAt <> ":00.000Z"
+          , onlyToProducts: selectedProducts
+          }
         liftEffect $ setEra (_ + 1)
     pure $ DOM.form
       { children:
         [ DOM.h1_ [ DOM.text "Inställningar för betalvägg" ]
         , DOM.hr {}
         , DOM.h2_ [ DOM.text "Öppna betalvägg" ]
-        , DOM.div_
-            [ DOM.text "från "
-            , renderStartDate startDate startDate setStartDate
-            , DOM.text "klockan "
-            , renderStartTime startTime setStartTime
-            ]
-        , DOM.div_
-            [ DOM.text "för "
-            , renderDays     days     setDays
-            , renderHours    hours    setHours
-            , renderMinutes  minutes  setMinutes
-            ]
+        , renderStartAt initialDateTimeString startAt setStartAt
+        , renderEndAt initialDateTimeString endAt setEndAt
         , renderProducts products setProducts
         , DOM.button
             { children: [ DOM.text "Alla" ]
@@ -112,7 +108,6 @@ paywall _router _logger = do
         , DOM.button
             { children: [ DOM.text "Skicka" ]
             , type: "submit"
-            , disabled: days + hours + minutes == 0 || null selectedProducts
             }
         , DOM.hr {}
         , DOM.h2_ [ DOM.text "Just nu öppna betalväggar" ]
@@ -121,95 +116,31 @@ paywall _router _logger = do
       , onSubmit: submitHandler
       }
 
-setInt :: Int -> Setter Int -> EventHandler
-setInt max setter = handler targetValue \value ->
-  maybe (pure unit) setter (value >>= fromString >>= handleBounds)
-  where
-    handleBounds n
-      | n < 0     = Just 0
-      | n > max   = Just max
-      | otherwise = Just n
+renderStartAt :: String -> String -> Setter String -> JSX
+renderStartAt min startAt setStartAt =
+  DOM.span_
+    [ DOM.text "från "
+    , DOM.input
+      { type: "datetime-local"
+      , value: startAt
+      , onChange: handler targetValue $ maybe (pure unit) setStartAt
+      , min
+      }
+    , DOM.text " (UTC)"
+    ]
 
-renderStartDate :: Date -> Date -> Setter Date -> JSX
-renderStartDate today startDate setStartDate =
-  DatePicker.datePicker
-    { onChange: (=<<) $ maybe (pure unit) setStartDate
-    , className: "paywall__datepicker"
-    , value: Just startDate
-    , format: "d.M.yyyy"
-    , required: true
-    , minDate: Just today
-    , maxDate: Nothing
-    , disabled: false
-    , locale: "sv-FI"
-    }
-
-renderStartTime :: Time -> Setter Time -> JSX
-renderStartTime startTime setStartTime =
-  let
-    mkSetter :: forall a . BoundedEnum a => (a -> Time -> Time) -> Setter Int
-    mkSetter f = maybe (pure unit) (setStartTime <<< flip f startTime) <<< toEnum
-  in
-    DOM.span_
-      [ DOM.input
-          { type: "number"
-          , value: (show (fromEnum (hour startTime)))
-          , onChange: setInt 23 $ mkSetter setHour
-          , style: DOM.css { width: "3rem" }
-          }
-      , DOM.text ":"
-      , DOM.input
-          { type: "number"
-          , value: (show (fromEnum (minute startTime)))
-          , onChange: setInt 59 $ mkSetter setMinute
-          , style: DOM.css { width: "3rem" }
-          }
-      ]
-
-renderDays :: Int -> Setter Int -> JSX
-renderDays days setDays =
-  DOM.label
-    { children:
-        [ DOM.input
-            { type: "number"
-            , value: show days
-            , onChange: setInt 364 setDays
-            , style: DOM.css { width: "3rem" }
-            }
-        , DOM.text " dagar"
-        ]
-      , style: DOM.css { marginRight: "1rem" }
-    }
-
-renderHours :: Int -> Setter Int -> JSX
-renderHours hours setHours =
-  DOM.label
-    { children:
-        [ DOM.input
-            { type: "number"
-            , value: show hours
-            , onChange: setInt 23 setHours
-            , style: DOM.css { width: "3rem" }
-            }
-        , DOM.text " timmar"
-        ]
-      , style: DOM.css { marginRight: "1rem" }
-    }
-
-renderMinutes :: Int -> Setter Int -> JSX
-renderMinutes minutes setMinutes =
-  DOM.label
-    { children:
-        [ DOM.input
-            { type: "number"
-            , value: show minutes
-            , onChange: setInt 59 setMinutes
-            , style: DOM.css { width: "3rem" }
-            }
-        , DOM.text " minuter"
-        ]
-      , style: DOM.css { marginRight: "1rem" }
-    }
+renderEndAt :: String -> String -> Setter String -> JSX
+renderEndAt min endAt setEndAt =
+  DOM.span_
+    [ DOM.text " till "
+    , DOM.input
+      { type: "datetime-local"
+      , value: endAt
+      , onChange: handler targetValue $ maybe (pure unit) setEndAt
+      , min
+      }
+    , DOM.text " (UTC)"
+    ]
 
 toggleProduct :: String -> Products -> Products
 toggleProduct name products =

@@ -1,12 +1,11 @@
 module KSF.Api.Entitlements where
 
-import Data.JSDate (JSDate)
 import Data.Nullable (Nullable)
 
 type AllowEntitlementsQuery =
-  { endAt :: JSDate
-  , onlyToProducts :: Array String
-  , startAt :: JSDate
+  { onlyToProducts :: Array String
+  , startAt :: String
+  , endAt :: String
   }
 
 -- | The dates in a paywall opening record are Strings containing ISO 8601

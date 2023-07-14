@@ -67,12 +67,9 @@ import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Parallel (parSequence_)
 import Data.Array as Array
 import Data.Date (Date)
-import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..), either)
-import Data.Foldable (foldM, for_)
+import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
-import Data.Int (toNumber)
-import Data.JSDate (fromDateTime, fromTime, getTime)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (toNullable)
 import Data.Nullable as Nullable
@@ -80,7 +77,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Show.Generic (genericShow)
 import Data.String as String
-import Data.Time.Duration (Days, Hours, Minutes, Seconds(..), convertDuration)
+import Data.Time.Duration (Seconds(..))
 import Data.UUID (UUID)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -97,7 +94,7 @@ import Foreign.Object (Object)
 import KSF.Api (AuthScope, InvalidateCache, UserAuth)
 import KSF.Api (Token(..), Password, UserAuth, oauthToken, parseToken) as Api
 import KSF.Api.Address (Address) as Address
-import KSF.Api.Entitlements (PaywallOpening)
+import KSF.Api.Entitlements (AllowEntitlementsQuery, PaywallOpening)
 import KSF.Api.Error as Api.Error
 import KSF.Api.Package (Package)
 import KSF.Api.Search (SearchQuery, SearchResult)
@@ -768,28 +765,12 @@ getPackages = Bottega.getPackages
 
 getPaywallOpenings :: Aff (Array PaywallOpening)
 getPaywallOpenings =
-  Persona.getPaywallOpenings =<< requireToken
+  requireToken >>= Persona.getPaywallOpenings
 
-openPaywall
-  :: DateTime
-  -> Days
-  -> Hours
-  -> Minutes
-  -> Array String
-  -> Aff Unit
-openPaywall startAt days hours minutes onlyToProducts = do
-  token <- liftEffect requireToken
-  case foldM (flip adjust) startAt [convertDuration days, convertDuration hours, minutes] of
-    Just endAt ->
-      Persona.openPaywall
-        { startAt: fromDateTime startAt
-        , endAt: fromDateTime endAt
-        , onlyToProducts }
-        token
-    Nothing ->
-      -- Date overflow seems unlikely
-      pure unit
+openPaywall :: AllowEntitlementsQuery -> Aff Unit
+openPaywall query =
+  requireToken >>= Persona.openPaywall query
 
 deletePaywallOpening :: Int -> Aff Unit
 deletePaywallOpening id =
-  Persona.deletePaywallOpening id =<< requireToken
+  requireToken >>= Persona.deletePaywallOpening id
