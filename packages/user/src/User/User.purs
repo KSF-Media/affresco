@@ -70,8 +70,6 @@ import Data.Date (Date)
 import Data.Either (Either(..), either)
 import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
-import Data.Int (toNumber)
-import Data.JSDate (fromTime, getTime, now)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (toNullable)
 import Data.Nullable as Nullable
@@ -96,7 +94,7 @@ import Foreign.Object (Object)
 import KSF.Api (AuthScope, InvalidateCache, UserAuth)
 import KSF.Api (Token(..), Password, UserAuth, oauthToken, parseToken) as Api
 import KSF.Api.Address (Address) as Address
-import KSF.Api.Entitlements (PaywallOpening)
+import KSF.Api.Entitlements (AllowEntitlementsQuery, PaywallOpening)
 import KSF.Api.Error as Api.Error
 import KSF.Api.Package (Package)
 import KSF.Api.Search (SearchQuery, SearchResult)
@@ -769,19 +767,9 @@ getPaywallOpenings :: Aff (Array PaywallOpening)
 getPaywallOpenings =
   Persona.getPaywallOpenings =<< requireToken
 
-openPaywall :: Int -> Int -> Int -> Array String -> Aff Unit
-openPaywall days hours minutes onlyToProducts = do
-  token <- liftEffect requireToken
-  startAt <- liftEffect now
-  let
-    msPerDay  = 24.0 * msPerHour
-    msPerHour = 60.0 * msPerMin
-    msPerMin  = 60.0 * 1000.0
-    endAt = fromTime (getTime startAt
-                      + toNumber days * msPerDay
-                      + toNumber hours * msPerHour
-                      + toNumber minutes * msPerMin)
-  Persona.openPaywall { startAt, endAt, onlyToProducts } token
+openPaywall :: AllowEntitlementsQuery -> Aff Unit
+openPaywall query =
+  Persona.openPaywall query =<< requireToken
 
 deletePaywallOpening :: Int -> Aff Unit
 deletePaywallOpening id =
