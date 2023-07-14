@@ -67,11 +67,12 @@ import Control.Monad.Error.Class (catchError, throwError, try)
 import Control.Parallel (parSequence_)
 import Data.Array as Array
 import Data.Date (Date)
+import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..), either)
-import Data.Foldable (for_)
+import Data.Foldable (foldM, for_)
 import Data.Generic.Rep (class Generic)
 import Data.Int (toNumber)
-import Data.JSDate (fromTime, getTime, now)
+import Data.JSDate (fromDateTime, fromTime, getTime)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (toNullable)
 import Data.Nullable as Nullable
@@ -79,7 +80,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Show.Generic (genericShow)
 import Data.String as String
-import Data.Time.Duration (Seconds(..))
+import Data.Time.Duration (Days, Hours, Minutes, Seconds(..), convertDuration)
 import Data.UUID (UUID)
 import Data.UUID as UUID
 import Effect (Effect)
@@ -769,19 +770,25 @@ getPaywallOpenings :: Aff (Array PaywallOpening)
 getPaywallOpenings =
   Persona.getPaywallOpenings =<< requireToken
 
-openPaywall :: Int -> Int -> Int -> Array String -> Aff Unit
-openPaywall days hours minutes onlyToProducts = do
+openPaywall
+  :: DateTime
+  -> Days
+  -> Hours
+  -> Minutes
+  -> Array String
+  -> Aff Unit
+openPaywall startAt days hours minutes onlyToProducts = do
   token <- liftEffect requireToken
-  startAt <- liftEffect now
-  let
-    msPerDay  = 24.0 * msPerHour
-    msPerHour = 60.0 * msPerMin
-    msPerMin  = 60.0 * 1000.0
-    endAt = fromTime (getTime startAt
-                      + toNumber days * msPerDay
-                      + toNumber hours * msPerHour
-                      + toNumber minutes * msPerMin)
-  Persona.openPaywall { startAt, endAt, onlyToProducts } token
+  case foldM (flip adjust) startAt [convertDuration days, convertDuration hours, minutes] of
+    Just endAt ->
+      Persona.openPaywall
+        { startAt: fromDateTime startAt
+        , endAt: fromDateTime endAt
+        , onlyToProducts }
+        token
+    Nothing ->
+      -- Date overflow seems unlikely
+      pure unit
 
 deletePaywallOpening :: Int -> Aff Unit
 deletePaywallOpening id =

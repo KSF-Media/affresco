@@ -3,15 +3,23 @@ module MittKonto.Components.Paywall where
 import Prelude
 
 import Data.Array ((:), filter, findIndex, length, modifyAt, null)
+import Data.Date (Date)
+import Data.DateTime (DateTime(..), date, time)
+import Data.Enum (class BoundedEnum, fromEnum, toEnum)
 import Data.Foldable (intercalate)
-import Data.Int (fromString)
+import Data.Int (fromString, toNumber)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
+import Data.Time (Time, hour, millisecond, minute, second, setHour, setMillisecond, setMinute, setSecond)
+import Data.Time.Duration (Days(..), Hours(..), Minutes(..))
+import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
+import Effect.Now (nowDateTime)
 import KSF.Api.Entitlements (PaywallOpening)
+import KSF.Helpers as Helpers
 import KSF.Sentry as Sentry
 import KSF.Spinner (loadingSpinner)
 import KSF.User as User
@@ -23,6 +31,8 @@ import React.Basic.Hooks (Component, component, useEffect, useState, useState', 
 import React.Basic.Hooks as React
 import Routing.PushState (PushStateInterface)
 
+type Setter a = a -> Effect Unit
+type Modifier a = (a -> a) -> Effect Unit
 type Props = {}
 type Product = { name :: String, label :: String, selected :: Boolean }
 type Products = Array Product
@@ -40,7 +50,14 @@ initialProducts =
 
 paywall :: PushStateInterface -> Sentry.Logger -> Component Props
 paywall _router _logger = do
+  rightNow <- nowDateTime
+  let initialDate = date rightNow
+      initialTime = setMillisecond (millisecond Helpers.midnight)
+                    <<< setSecond (second Helpers.midnight)
+                    $ time rightNow
   component "Paywall" \ {} -> React.do
+    startDate /\ setStartDate <- useState' initialDate
+    startTime /\ setStartTime <- useState' initialTime
     days     /\ setDays     <- useState' 0
     hours    /\ setHours    <- useState' 0
     minutes  /\ setMinutes  <- useState' 0
@@ -52,7 +69,7 @@ paywall _router _logger = do
         liftEffect <<< setOpenings <<< Just =<< User.getPaywallOpenings
       pure $ Aff.launchAff_ $ Aff.killFiber (error "component closed") fiber
     let
-      selection = map _.name $ filter _.selected products
+      selectedProducts = map _.name $ filter _.selected products
       deletionHandler :: Int -> EventHandler
       deletionHandler id = handler_ $ Aff.launchAff_ $ do
         User.deletePaywallOpening id
@@ -62,26 +79,40 @@ paywall _router _logger = do
         map _{ selected = true }
       submitHandler :: EventHandler
       submitHandler = capture_ $ Aff.launchAff_ $ do
-        User.openPaywall days hours minutes selection
+        User.openPaywall
+          (DateTime startDate startTime)
+          (Days $ toNumber days)
+          (Hours $ toNumber hours)
+          (Minutes $ toNumber minutes)
+          selectedProducts
         liftEffect $ setEra (_ + 1)
     pure $ DOM.form
       { children:
         [ DOM.h1_ [ DOM.text "Inställningar för betalvägg" ]
         , DOM.hr {}
         , DOM.h2_ [ DOM.text "Öppna betalvägg" ]
-        , renderDays     days     setDays
-        , renderHours    hours    setHours
-        , renderMinutes  minutes  setMinutes
+        , DOM.div_
+            [ DOM.text "från "
+            , renderStartDate startDate startDate setStartDate
+            , DOM.text "klockan "
+            , renderStartTime startTime setStartTime
+            ]
+        , DOM.div_
+            [ DOM.text "för "
+            , renderDays     days     setDays
+            , renderHours    hours    setHours
+            , renderMinutes  minutes  setMinutes
+            ]
         , renderProducts products setProducts
         , DOM.button
             { children: [ DOM.text "Alla" ]
             , onClick: selectAllHandler
-            , disabled: length selection == length products
+            , disabled: length selectedProducts == length products
             }
         , DOM.button
             { children: [ DOM.text "Skicka" ]
             , type: "submit"
-            , disabled: days + hours + minutes == 0 || null selection
+            , disabled: days + hours + minutes == 0 || null selectedProducts
             }
         , DOM.hr {}
         , DOM.h2_ [ DOM.text "Just nu öppna betalväggar" ]
@@ -90,8 +121,8 @@ paywall _router _logger = do
       , onSubmit: submitHandler
       }
 
-setNumber :: Int -> (Int -> Effect Unit) -> EventHandler
-setNumber max setter = handler targetValue \value ->
+setInt :: Int -> Setter Int -> EventHandler
+setInt max setter = handler targetValue \value ->
   maybe (pure unit) setter (value >>= fromString >>= handleBounds)
   where
     handleBounds n
@@ -99,14 +130,50 @@ setNumber max setter = handler targetValue \value ->
       | n > max   = Just max
       | otherwise = Just n
 
-renderDays :: Int -> (Int -> Effect Unit) -> JSX
+renderStartDate :: Date -> Date -> Setter Date -> JSX
+renderStartDate today startDate setStartDate =
+  DatePicker.datePicker
+    { onChange: (=<<) $ maybe (pure unit) setStartDate
+    , className: "paywall__datepicker"
+    , value: Just startDate
+    , format: "d.M.yyyy"
+    , required: true
+    , minDate: Just today
+    , maxDate: Nothing
+    , disabled: false
+    , locale: "sv-FI"
+    }
+
+renderStartTime :: Time -> Setter Time -> JSX
+renderStartTime startTime setStartTime =
+  let
+    mkSetter :: forall a . BoundedEnum a => (a -> Time -> Time) -> Setter Int
+    mkSetter f = maybe (pure unit) (setStartTime <<< flip f startTime) <<< toEnum
+  in
+    DOM.span_
+      [ DOM.input
+          { type: "number"
+          , value: (show (fromEnum (hour startTime)))
+          , onChange: setInt 23 $ mkSetter setHour
+          , style: DOM.css { width: "3rem" }
+          }
+      , DOM.text ":"
+      , DOM.input
+          { type: "number"
+          , value: (show (fromEnum (minute startTime)))
+          , onChange: setInt 59 $ mkSetter setMinute
+          , style: DOM.css { width: "3rem" }
+          }
+      ]
+
+renderDays :: Int -> Setter Int -> JSX
 renderDays days setDays =
   DOM.label
     { children:
         [ DOM.input
             { type: "number"
             , value: show days
-            , onChange: setNumber 365 setDays
+            , onChange: setInt 364 setDays
             , style: DOM.css { width: "3rem" }
             }
         , DOM.text " dagar"
@@ -114,14 +181,14 @@ renderDays days setDays =
       , style: DOM.css { marginRight: "1rem" }
     }
 
-renderHours :: Int -> (Int -> Effect Unit) -> JSX
+renderHours :: Int -> Setter Int -> JSX
 renderHours hours setHours =
   DOM.label
     { children:
         [ DOM.input
             { type: "number"
             , value: show hours
-            , onChange: setNumber 23 setHours
+            , onChange: setInt 23 setHours
             , style: DOM.css { width: "3rem" }
             }
         , DOM.text " timmar"
@@ -129,14 +196,14 @@ renderHours hours setHours =
       , style: DOM.css { marginRight: "1rem" }
     }
 
-renderMinutes :: Int -> (Int -> Effect Unit) -> JSX
+renderMinutes :: Int -> Setter Int -> JSX
 renderMinutes minutes setMinutes =
   DOM.label
     { children:
         [ DOM.input
             { type: "number"
             , value: show minutes
-            , onChange: setNumber 59 setMinutes
+            , onChange: setInt 59 setMinutes
             , style: DOM.css { width: "3rem" }
             }
         , DOM.text " minuter"
@@ -151,11 +218,8 @@ toggleProduct name products =
     let modify p = p { selected = not p.selected }
     modifyAt index modify products
 
-renderProducts
-  :: Products
-  -> ((Products -> Products) -> Effect Unit)
-  -> JSX
-renderProducts products setProducts =
+renderProducts :: Products -> Modifier Products -> JSX
+renderProducts products modifyProducts =
   DOM.dl
     { children:
         DOM.dt_ [ DOM.text "Markera var du vill öppna betalväggen"] : map renderProduct products
@@ -170,7 +234,7 @@ renderProducts products setProducts =
                   { type: "checkbox"
                   , value: name
                   , checked: selected
-                  , onChange: handler_ $ setProducts (toggleProduct name)
+                  , onChange: handler_ $ modifyProducts (toggleProduct name)
                   }
               , DOM.text label
               ]
