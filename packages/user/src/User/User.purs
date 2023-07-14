@@ -765,12 +765,12 @@ getPackages = Bottega.getPackages
 
 getPaywallOpenings :: Aff (Array PaywallOpening)
 getPaywallOpenings =
-  requireToken >>= Persona.getPaywallOpenings
+  Persona.getPaywallOpenings =<< requireToken
 
 openPaywall :: AllowEntitlementsQuery -> Aff Unit
 openPaywall query =
-  requireToken >>= Persona.openPaywall query
+  Persona.openPaywall query =<< requireToken
 
 deletePaywallOpening :: Int -> Aff Unit
 deletePaywallOpening id =
-  requireToken >>= Persona.deletePaywallOpening id
+  Persona.deletePaywallOpening id =<< requireToken
