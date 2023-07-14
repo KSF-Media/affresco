@@ -31,8 +31,6 @@ import React.Basic.Hooks (Component, component, useEffect, useState, useState', 
 import React.Basic.Hooks as React
 import Routing.PushState (PushStateInterface)
 
-type Setter a = a -> Effect Unit
-type Modifier a = (a -> a) -> Effect Unit
 type Props = {}
 type Product = { name :: String, label :: String, selected :: Boolean }
 type Products = Array Product
@@ -116,7 +114,7 @@ paywall _router _logger = do
       , onSubmit: submitHandler
       }
 
-renderStartAt :: String -> String -> Setter String -> JSX
+renderStartAt :: String -> String -> (String -> Effect Unit) -> JSX
 renderStartAt min startAt setStartAt =
   DOM.span_
     [ DOM.text "från "
@@ -129,7 +127,7 @@ renderStartAt min startAt setStartAt =
     , DOM.text " (UTC)"
     ]
 
-renderEndAt :: String -> String -> Setter String -> JSX
+renderEndAt :: String -> String -> (String -> Effect Unit) -> JSX
 renderEndAt min endAt setEndAt =
   DOM.span_
     [ DOM.text " till "
@@ -149,7 +147,7 @@ toggleProduct name products =
     let modify p = p { selected = not p.selected }
     modifyAt index modify products
 
-renderProducts :: Products -> Modifier Products -> JSX
+renderProducts :: Products -> ((Products -> Products) -> Effect Unit) -> JSX
 renderProducts products modifyProducts =
   DOM.dl
     { children:
