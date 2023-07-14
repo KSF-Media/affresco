@@ -96,7 +96,7 @@ paywall _router _logger = do
         , DOM.hr {}
         , DOM.h2_ [ DOM.text "Öppna betalvägg" ]
         , renderStartAt initialDateTimeString startAt setStartAt
-        , renderEndAt initialDateTimeString endAt setEndAt
+        , renderEndAt startAt endAt setEndAt
         , renderProducts products setProducts
         , DOM.button
             { children: [ DOM.text "Alla" ]
