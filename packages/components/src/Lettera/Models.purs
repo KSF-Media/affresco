@@ -496,6 +496,7 @@ data CategoryType
   | CategoryTag
 
 derive instance eqCategoryType :: Eq CategoryType
+derive instance ordCategoryType :: Ord CategoryType
 
 toString :: CategoryType -> String
 toString Feed = "feed"
@@ -514,6 +515,13 @@ instance categoryTypeDecodeJson :: DecodeJson CategoryType where
       "prerendered" -> Right Prerendered
       "tag"         -> Right CategoryTag
       _             -> Left $ UnexpectedValue json
+
+instance categoryTypeEncodeJson :: EncodeJson CategoryType where
+  encodeJson Feed = encodeJson "feed"
+  encodeJson Webview = encodeJson "webview"
+  encodeJson Link = encodeJson "link"
+  encodeJson Prerendered = encodeJson "prerendered"
+  encodeJson CategoryTag = encodeJson "tag"
 
 newtype CategoryLabel = CategoryLabel String
 derive instance newtypeCategoryLabel :: Newtype CategoryLabel _
