@@ -80,4 +80,4 @@ alertView alert =
     [ Alert.alert alert ]
 
 footerView :: JSX
-footerView = Footer.footer {}
+footerView = Footer.render

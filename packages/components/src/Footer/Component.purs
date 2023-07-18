@@ -2,31 +2,12 @@ module KSF.Footer.Component where
 
 import KSF.Icons (papers)
 import React.Basic (JSX)
-import React.Basic.Classic (createComponent, make)
-import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 
-type Self = React.Self Props {}
 type Props = {}
 
-jsComponent :: React.Component Props
-jsComponent = component
-
-component :: React.Component Props
-component = createComponent "Footer"
-
-reactComponent :: React.ReactComponent {}
-reactComponent =
-  React.toReactComponent (\_ -> {}) component { render, initialState: {} }
-
-footer :: Props -> JSX
-footer = make component
-  { initialState: {}
-  , render
-  }
-
-render :: Self -> JSX
-render _ =
+render :: JSX
+render =
   DOM.div
     { className: "footer--container"
     , children:
