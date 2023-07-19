@@ -3,13 +3,9 @@ module KSF.Alert.Component where
 import Prelude
 
 import React.Basic (JSX)
-import React.Basic.Classic (make)
-import React.Basic.Classic as React
-import React.Basic.DOM as JSX
+import React.Basic.DOM as DOM
 
 newtype Level = Level String
-
-type Self = React.Self Props {}
 
 danger :: Level
 danger = Level "danger"
@@ -31,31 +27,18 @@ type Alert =
 
 type Props = Alert
 
-jsComponent :: React.Component Props
-jsComponent = component
-
-component :: React.Component Props
-component = React.createComponent "Alert"
-
-alert :: Props -> JSX
-alert = make component
-  { initialState: {}
-  , render
-  }
-
-
-render :: Self -> JSX
-render { props: alert_ } =
-  JSX.div
-    { className: "alert" <> " " <> alertLevelClass alert_.level
+render :: Props -> JSX
+render props =
+  DOM.div
+    { className: "alert" <> " " <> alertLevelClass props.level
     , children:
-        [ JSX.div
+        [ DOM.div
             { className: "alert__title"
-            , children: [ JSX.text alert_.title ]
+            , children: [ DOM.text props.title ]
             }
-        , JSX.div
+        , DOM.div
             { className: "alert__message"
-            , children: [ JSX.text alert_.message ]
+            , children: [ DOM.text props.message ]
             }
         ]
     }

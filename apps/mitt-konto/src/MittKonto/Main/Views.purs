@@ -85,7 +85,7 @@ navbarWrapper router = do
 alertView :: Alert -> JSX
 alertView alert =
   Helpers.classy DOM.div "mitt-konto--alert"
-    [ Alert.alert alert ]
+    [ Alert.render alert ]
 
 footerView :: JSX
 footerView = Footer.render
