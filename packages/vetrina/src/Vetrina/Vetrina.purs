@@ -122,7 +122,6 @@ component = do
       case state.purchaseState of
         PurchaseFailed _    -> stop
         PurchaseCompleted _ -> stop
-        NewPurchase         -> stop
         _                   -> pure unit
       pure $ Aff.launchAff_ $ killOrderPoller state
 
