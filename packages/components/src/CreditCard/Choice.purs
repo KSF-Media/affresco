@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import KSF.Grid as Grid
 import KSF.InputField as InputField
-import KSF.CreditCard.Menu (menu) as Menu
+import KSF.CreditCard.Menu as Menu
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
@@ -29,29 +29,32 @@ type Props =
   }
 
 component :: Component Props
-component = React.component "choice" $ \props -> React.do
-  chosenCard /\ setChosenCard <- useState' Nothing
-  validationError /\ setValidationError <- useState' Nothing
-  pure $ render props chosenCard setChosenCard validationError setValidationError
+component = do
+  menuComponent <- Menu.component
+  React.component "choice" $ \props -> React.do
+    chosenCard /\ setChosenCard <- useState' Nothing
+    validationError /\ setValidationError <- useState' Nothing
+    menuView <- pure $ menuComponent
+      { creditCards: props.creditCards
+      , onSelect: setChosenCard <<< Just
+      }
+    pure $ render props.onSubmit chosenCard validationError setValidationError menuView
 
 render
-  :: Props
+  :: (CreditCard -> Effect Unit)
   -> Maybe CreditCard
-  -> (Maybe CreditCard -> Effect Unit)
   -> Maybe String
   -> (Maybe String -> Effect Unit)
   -> JSX
-render { creditCards, onSubmit } chosenCard setChosenCard validationError setValidationError =
+  -> JSX
+render onSubmit chosenCard validationError setValidationError menuView =
   DOM.div
     { className: "credit-card-choice--form-wrapper"
     , children: [ DOM.form
                     { onSubmit: handler preventDefault $ (\_ -> submitForm chosenCard)
                     , className: "credit-card-choice--form"
                     , children: [ description
-                                , Menu.menu
-                                    { creditCards: creditCards
-                                    , onSelect: setChosenCard <<< Just
-                                    }
+                                , menuView
                                 ]
                         `snoc` foldMap InputField.errorMessage validationError
                         `snoc` DOM.div
