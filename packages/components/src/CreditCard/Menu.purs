@@ -4,7 +4,7 @@ import Prelude
 
 import Bottega.Models (CreditCard)
 import Effect (Effect)
-import KSF.CreditCard.Menu.Item (item) as CreditCard
+import KSF.CreditCard.Menu.Item as CreditCard
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component)
@@ -16,19 +16,19 @@ type Props =
   }
 
 component :: Component Props
-component = React.component "menu" $ pure <<< render
+component = do
+  creditCardMenuItemComponent <- CreditCard.component
+  React.component "menu" $ \props -> React.do
+    let creditCardMenuItem onSelect creditCard =
+          creditCardMenuItemComponent { creditCard, onClick: onSelect creditCard }
+        creditCardMenuItems = map
+          (creditCardMenuItem props.onSelect)
+          props.creditCards
+    pure $ render creditCardMenuItems
 
-render
-  :: Props
-  -> JSX
-render { creditCards, onSelect } =
+render :: Array JSX -> JSX
+render creditCardMenuItems =
   DOM.div
     { className: "credit-card-menu"
-    , children:  map creditCardMenuItem creditCards
+    , children:  creditCardMenuItems
     }
-  where
-    creditCardMenuItem :: CreditCard -> JSX
-    creditCardMenuItem creditCard = CreditCard.item
-      { creditCard: creditCard
-      , onClick: onSelect creditCard
-      }

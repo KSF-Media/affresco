@@ -1,55 +1,61 @@
 module KSF.CreditCard.Menu.Item where
 
-import Prelude (Unit, ($), (<>), show)
+import Prelude (Unit, ($), (<>), pure, show)
 
 import Bottega.Models (CreditCard, CreditCardId(..))
 import Data.String.CodePoints (splitAt)
 import Effect (Effect)
 import React.Basic (JSX)
-import React.Basic.Classic (make)
-import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events (handler_)
+import React.Basic.Hooks (Component)
+import React.Basic.Hooks as React
 
-type Self = React.Self Props State
+-- type Self = React.Self Props State
 
-type State = { selected :: Boolean }
+-- type State = { selected :: Boolean }
 
 type Props =
   { creditCard :: CreditCard
   , onClick :: Effect Unit
   }
 
-item :: Props -> JSX
-item = make component { initialState, render }
+-- item :: Props -> JSX
+-- item = make component { initialState, render }
 
-component :: React.Component Props
-component = React.createComponent "item"
+-- component :: React.Component Props
+-- component = React.createComponent "item"
 
-initialState :: State
-initialState = { selected: false }
+component :: Component Props
+component = React.component "item" $ \props -> React.do
+  pure $ render props
 
-render :: Self -> JSX
-render { props: { creditCard, onClick } } = DOM.label
-                { className: "credit-card-menu-item"
-                , children: [ DOM.input
-                                { type: "radio"
-                                , name: "credit-card-menu-item--selection"
-                                , onClick: handler_ $ onClick
-                                , value: creditCardId creditCard.id
-                                }
-                            , DOM.div
-                                { className: "credit-card-menu-item--radio-button"
-                                , id: creditCardId creditCard.id
-                                , children:
-                                    [ DOM.div { className: "credit-card-menu-item--radio-button_checked" } ]
-                                }
-                            , DOM.div_
-                                [ number creditCard.maskedPan
-                                , expiryDate creditCard.expiryDate
-                                ]
-                            ]
-                }
+-- initialState :: State
+-- initialState = { selected: false }
+
+render :: Props -> JSX
+render { creditCard, onClick } =
+  DOM.label
+    { className: "credit-card-menu-item"
+    , children:
+        [ DOM.input
+            { type: "radio"
+            , name: "credit-card-menu-item--selection"
+            , onClick: handler_ $ onClick
+            , value: creditCardId creditCard.id
+            }
+        , DOM.div
+            { className: "credit-card-menu-item--radio-button"
+            , id: creditCardId creditCard.id
+            , children:
+                [ DOM.div { className: "credit-card-menu-item--radio-button_checked" } ]
+            }
+        , DOM.div_
+            [ number creditCard.maskedPan
+            , expiryDate creditCard.expiryDate
+            ]
+        ]
+    }
   where
     creditCardId :: CreditCardId -> String
     creditCardId (CreditCardId id) = show id
