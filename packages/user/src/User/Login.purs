@@ -565,7 +565,7 @@ someLoginButton { className, description, onClick } =
   DOM.div
   { className: className
   , children:
-    [ Button.button
+    [ Button.render
         { description
         , destination: Nothing
         , onClick
