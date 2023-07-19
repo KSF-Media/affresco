@@ -92,7 +92,7 @@ component router logger = do
       DOM.div
         { className: "mitt-konto--cancel-subscription-icon-container"
         , children:
-            [ IconAction.iconAction
+            [ IconAction.render
                 { iconClassName: "mitt-konto--cancel-subscription-icon"
                 , description: "Avsluta din prenumeration"
                 , onClick: IconAction.Href $ "https://form.jotform.com/221793422462051"
