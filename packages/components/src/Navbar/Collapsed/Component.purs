@@ -3,30 +3,17 @@ module KSF.Navbar.Collapsed.Component where
 import Prelude
 
 import React.Basic (JSX)
-import React.Basic.Classic (make)
-import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 
 data Visibility = Visible | Hidden
-
-type Self = React.Self Props {}
 
 type Props =
   { visibility :: Visibility
   , navItems :: Array JSX
   }
 
-component :: React.Component Props
-component = React.createComponent "CollapsedNav"
-
-collapsed :: Props -> JSX
-collapsed = make component
-  { initialState: {}
-  , render
-  }
-
-render :: Self -> JSX
-render { props } =
+render :: Props -> JSX
+render props =
   DOM.div
     { className: "collapsed-nav--container"
     , style: DOM.css

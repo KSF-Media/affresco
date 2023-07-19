@@ -14,17 +14,16 @@ import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)
 import KSF.Navbar.Collapsed.Component as Collapsed
 import KSF.Paper (Paper(..))
 import KSF.User (User)
-import React.Basic.Classic (JSX, make)
-import React.Basic.Classic as React
+import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events as Event
+import React.Basic.Hooks (Component, useState, (/\))
+import React.Basic.Hooks as React
 
 foreign import icons ::
   { signOut :: String
   , phone :: String
   }
-
-type Self = React.Self Props State
 
 type Props =
   { paper :: Paper
@@ -56,48 +55,47 @@ fromJSProps jsProps =
         "JUNIOR" -> JUNIOR
         _        -> KSF
 
-type State =
-  { collapsedNavVisibility :: Visibility  }
+component :: Component Props
+component = React.component "Navbar" $ \ props -> React.do
+  collapsedNavVisibility /\ modifyCollapsedNavVisibility <- useState Hidden
+  let collapsedNavJSX = collapsedNav props collapsedNavVisibility modifyCollapsedNavVisibility
+  pure $ render props collapsedNavJSX modifyCollapsedNavVisibility
 
-initialState :: State
-initialState = { collapsedNavVisibility: Hidden }
-
-jsComponent :: React.ReactComponent JSProps
-jsComponent = React.toReactComponent fromJSProps component { render }
-
-component :: React.Component Props
-component = React.createComponent "Navbar"
-
-navbar :: Props -> JSX
-navbar = make component
-  { initialState, render }
-
-render :: Self -> JSX
-render self =
+render
+  :: Props
+  -> JSX
+  -> ((Visibility -> Visibility) -> Effect Unit)
+  -> JSX
+render props collapsedNavJSX modifyCollapsedNavVisibility =
   DOM.div
     { className: "nav--navbars"
     , children:
-        [ fullNav self
-        , hamburgerNav self
-        , collapsedNav self
+        [ fullNav props modifyCollapsedNavVisibility
+        , hamburgerNav props modifyCollapsedNavVisibility
+        , collapsedNavJSX
         ]
     }
 
 -- | Full width navbar
-fullNav :: Self -> JSX
-fullNav self@{ props } =
+fullNav
+  :: Props
+  -> ((Visibility -> Visibility) -> Effect Unit)
+  -> JSX
+fullNav props modifyCollapsedNavVisibility =
   DOM.div
     { className: "nav--nav-container"
     , children:
         [ paperLogo props.paper
         , fromMaybe needHelp props.specialHelp
-        , showUser self
-        , logoutButton self
+        , showUser props
+        , logoutButton props modifyCollapsedNavVisibility
         ]
     }
 
-showUser :: Self -> JSX
-showUser { props: { activeUser } } =
+showUser
+  :: Props
+  -> JSX
+showUser { activeUser } =
   foldMap displayUser activeUser
   where
     displayUser user =
@@ -112,8 +110,11 @@ showUser { props: { activeUser } } =
             ]
         }
 
-logoutButton :: Self -> JSX
-logoutButton self@{ props: { activeUser } } =
+logoutButton
+  :: Props
+  -> ((Visibility -> Visibility) -> Effect Unit)
+  -> JSX
+logoutButton { activeUser, logout } modifyCollapsedNavVisibility =
   foldMap button activeUser
   where
     button _user =
@@ -126,29 +127,41 @@ logoutButton self@{ props: { activeUser } } =
             ]
         }
     onLogout = do
-      self.props.logout
-      self.setState _ { collapsedNavVisibility = Hidden }
+      logout
+      modifyCollapsedNavVisibility (const Hidden)
 
 -- | Narrow navbar with hamburger button
-hamburgerNav :: Self -> JSX
-hamburgerNav self@{ props } =
+hamburgerNav
+  :: Props
+  -> ((Visibility -> Visibility) -> Effect Unit)
+  -> JSX
+hamburgerNav props modifyCollapsedNavVisibility =
   DOM.div
     { className: "nav--hamburger-container"
     , children:
         [ paperLogo props.paper
-        , hamburgerButton self
+        , hamburgerButton modifyCollapsedNavVisibility
         ]
     }
 
 -- | Items of hamburger nav
-collapsedNav :: Self -> JSX
-collapsedNav self =
-  Collapsed.collapsed
-    { visibility: self.state.collapsedNavVisibility
-    , navItems: [ logoutButton self, needHelp ]
+collapsedNav
+  :: Props
+  -> Visibility
+  -> ((Visibility -> Visibility) -> Effect Unit)
+  -> JSX
+collapsedNav props collapsedNavVisibility modifyCollapsedNavVisibility =
+  Collapsed.render
+    { visibility: collapsedNavVisibility
+    , navItems:
+        [ logoutButton props modifyCollapsedNavVisibility
+        , needHelp
+        ]
     }
 
-paperLogo :: Paper -> JSX
+paperLogo
+  :: Paper
+  -> JSX
 paperLogo paper =
   DOM.img { className: "nav--paper-logo", src: paperLogoUrl paper }
 
@@ -165,11 +178,13 @@ needHelp =
       formatMailtoAnchorTag :: String -> JSX
       formatMailtoAnchorTag email = DOM.a { href: "mailto:" <> email, children: [ DOM.text email ] }
 
-hamburgerButton :: Self -> JSX
-hamburgerButton self =
+hamburgerButton
+  :: ((Visibility -> Visibility) -> Effect Unit)
+  -> JSX
+hamburgerButton modifyCollapsedNavVisibility =
   DOM.div
     { className: "nav--hamburger-button"
-    , onClick: Event.handler_ $ self.setState _ { collapsedNavVisibility = negateVisibility self.state.collapsedNavVisibility }
+    , onClick: Event.handler_ $ modifyCollapsedNavVisibility negateVisibility
     , children: replicate 3 hamburgerStripe
     }
   where
