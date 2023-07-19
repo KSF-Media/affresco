@@ -17,7 +17,7 @@ import Effect.Class (liftEffect)
 import Effect.Exception (error)
 import KSF.Api.Subscription (Subsno)
 import KSF.AsyncWrapper as AsyncWrapper
-import KSF.CreditCard.Choice (choice) as Choice
+import KSF.CreditCard.Choice as Choice
 import KSF.CreditCard.Register (render, scaRequired) as Register
 import KSF.Sentry as Sentry
 import KSF.User (getCreditCardRegister, registerCreditCardFromExisting) as User
@@ -73,6 +73,7 @@ data UpdateState
 creditCardUpdateView :: Component Props
 creditCardUpdateView = do
   closed <- AVar.empty
+  creditCardChoiceComponent <- Choice.component
   component "CreditCardUpdateView" \props@{ creditCards, logger } -> React.do
     state /\ setState <- useState initialState
     let self = { state, setState, props}
@@ -93,7 +94,12 @@ creditCardUpdateView = do
       pure do
         _ <- AVar.tryPut unit closed
         pure unit
-    pure $ render self closed
+    creditCardChoiceView <- pure $ creditCardChoiceComponent
+      { creditCards
+      , onSubmit: \creditCard -> Aff.launchAff_ $ registerCreditCard self closed creditCard
+      , onCancel: onCancel self
+      }
+    pure $ render self creditCardChoiceView
 
 initialState :: State
 initialState =
@@ -104,18 +110,13 @@ initialState =
   , scaShown: false
   }
 
-render :: Self -> AVar Unit -> JSX
-render self@{ setState, state: { asyncWrapperState, updateState }, props: { creditCards } } closed =
+render :: Self -> JSX -> JSX
+render { setState, state: { asyncWrapperState, updateState } } creditCardChoiceView =
   asyncWrapper $ DOM.div
     { className: "credit-card-update--container"
     , children:
         [ case updateState of
-            ChooseCreditCard       -> Choice.choice
-                                        { creditCards: creditCards
-                                        , onSubmit: \creditCard -> Aff.launchAff_ $ registerCreditCard self closed creditCard
-                                        , onCancel: onCancel self
-                                        }
-
+            ChooseCreditCard -> creditCardChoiceView
             RegisterCreditCard -> Register.render
             ScaRequired url -> Register.scaRequired url
         ]
