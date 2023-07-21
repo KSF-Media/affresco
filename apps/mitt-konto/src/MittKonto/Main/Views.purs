@@ -31,14 +31,14 @@ import React.Basic.Events (handler)
 import React.Basic.Hooks (Component, component)
 import Routing.PushState (PushStateInterface)
 
+type Props =
+  { state :: Types.State
+  , logout :: Effect Unit
+  , isPersonating :: Boolean
+  }
+
 -- | Navbar with logo, contact info, logout button, language switch, etc.
-navbarWrapper
-  :: PushStateInterface
-  -> Component
-       { state :: Types.State
-       , logout :: Effect Unit
-       , isPersonating :: Boolean
-       }
+navbarWrapper :: PushStateInterface -> Component Props
 navbarWrapper router = do
   navbarComponent <- Navbar.component
   component "NavbarWrapper" $ \ { state, logout, isPersonating } -> pure $ navbarComponent
