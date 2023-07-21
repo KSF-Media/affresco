@@ -5,11 +5,7 @@ import Prelude
 import Data.Array (foldl, (:))
 import Data.Array as Array
 import React.Basic (JSX)
-import React.Basic.Classic (make)
-import React.Basic.Classic as React
 import React.Basic.DOM as DOM
-
-type Self = React.Self Props {}
 
 type Props =
   { definitions :: Array Definition }
@@ -19,14 +15,8 @@ type Definition =
   , description :: Array JSX
   }
 
-component :: React.Component Props
-component = React.createComponent "DescriptionList"
-
-descriptionList :: Props -> JSX
-descriptionList = make component { initialState: {}, render }
-
-render :: Self -> JSX
-render { props: { definitions } } =
+render :: Props -> JSX
+render { definitions } =
   DOM.dl
     { className: "description-list--container"
     , children: foldl mkDescriptionList [] $ map handleEmptyDescriptions definitions

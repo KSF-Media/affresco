@@ -41,7 +41,7 @@ component = do
 
 renderInformationColumn :: Types.Self -> JSX
 renderInformationColumn self@{ props: { now, subscription: sub@{ package, state } } } =
-  (DescriptionList.descriptionList
+  (DescriptionList.render
      { definitions:
          [ { term: "Produkt:"
            , description: DOM.text package.name `cons`
