@@ -94,11 +94,12 @@ creditCardUpdateView = do
       pure do
         _ <- AVar.tryPut unit closed
         pure unit
-    creditCardChoiceView <- pure $ creditCardChoiceComponent
-      { creditCards
-      , onSubmit: \creditCard -> Aff.launchAff_ $ registerCreditCard self closed creditCard
-      , onCancel: onCancel self
-      }
+    let creditCardChoiceView = creditCardChoiceComponent
+                               { creditCards
+                               , onSubmit: Aff.launchAff_ <<<
+                                           registerCreditCard self closed
+                               , onCancel: onCancel self
+                               }
     pure $ render self creditCardChoiceView
 
 initialState :: State

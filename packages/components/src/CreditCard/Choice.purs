@@ -34,10 +34,10 @@ component = do
   React.component "choice" $ \props -> React.do
     chosenCard /\ setChosenCard <- useState' Nothing
     validationError /\ setValidationError <- useState' Nothing
-    menuView <- pure $ menuComponent
-      { creditCards: props.creditCards
-      , onSelect: setChosenCard <<< Just
-      }
+    let menuView = menuComponent
+                   { creditCards: props.creditCards
+                   , onSelect: setChosenCard <<< Just
+                   }
     pure $ render props.onSubmit chosenCard validationError setValidationError menuView
 
 render

@@ -128,12 +128,12 @@ app = do
               setUser $ const Nothing
               nav.pushState (unsafeToForeign {}) "/"
 
-    navbarView <- pure $ navbarComponent
-      { paper: brand
-      , activeUser: user
-      , specialHelp: Nothing
-      , logout
-      }
+    let navbarView = navbarComponent
+                     { paper: brand
+                     , activeUser: user
+                     , specialHelp: Nothing
+                     , logout
+                     }
 
     useEffectOnce do
       let attemptMagicLogin :: Aff.Aff Unit
