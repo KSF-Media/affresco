@@ -49,9 +49,13 @@ class Article extends Component {
     };
     const mostreadReq =
       process.env.LETTERA_URL +
-      `/list/mostread?start=0&limit=10&paper=${this.props.paper}&onlySubscribers=${this.props.paper === "hbl"}`;
-        axios.get(mostreadReq, {headers: headers}).then((res) => {
-      this.setState({ mostReadArticles: res.data });
+      `/list/mostread?start=0&limit=11&paper=${this.props.paper}&onlySubscribers=${this.props.paper === "hbl"}`;
+      axios.get(mostreadReq, {headers: headers}).then((res) => {
+        this.setState(
+          { mostReadArticles:
+            res.data.filter(a => a.uuid != this.props.uuid).slice(0,10)
+          }
+        );
     });
   }
 
