@@ -129,11 +129,11 @@ app = do
               nav.pushState (unsafeToForeign {}) "/"
 
     let navbarView = navbarComponent
-                     { paper: brand
-                     , activeUser: user
-                     , specialHelp: Nothing
-                     , logout
-                     }
+          { paper: brand
+          , activeUser: user
+          , specialHelp: Nothing
+          , logout
+          }
 
     useEffectOnce do
       let attemptMagicLogin :: Aff.Aff Unit

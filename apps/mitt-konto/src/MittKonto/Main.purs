@@ -220,7 +220,6 @@ app = do
         content = if isNothing state.activeUser && needsLogin route
                   then Views.loginView { state, setState } (setUser (Nothing :: Maybe Days)) logger
                   else userContent
-        navbarView :: JSX
         navbarView = navbarComponent { state, logout, isPersonating }
     pure $ render state navbarView (foldMap Elements.loadingIndicator state.loading <> content) isPersonating
 

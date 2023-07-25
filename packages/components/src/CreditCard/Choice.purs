@@ -35,9 +35,9 @@ component = do
     chosenCard /\ setChosenCard <- useState' Nothing
     validationError /\ setValidationError <- useState' Nothing
     let menuView = menuComponent
-                   { creditCards: props.creditCards
-                   , onSelect: setChosenCard <<< Just
-                   }
+          { creditCards: props.creditCards
+          , onSelect: setChosenCard <<< Just
+          }
     pure $ render props.onSubmit chosenCard validationError setValidationError menuView
 
 render

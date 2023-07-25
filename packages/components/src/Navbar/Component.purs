@@ -32,29 +32,6 @@ type Props =
   , logout :: Effect Unit
   }
 
-type JSProps =
-  { paperCode :: String
-  , specialHelp :: Nullable JSX
-  , activeUser :: Nullable User
-  , onLogout :: Effect Unit
-  }
-
-fromJSProps :: JSProps -> Props
-fromJSProps jsProps =
-  { paper
-  , specialHelp: Nullable.toMaybe jsProps.specialHelp
-  , activeUser: Nullable.toMaybe jsProps.activeUser
-  , logout: jsProps.onLogout
-  }
-  where
-    paper =
-      case String.toUpper jsProps.paperCode of
-        "HBL"    -> HBL
-        "ON"     -> ON
-        "VN"     -> VN
-        "JUNIOR" -> JUNIOR
-        _        -> KSF
-
 component :: Component Props
 component = React.component "Navbar" $ \ props -> React.do
   collapsedNavVisibility /\ modifyCollapsedNavVisibility <- useState Hidden

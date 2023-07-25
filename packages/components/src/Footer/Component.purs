@@ -4,8 +4,6 @@ import KSF.Icons (papers)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 
-type Props = {}
-
 render :: JSX
 render =
   DOM.div

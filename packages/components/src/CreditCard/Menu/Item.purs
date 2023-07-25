@@ -1,6 +1,6 @@
 module KSF.CreditCard.Menu.Item where
 
-import Prelude (Unit, ($), (<>), pure, show)
+import Prelude
 
 import Bottega.Models (CreditCard, CreditCardId(..))
 import Data.String.CodePoints (splitAt)
@@ -11,27 +11,14 @@ import React.Basic.Events (handler_)
 import React.Basic.Hooks (Component)
 import React.Basic.Hooks as React
 
--- type Self = React.Self Props State
-
--- type State = { selected :: Boolean }
-
 type Props =
   { creditCard :: CreditCard
   , onClick :: Effect Unit
   }
 
--- item :: Props -> JSX
--- item = make component { initialState, render }
-
--- component :: React.Component Props
--- component = React.createComponent "item"
-
 component :: Component Props
 component = React.component "item" $ \props -> React.do
   pure $ render props
-
--- initialState :: State
--- initialState = { selected: false }
 
 render :: Props -> JSX
 render { creditCard, onClick } =
