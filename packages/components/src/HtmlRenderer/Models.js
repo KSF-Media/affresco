@@ -58,3 +58,10 @@ export function removeAttribImpl(name, node) {
 	delete node.attribs[name];
     return node;
 }
+
+export function removeChildImpl(name, parent) {
+    if (parent && parent.children) {
+        delete parent.children[name];
+    }
+    return parent;
+}

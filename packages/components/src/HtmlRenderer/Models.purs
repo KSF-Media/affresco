@@ -40,12 +40,16 @@ getChildren n = toMaybe $ runFn1 getChildrenImpl n
 
 foreign import setStringAttribImpl :: Fn3 String String Node Node
 foreign import removeAttribImpl :: Fn2 String Node Node
+foreign import removeChildImpl :: Fn2 String Node Node
 
 setStringAttrib :: String -> String -> Node -> Node
 setStringAttrib = runFn3 setStringAttribImpl
 
 removeAttrib :: String -> Node -> Node
 removeAttrib = runFn2 removeAttribImpl
+
+removeChild :: String -> Node -> Node
+removeChild = runFn2 removeChildImpl
 
 -- | Utility to turn a hook into a generic one
 class ToGenericHook h where
