@@ -6,19 +6,24 @@ import           Control.Alt ((<|>))
 import           Data.Date               (Date, adjust)
 import           Data.DateTime           (DateTime (..))
 import           Data.DateTime           as DateTime
+import           Data.Either             (hush)
 import           Data.Enum               (toEnum)
 import           Data.Formatter.DateTime (Formatter, FormatterCommand (..),
                                           format)
 import           Data.Int                (toNumber)
 import           Data.List               (fromFoldable)
-import           Data.Maybe              (Maybe (..), fromJust)
+import           Data.Maybe              (Maybe (..), fromJust, isJust)
 import           Data.String             (Pattern (..))
 import           Data.String             as String
+import           Data.String.Regex       as Regex
 import           Data.Time               (Time (..))
 import           Data.Time.Duration      (Days (..), Hours (..), negateDuration)
+import           Data.UUID               as UUID
 import           Effect                  (Effect)
 import           Effect.Now              as Now
 import           Partial.Unsafe          (unsafePartial)
+
+
 
 foreign import getCurrentTZOffset_ :: Effect Int
 
@@ -117,3 +122,17 @@ getMinStartDate nextDelivery = do
           soonestStart = adjust soonestDuration (DateTime.date now)
           byNextIssue = max <$> soonestStart <*> nextDelivery
       pure $ byNextIssue <|> soonestStart
+
+matchesRegex :: String -> String -> Boolean
+matchesRegex regex str = isJust $ do
+  re <- hush $ Regex.regex regex mempty
+  Regex.match re str
+
+-- This same deterministic function is in Lettera's code
+editorialIdToUuid :: String -> UUID.UUID
+editorialIdToUuid editorialId =
+  UUID.genv5UUID ("https://hblmedia.fi/" <> editorialId) url_namespace
+
+-- Constant defined in the UUIDv5 standard
+url_namespace :: UUID.UUID
+url_namespace = unsafePartial $ fromJust $ UUID.parseUUID "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
