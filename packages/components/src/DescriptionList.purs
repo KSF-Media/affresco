@@ -1,4 +1,4 @@
-module KSF.DescriptionList.Component where
+module KSF.DescriptionList where
 
 import Prelude
 

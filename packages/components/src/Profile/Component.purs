@@ -28,7 +28,7 @@ import Effect.Now as Now
 import KSF.AsyncWrapper (Progress(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CountryDropDown as CountryDropDown
-import KSF.DescriptionList.Component as DescriptionList
+import KSF.DescriptionList as DescriptionList
 import KSF.Grid as Grid
 import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField

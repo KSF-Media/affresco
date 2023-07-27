@@ -1,4 +1,4 @@
-module KSF.Footer.Component where
+module KSF.Footer where
 
 import KSF.Icons (papers)
 import React.Basic (JSX)

@@ -15,9 +15,9 @@ import Data.Nullable (toMaybe)
 import Data.String as String
 import Effect (Effect)
 import Foreign (unsafeToForeign)
-import KSF.Alert.Component (Alert)
-import KSF.Alert.Component as Alert
-import KSF.Footer.Component as Footer
+import KSF.Alert (Alert)
+import KSF.Alert as Alert
+import KSF.Footer as Footer
 import KSF.Navbar.Component as Navbar
 import KSF.User.Cusno as Cusno
 import MittKonto.Main.Helpers as Helpers

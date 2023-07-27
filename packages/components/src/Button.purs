@@ -1,4 +1,4 @@
-module KSF.Button.Component where
+module KSF.Button where
 
 import Prelude
 

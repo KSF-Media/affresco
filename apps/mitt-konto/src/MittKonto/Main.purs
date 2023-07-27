@@ -14,7 +14,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import Effect.Unsafe (unsafePerformEffect)
-import KSF.Alert.Component as Alert
+import KSF.Alert as Alert
 import KSF.Api (AuthScope(..))
 import KSF.Api.Subscription (SubscriptionPaymentMethod(CreditCard))
 import KSF.News as News

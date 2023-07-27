@@ -10,8 +10,8 @@ import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Exception (Error)
-import KSF.Alert.Component (Alert)
-import KSF.Alert.Component as Alert
+import KSF.Alert (Alert)
+import KSF.Alert as Alert
 import KSF.Error as KSF.Error
 import KSF.Spinner as Spinner
 import MittKonto.Main.Types as Types

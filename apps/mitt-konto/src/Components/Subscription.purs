@@ -10,7 +10,7 @@ import Data.Tuple (Tuple(..))
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.Api.Subscription (isSubscriptionExpired)
 import KSF.AsyncWrapper as AsyncWrapper
-import KSF.DescriptionList.Component as DescriptionList
+import KSF.DescriptionList as DescriptionList
 import KSF.Grid as Grid
 import KSF.User as User
 import MittKonto.Main.UserView.Subscription.Elements as Elements

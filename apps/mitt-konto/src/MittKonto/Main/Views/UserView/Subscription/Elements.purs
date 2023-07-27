@@ -23,7 +23,7 @@ import KSF.Api.Subscription (PausedSubscription, SubscriptionPaymentMethod(..), 
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
-import KSF.DescriptionList.Component as DescriptionList
+import KSF.DescriptionList as DescriptionList
 import KSF.Grid as Grid
 import KSF.Helpers (formatDateDots)
 import KSF.JSError as Error

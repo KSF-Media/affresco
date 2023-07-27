@@ -1,4 +1,4 @@
-module KSF.Alert.Component where
+module KSF.Alert where
 
 import Prelude
 
