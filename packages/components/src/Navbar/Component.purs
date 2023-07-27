@@ -5,9 +5,7 @@ import Prelude
 import Data.Array (replicate)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe, fromMaybe)
-import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
-import Data.String as String
 import Effect (Effect)
 import KSF.Icons (papers)
 import KSF.Navbar.Collapsed.Component (Visibility(..), negateVisibility)

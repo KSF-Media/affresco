@@ -3,17 +3,12 @@ module MittKonto.Components.Paywall where
 import Prelude
 
 import Data.Array ((:), filter, findIndex, length, modifyAt)
-import Data.Date (Date)
 import Data.DateTime (DateTime(..), date, time)
-import Data.Enum (class BoundedEnum, fromEnum, toEnum)
 import Data.Foldable (intercalate)
 import Data.Formatter.DateTime (FormatterCommand(..), format)
-import Data.Int (fromString)
 import Data.List (fromFoldable)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (toMaybe)
-import Data.Time (Time, hour, minute, setHour, setMinute)
-import DatePicker.Component as DatePicker
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
