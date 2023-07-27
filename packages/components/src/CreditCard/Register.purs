@@ -7,9 +7,16 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
+import React.Basic.Hooks (Component)
+import React.Basic.Hooks as React
 import Web.HTML (window) as Web.HTML
 import Web.HTML.Window (Window)
 import Web.HTML.Window as Window
+
+type Props = {}
+
+component :: Component Props
+component = React.component "register" $ pure <<< const render
 
 render :: JSX
 render =

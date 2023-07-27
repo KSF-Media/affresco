@@ -4,6 +4,8 @@ import Prelude
 
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.Hooks (Component)
+import React.Basic.Hooks as React
 
 newtype Level = Level String
 
@@ -26,6 +28,9 @@ type Alert =
   }
 
 type Props = Alert
+
+component :: Component Props
+component = React.component "Alert" $ pure <<< render
 
 render :: Props -> JSX
 render props =

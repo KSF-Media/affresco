@@ -17,6 +17,8 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetChecked)
 import React.Basic.Events (handler)
+import React.Basic.Hooks (Component)
+import React.Basic.Hooks as React
 import Record as Record
 
 type PropsRow =
@@ -65,6 +67,10 @@ inputCheckbox props = render $ Record.merge props defaultProps
       , id: ""
       , checkboxFirst: false
       }
+
+
+component :: Component Props
+component = React.component "Checkbox" $ pure <<< render
 
 render :: Props -> JSX
 render props =

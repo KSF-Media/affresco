@@ -1,8 +1,16 @@
 module KSF.Footer.Component where
 
+import Prelude
 import KSF.Icons (papers)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
+import React.Basic.Hooks (Component)
+import React.Basic.Hooks as React
+
+type Props = {}
+
+component :: Component Props
+component = React.component "Footer" $ pure <<< const render
 
 render :: JSX
 render =
