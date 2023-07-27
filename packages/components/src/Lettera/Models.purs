@@ -632,3 +632,4 @@ editorialIdToUuid editorialId =
 --   - https://datatracker.ietf.org/doc/html/rfc4122
 url_namespace :: UUID.UUID
 url_namespace = unsafePartial $ fromJust $ UUID.parseUUID "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
+
