@@ -28,7 +28,7 @@ render { creditCard, onClick } =
         [ DOM.input
             { type: "radio"
             , name: "credit-card-menu-item--selection"
-            , onClick: handler_ $ onClick
+            , onClick: handler_ onClick
             , value: creditCardId creditCard.id
             }
         , DOM.div
