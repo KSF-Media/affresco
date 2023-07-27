@@ -4,8 +4,6 @@ import Prelude
 
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (Component)
-import React.Basic.Hooks as React
 
 data Visibility = Visible | Hidden
 
@@ -13,9 +11,6 @@ type Props =
   { visibility :: Visibility
   , navItems :: Array JSX
   }
-
-component :: Component Props
-component = React.component "Collapsed" $ pure <<< render
 
 render :: Props -> JSX
 render props =

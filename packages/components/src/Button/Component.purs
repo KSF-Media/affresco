@@ -7,8 +7,6 @@ import Effect (Effect)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Events as Event
-import React.Basic.Hooks (Component)
-import React.Basic.Hooks as React
 import Record (merge)
 
 type Props =
@@ -16,9 +14,6 @@ type Props =
   , destination :: Maybe String
   , onClick :: Effect Unit
   }
-
-component :: Component Props
-component = React.component "Button" $ pure <<< render
 
 render :: Props -> JSX
 render props =

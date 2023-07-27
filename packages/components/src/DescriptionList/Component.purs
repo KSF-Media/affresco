@@ -6,8 +6,6 @@ import Data.Array (foldl, (:))
 import Data.Array as Array
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (Component)
-import React.Basic.Hooks as React
 
 type Props =
   { definitions :: Array Definition }
@@ -16,9 +14,6 @@ type Definition =
   { term :: String
   , description :: Array JSX
   }
-
-component :: Component Props
-component = React.component "DescriptionList" $ pure <<< render
 
 render :: Props -> JSX
 render { definitions } =
