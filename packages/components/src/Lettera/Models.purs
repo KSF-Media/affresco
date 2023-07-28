@@ -17,7 +17,7 @@ import Data.Int (round, toNumber)
 import Data.JSDate as JSDate
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe, fromJust)
 import Data.Newtype (class Newtype, un, unwrap)
 import Data.Show.Generic (genericShow)
 import Data.String (toLower)
@@ -27,12 +27,14 @@ import Data.String.Pattern (Pattern(..), Replacement(..))
 import Data.Time.Duration as Duration
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..), swap)
+import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign.Object as Object
 import KSF.Helpers (dateTimeFormatter)
 import KSF.LocalDateTime (LocalDateTime(..), formatLocalDateTime, parseLocalDateTime)
 import KSF.Paper as Paper
+import Partial.Unsafe (unsafePartial)
 import Record (merge, modify)
 import Type.Prelude (Proxy(..))
 
@@ -618,3 +620,16 @@ derive newtype instance ordTag :: Ord Tag
 derive instance newtypeTag :: Newtype Tag _
 
 data Platform = Desktop | Mobile
+
+-- This same deterministic function is in Lettera's code
+editorialIdToUuid :: String -> UUID.UUID
+editorialIdToUuid editorialId =
+  UUID.genv5UUID ("https://hblmedia.fi/" <> editorialId) url_namespace
+
+-- A constant defined in the UUIDv5 standard. Explanations:
+--   - https://stackoverflow.com/questions/10867405/generating-v5-uuid-what-is-name-and-namespace
+--   - https://en.wikipedia.org/wiki/Universally_unique_identifier#Versions_3_and_5_(namespace_name-based)
+--   - https://datatracker.ietf.org/doc/html/rfc4122
+url_namespace :: UUID.UUID
+url_namespace = unsafePartial $ fromJust $ UUID.parseUUID "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
+

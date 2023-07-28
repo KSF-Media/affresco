@@ -6,11 +6,8 @@ import Data.Maybe (fromMaybe)
 import Effect (Effect)
 import KSF.AsyncWrapper as AsyncWrapper
 import MittKonto.Wrappers.Elements (errorWrapper)
-import React.Basic.Classic (JSX, make)
-import React.Basic.Classic as React
+import React.Basic (JSX)
 import React.Basic.DOM as DOM
-
-type Self = React.Self Props State
 
 type Props =
   { actions :: Array JSX
@@ -19,16 +16,8 @@ type Props =
   , containerClass :: String
   }
 
-type State = {}
-
-component :: React.Component Props
-component = React.createComponent "ActionsWrapper"
-
-actionsWrapper :: Props -> JSX
-actionsWrapper = make component { initialState: {}, render }
-
-render :: Self -> JSX
-render self@{ props: { actions, wrapperState, onTryAgain } } =
+render :: Props -> JSX
+render { actions, wrapperState, onTryAgain, containerClass } =
   AsyncWrapper.asyncWrapper
     { wrapperState: wrapperState
     , readyView: actionsContainer actions
@@ -45,4 +34,4 @@ render self@{ props: { actions, wrapperState, onTryAgain } } =
     }
   where
     actionsContainer children =
-      DOM.div { className: self.props.containerClass, children }
+      DOM.div { className: containerClass, children }

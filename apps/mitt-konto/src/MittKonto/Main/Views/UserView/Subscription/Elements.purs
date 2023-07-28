@@ -23,7 +23,7 @@ import KSF.Api.Subscription (PausedSubscription, SubscriptionPaymentMethod(..), 
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.DeliveryReclamation as DeliveryReclamation
-import KSF.DescriptionList.Component as DescriptionList
+import KSF.DescriptionList as DescriptionList
 import KSF.Grid as Grid
 import KSF.Helpers (formatDateDots)
 import KSF.JSError as Error
@@ -36,7 +36,7 @@ import KSF.User as User
 import KSF.Window (clearOpener)
 import MittKonto.Main.UserView.Subscription.Helpers as Helpers
 import MittKonto.Main.UserView.Subscription.Types as Types
-import MittKonto.Wrappers.ActionsWrapper (actionsWrapper) as ActionsWrapper
+import MittKonto.Wrappers.ActionsWrapper as ActionsWrapper
 import MittKonto.Wrappers.Elements (successWrapper)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -147,7 +147,7 @@ subscriptionUpdates :: Types.Self -> JSX
 subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, package } }, state } =
   Grid.row_ [ actionsWrapper ]
   where
-    actionsWrapper = ActionsWrapper.actionsWrapper
+    actionsWrapper = ActionsWrapper.render
       { actions: (if package.digitalOnly then
                    mempty
                  else

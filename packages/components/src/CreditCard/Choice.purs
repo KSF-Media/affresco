@@ -9,15 +9,13 @@ import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import KSF.Grid as Grid
 import KSF.InputField as InputField
-import KSF.CreditCard.Menu (menu) as Menu
+import KSF.CreditCard.Menu as Menu
 import React.Basic (JSX)
-import React.Basic.Classic (make)
-import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
-
-type Self = React.Self Props State
+import React.Basic.Hooks (Component, useState', (/\))
+import React.Basic.Hooks as React
 
 type State =
   { chosenCard :: Maybe CreditCard
@@ -30,32 +28,33 @@ type Props =
   , onCancel :: Effect Unit
   }
 
-choice :: Props -> JSX
-choice = make component
-  { initialState
-  , render
-  }
+component :: Component Props
+component = do
+  menuComponent <- Menu.component
+  React.component "choice" $ \props -> React.do
+    chosenCard /\ setChosenCard <- useState' Nothing
+    validationError /\ setValidationError <- useState' Nothing
+    let menuView = menuComponent
+          { creditCards: props.creditCards
+          , onSelect: setChosenCard <<< Just
+          }
+    pure $ render props.onSubmit chosenCard validationError setValidationError menuView
 
-component :: React.Component Props
-component = React.createComponent "choice"
-
-initialState :: State
-initialState = { chosenCard: Nothing
-               , validationError: Nothing
-               }
-
-render :: Self -> JSX
-render { setState, state: { chosenCard, validationError }, props: { creditCards, onSubmit } } =
+render
+  :: (CreditCard -> Effect Unit)
+  -> Maybe CreditCard
+  -> Maybe String
+  -> (Maybe String -> Effect Unit)
+  -> JSX
+  -> JSX
+render onSubmit chosenCard validationError setValidationError menuView =
   DOM.div
     { className: "credit-card-choice--form-wrapper"
     , children: [ DOM.form
                     { onSubmit: handler preventDefault $ (\_ -> submitForm chosenCard)
                     , className: "credit-card-choice--form"
                     , children: [ description
-                                , Menu.menu
-                                    { creditCards: creditCards
-                                    , onSelect: \creditCard -> setState _ { chosenCard = Just creditCard }
-                                    }
+                                , menuView
                                 ]
                         `snoc` foldMap InputField.errorMessage validationError
                         `snoc` DOM.div
@@ -83,4 +82,4 @@ render { setState, state: { chosenCard, validationError }, props: { creditCards,
 
     submitForm :: Maybe CreditCard -> Effect Unit
     submitForm (Just creditCard) = onSubmit creditCard
-    submitForm Nothing = setState _  { validationError = Just "Välj ett alternativ." }
+    submitForm Nothing = setValidationError $ Just "Välj ett alternativ."
