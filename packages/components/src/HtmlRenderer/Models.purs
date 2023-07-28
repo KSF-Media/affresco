@@ -2,8 +2,9 @@ module KSF.HtmlRenderer.Models where
 
 import Prelude
 
+import Data.Array (any)
 import Data.Function.Uncurried (Fn1, Fn2, Fn3, runFn1, runFn2, runFn3)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn2, EffectFn3, mkEffectFn2, mkEffectFn3)
@@ -125,3 +126,10 @@ toJSGenericHook h =
   , preprocessNode:       toNullable $ mkEffectFn2 <$> h.preprocessNode
   , processNode:          toNullable $ mkEffectFn3 <$> h.processNode
   }
+
+-- | Performs a Depth-First Search (DFS) on the given node and returns `true`
+--   once a children that satisfies the given predicate is found or `false`
+--   once all reachable nodes have been visited and none of them satisfied the
+--   predicate.
+dfs :: (Node -> Boolean) -> Node -> Boolean
+dfs prop node = prop node || maybe false (any (dfs prop)) (getChildren node)
