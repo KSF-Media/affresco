@@ -28,6 +28,7 @@ if (window.article) {
         tags={window.article.tags || []}
         title={window.article.title}
         updateTime={window.article.updateTime}
+        uuid={window.article.uuid}
       />,
       document.getElementById("root")
     );
