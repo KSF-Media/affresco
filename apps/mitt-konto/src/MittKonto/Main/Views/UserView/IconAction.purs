@@ -5,14 +5,10 @@ import Prelude
 import Effect (Effect)
 import Foreign (unsafeToForeign)
 import React.Basic (JSX)
-import React.Basic.Classic (make)
-import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler, handler_)
 import Routing.PushState (PushStateInterface)
-
-type Self = React.Self Props {}
 
 data OnClick
   = Href String
@@ -26,18 +22,9 @@ type Props =
   , router :: PushStateInterface
   }
 
-iconAction :: Props -> JSX
-iconAction = make component
-  { initialState: {}
-  , render
-  }
-
-component :: React.Component Props
-component = React.createComponent "IconAction"
-
-render :: Self -> JSX
-render self =
-  case self.props.onClick of
+render :: Props -> JSX
+render props =
+  case props.onClick of
     Href url -> accountActionAnchor url
     Router path -> routerLink path
     Action _onClick -> accountActionContainer
@@ -46,12 +33,12 @@ render self =
     accountActionContainer =
       DOM.div
         { className: "icon-action--container"
-        , onClick: handler_ case self.props.onClick of
+        , onClick: handler_ case props.onClick of
           Action onClickAction -> onClickAction
           _ -> pure unit
         , children:
-            [ DOM.div { className: self.props.iconClassName }
-            , DOM.div_ [ DOM.text self.props.description ]
+            [ DOM.div { className: props.iconClassName }
+            , DOM.div_ [ DOM.text props.description ]
             ]
         }
 
@@ -64,6 +51,6 @@ render self =
 
     routerLink pathname =
       DOM.div
-        { onClick: handler preventDefault $ const $ self.props.router.pushState (unsafeToForeign {}) pathname
+        { onClick: handler preventDefault $ const $ props.router.pushState (unsafeToForeign {}) pathname
         , children: [ accountActionContainer ]
         }

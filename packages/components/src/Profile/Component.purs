@@ -28,7 +28,7 @@ import Effect.Now as Now
 import KSF.AsyncWrapper (Progress(..))
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CountryDropDown as CountryDropDown
-import KSF.DescriptionList.Component as DescriptionList
+import KSF.DescriptionList as DescriptionList
 import KSF.Grid as Grid
 import KSF.Helpers (formatDateDots)
 import KSF.InputField as InputField
@@ -166,14 +166,14 @@ render props@{ profile: user } now resetField state setState =
           { className: "profile--profile-row"
           , id: "profile--pending-address-change"
           , children:
-              [ DescriptionList.descriptionList { definitions: visiblePendingAddressChanges } ]
+              [ DescriptionList.render { definitions: visiblePendingAddressChanges } ]
           }
     , profileEmail
     , profilePhone
     , DOM.div
         { id: "profile--display"
         , children:
-            [ DescriptionList.descriptionList
+            [ DescriptionList.render
                 { definitions:
                     [ { term: "Kundnummer:", description: [ DOM.text $ Cusno.toString user.cusno ] }
                     ]
@@ -202,7 +202,7 @@ render props@{ profile: user } now resetField state setState =
               ]
           }
         profileEmailEditing = DOM.div_
-          [ DescriptionList.descriptionList
+          [ DescriptionList.render
               { definitions:
                   [ { term: "E-postadress:"
                     , description: [ editEmail props state setState resetField ]
@@ -218,7 +218,7 @@ render props@{ profile: user } now resetField state setState =
               ]
           }
         currentEmail =
-          DescriptionList.descriptionList
+          DescriptionList.render
             { definitions:
                 [ { term: "E-postadress:"
                   , description: [ DOM.text user.email ]
@@ -245,7 +245,7 @@ render props@{ profile: user } now resetField state setState =
               ]
           }
         profilePhoneEditing = DOM.div_
-          [ DescriptionList.descriptionList
+          [ DescriptionList.render
               { definitions:
                   [ { term: "Telefonnummer:"
                     , description: [ editPhone props state setState resetField ]
@@ -261,7 +261,7 @@ render props@{ profile: user } now resetField state setState =
               ]
           }
         currentPhone =
-          DescriptionList.descriptionList
+          DescriptionList.render
             { definitions:
                 [ { term: "Telefonnummer:"
                   , description: [ DOM.text $ fromMaybe "-" $ Nullable.toMaybe user.phone ]
@@ -288,7 +288,7 @@ render props@{ profile: user } now resetField state setState =
               ]
           }
         profileNameEditing = DOM.div_
-          [ DescriptionList.descriptionList
+          [ DescriptionList.render
               { definitions:
                   [ { term: "Namn:"
                     , description: [ editName props state setState resetField ]
@@ -304,7 +304,7 @@ render props@{ profile: user } now resetField state setState =
               ]
           }
         currentName =
-          DescriptionList.descriptionList
+          DescriptionList.render
             { definitions:
                 [ { term: "Namn:"
                   , description: map DOM.text $ mapMaybe toMaybe [ user.firstName, user.lastName ]
@@ -340,7 +340,7 @@ render props@{ profile: user } now resetField state setState =
             pendingChanges = fromMaybe [] $ toMaybe user.pendingAddressChanges
 
         profileAddressEditing = DOM.div_
-          [ DescriptionList.descriptionList
+          [ DescriptionList.render
               { definitions:
                   [ { term: "Permanent adress:"
                     , description: [ editAddress props state setState resetField now ]
@@ -357,7 +357,7 @@ render props@{ profile: user } now resetField state setState =
                 ]
             }
         currentAddress =
-          DescriptionList.descriptionList
+          DescriptionList.render
             { definitions:
                 [ { term: "Permanent adress:"
                   , description: map DOM.text $ fromMaybe [] $ addressArray <$> toMaybe user.address

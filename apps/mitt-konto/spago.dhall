@@ -29,7 +29,6 @@ You can edit this file as you like.
   , "ordered-collections"
   , "prelude"
   , "react-basic"
-  , "react-basic-classic"
   , "react-basic-dom"
   , "react-basic-hooks"
   , "record"

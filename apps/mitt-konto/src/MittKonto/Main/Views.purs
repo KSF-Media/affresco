@@ -2,7 +2,7 @@ module MittKonto.Main.Views
   ( module Views
   , alertView
   , footerView
-  , navbarView
+  , navbarWrapper
   )
   where
 
@@ -15,9 +15,9 @@ import Data.Nullable (toMaybe)
 import Data.String as String
 import Effect (Effect)
 import Foreign (unsafeToForeign)
-import KSF.Alert.Component (Alert)
-import KSF.Alert.Component as Alert
-import KSF.Footer.Component as Footer
+import KSF.Alert (Alert)
+import KSF.Alert as Alert
+import KSF.Footer as Footer
 import KSF.Navbar.Component as Navbar
 import KSF.User.Cusno as Cusno
 import MittKonto.Main.Helpers as Helpers
@@ -28,41 +28,49 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
+import React.Basic.Hooks (Component, component)
 import Routing.PushState (PushStateInterface)
 
+type Props =
+  { state :: Types.State
+  , logout :: Effect Unit
+  , isPersonating :: Boolean
+  }
+
 -- | Navbar with logo, contact info, logout button, language switch, etc.
-navbarView :: Types.Self -> PushStateInterface -> Effect Unit -> Boolean -> JSX
-navbarView { state } router logout isPersonating =
-    Navbar.navbar
-      { paper: state.paper
-      , specialHelp: guard state.adminMode $ state.activeUser *> Just
-        (DOM.div
-           { className: "nav--logout-limpet"
-           , children:
-               [ DOM.a
-                   { onClick: (handler preventDefault $
-                               const $ router.pushState (unsafeToForeign {}) "/betalvägg")
-                   , href: "/betalvägg"
-                   , children: [ DOM.text "Hantera betalvägg" ]
-                   , style: DOM.css { margin: "1rem" }
-                   }
-               , DOM.a
-                   { onClick: (handler preventDefault $
-                               const $ router.pushState (unsafeToForeign {}) "/sök")
-                   , href: "/sök"
-                   , children: [ DOM.text "Sök kund" ]
-                   }
-               ] <>
-               ( fromMaybe [] $ guard isPersonating $
-                 (\user -> [ DOM.div_ [ DOM.strong_ [ DOM.text "Aktiv kund" ] ]
-                           , userLink user
-                           ]) <$> state.activeUser
-               )
-           }
-        )
-      , activeUser: state.activeUser
-      , logout
-      }
+navbarWrapper :: PushStateInterface -> Component Props
+navbarWrapper router = do
+  navbarComponent <- Navbar.component
+  component "NavbarWrapper" $ \ { state, logout, isPersonating } -> pure $ navbarComponent
+    { paper: state.paper
+    , specialHelp: guard state.adminMode $ state.activeUser *> Just
+      (DOM.div
+         { className: "nav--logout-limpet"
+         , children:
+             [ DOM.a
+                 { onClick: (handler preventDefault $
+                             const $ router.pushState (unsafeToForeign {}) "/betalvägg")
+                 , href: "/betalvägg"
+                 , children: [ DOM.text "Hantera betalvägg" ]
+                 , style: DOM.css { margin: "1rem" }
+                 }
+             , DOM.a
+                 { onClick: (handler preventDefault $
+                             const $ router.pushState (unsafeToForeign {}) "/sök")
+                 , href: "/sök"
+                 , children: [ DOM.text "Sök kund" ]
+                 }
+             ] <>
+             ( fromMaybe [] $ guard isPersonating $
+               (\user -> [ DOM.div_ [ DOM.strong_ [ DOM.text "Aktiv kund" ] ]
+                         , userLink user
+                         ]) <$> state.activeUser
+             )
+         }
+      )
+    , activeUser: state.activeUser
+    , logout
+    }
   where
     userLink user =
       DOM.a
@@ -77,7 +85,7 @@ navbarView { state } router logout isPersonating =
 alertView :: Alert -> JSX
 alertView alert =
   Helpers.classy DOM.div "mitt-konto--alert"
-    [ Alert.alert alert ]
+    [ Alert.render alert ]
 
 footerView :: JSX
-footerView = Footer.footer {}
+footerView = Footer.render

@@ -5,7 +5,7 @@ import Prelude
 import Data.Date (Date)
 import Data.Maybe (Maybe)
 import Effect (Effect)
-import KSF.Alert.Component (Alert)
+import KSF.Alert (Alert)
 import KSF.Paper (Paper)
 import KSF.Spinner as Spinner
 import KSF.User (User, SubscriptionPayments)

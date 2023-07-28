@@ -1,7 +1,7 @@
 module MittKonto.Main.UserView.AccountEdit where
 
 import MittKonto.Main.UserView.IconAction as IconAction
-import React.Basic.Classic (JSX)
+import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import Routing.PushState (PushStateInterface)
 
@@ -13,13 +13,13 @@ accountEdit router = DOM.div
   where
     accountEditActions :: Array JSX
     accountEditActions =
-      [ IconAction.iconAction
+      [ IconAction.render
           { iconClassName: passwordChangeClass
           , description: "Byt lösenord"
           , onClick: IconAction.Href "/#lösenord"
           , router
           }
-      , IconAction.iconAction
+      , IconAction.render
           { iconClassName: paymentHistoryClass
           , description: "Fakturor"
           , onClick: IconAction.Router "/fakturor"

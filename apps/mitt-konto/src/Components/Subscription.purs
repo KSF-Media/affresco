@@ -10,7 +10,7 @@ import Data.Tuple (Tuple(..))
 import KSF.Api.Subscription (toString) as Subsno
 import KSF.Api.Subscription (isSubscriptionExpired)
 import KSF.AsyncWrapper as AsyncWrapper
-import KSF.DescriptionList.Component as DescriptionList
+import KSF.DescriptionList as DescriptionList
 import KSF.Grid as Grid
 import KSF.User as User
 import MittKonto.Main.UserView.Subscription.Elements as Elements
@@ -41,7 +41,7 @@ component = do
 
 renderInformationColumn :: Types.Self -> JSX
 renderInformationColumn self@{ props: { now, subscription: sub@{ package, state } } } =
-  (DescriptionList.descriptionList
+  (DescriptionList.render
      { definitions:
          [ { term: "Produkt:"
            , description: DOM.text package.name `cons`

@@ -22,7 +22,7 @@ import KSF.Paper (Paper(..), paperName)
 import KSF.Spinner as Spinner
 import KSF.User (User)
 import KSF.User as User
-import KSF.Navbar.Component (navbar)
+import KSF.Navbar.Component as Navbar
 import Prenumerera.Package (PackageId, fromApiPackage)
 import Prenumerera.Page.Error as Error
 import Prenumerera.Page.Finish as Finish
@@ -87,6 +87,7 @@ app = do
   selectPeriodComponent <- SelectPeriod.component
   paymentComponent <- Payment.component
   finishComponent <- Finish.component
+  navbarComponent <- Navbar.component
 
   component "Prenumerera" \_ -> React.do
     user /\ setUser <- useState Nothing
@@ -127,6 +128,13 @@ app = do
               setUser $ const Nothing
               nav.pushState (unsafeToForeign {}) "/"
 
+    let navbarView = navbarComponent
+          { paper: brand
+          , activeUser: user
+          , specialHelp: Nothing
+          , logout
+          }
+
     useEffectOnce do
       let attemptMagicLogin :: Aff.Aff Unit
           attemptMagicLogin =
@@ -163,7 +171,7 @@ app = do
         _ -> pure unit
       pure $ pure unit
 
-    pure $ renderMain brand logout user $
+    pure $ renderMain navbarView $
       case loading of
         Nothing ->
           case route of
@@ -256,14 +264,9 @@ app = do
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-renderMain :: Paper -> Effect Unit -> Maybe User -> JSX -> JSX
-renderMain brand logout user content =
-  navbar
-    { paper: brand
-    , activeUser: user
-    , specialHelp: Nothing
-    , logout
-    } <>
+renderMain :: JSX -> JSX -> JSX
+renderMain navbar content =
+  navbar <>
   DOM.div
     { className: "ksf-main-container"
     , children: [ content ]

@@ -14,7 +14,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
 import Effect.Now as Now
 import Effect.Unsafe (unsafePerformEffect)
-import KSF.Alert.Component as Alert
+import KSF.Alert as Alert
 import KSF.Api (AuthScope(..))
 import KSF.Api.Subscription (SubscriptionPaymentMethod(CreditCard))
 import KSF.News as News
@@ -33,7 +33,7 @@ import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardU
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
-import MittKonto.Main.Views (alertView, footerView, loginView, navbarView) as Views
+import MittKonto.Main.Views (alertView, footerView, loginView, navbarWrapper) as Views
 import MittKonto.Payment.PaymentAccordion as PaymentAccordion
 import MittKonto.Payment.PaymentDetail as PaymentDetail
 import MittKonto.Payment.Types as Payments
@@ -44,7 +44,7 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState', (/\))
 import React.Basic.Hooks as React
-import Routing.PushState (PushStateInterface, matchesWith, makeInterface)
+import Routing.PushState (matchesWith, makeInterface)
 import Routing.Duplex as Duplex
 
 foreign import sentryDsn_ :: Effect String
@@ -68,6 +68,7 @@ app = do
   timeout <- Timeout.newTimer
   userComponent <- Components.User.component router logger
   paywallComponent <- Components.Paywall.paywall router logger
+  navbarComponent <- Views.navbarWrapper router
 
   let initialState =
         { paper: KSF
@@ -128,8 +129,7 @@ app = do
                 $ Spinner.withSpinner (setState <<< Types.setLoading) attemptMagicLogin
       matchesWith routeParse (const setRoute) router
 
-    let self = { state, setState }
-        -- The user data in the search results isn't quite complete.
+    let -- The user data in the search results isn't quite complete.
         -- We do another fetch to get it all.
         setActive result = case result of
           Left _ -> setState $ Types.setAlert $ Just
@@ -220,15 +220,21 @@ app = do
         content = if isNothing state.activeUser && needsLogin route
                   then Views.loginView { state, setState } (setUser (Nothing :: Maybe Days)) logger
                   else userContent
-    pure $ render self router (foldMap Elements.loadingIndicator state.loading <> content) logout isPersonating
+        navbarView = navbarComponent { state, logout, isPersonating }
+    pure $ render state navbarView (foldMap Elements.loadingIndicator state.loading <> content) isPersonating
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app
 
-render :: Types.Self -> PushStateInterface -> JSX -> Effect Unit -> Boolean -> JSX
-render self@{ state } router content logout isPersonating =
+render
+  :: Types.State
+  -> JSX
+  -> JSX
+  -> Boolean
+  -> JSX
+render state navbar content isPersonating =
   Helpers.classy DOM.div (if isPersonating then "mitt-konto--personating" else "") $
-    [ Views.navbarView self router logout isPersonating
+    [ navbar
     , Helpers.classy DOM.div "mitt-konto--main-container-container"
         [ foldMap Views.alertView state.alert
         , Helpers.classy DOM.div "mitt-konto--main-container"

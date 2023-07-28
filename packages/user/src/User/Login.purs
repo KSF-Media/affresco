@@ -23,7 +23,7 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
-import KSF.Button.Component as Button
+import KSF.Button as Button
 import KSF.InputField as InputField
 import KSF.Paper as Paper
 import KSF.Registration.Component as Registration
@@ -565,7 +565,7 @@ someLoginButton { className, description, onClick } =
   DOM.div
   { className: className
   , children:
-    [ Button.button
+    [ Button.render
         { description
         , destination: Nothing
         , onClick
