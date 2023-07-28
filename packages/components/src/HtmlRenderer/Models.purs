@@ -132,6 +132,4 @@ toJSGenericHook h =
 --   once all reachable nodes have been visited and none of them satisfied the
 --   predicate.
 dfs :: (Node -> Boolean) -> Node -> Boolean
-dfs prop node
-  | prop node = true
-  | otherwise = maybe false (any (dfs prop)) (getChildren node)
+dfs prop node = prop node || maybe false (any (dfs prop)) (getChildren node)
