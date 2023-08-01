@@ -5,7 +5,6 @@ import Additional from "./article-additional";
 import ArticleDetails from "./article-details";
 import Content from "./article-content";
 import Footer from "./footer";
-import RelatedArticles from "./related-articles";
 import Lightbox from "react-image-lightbox";
 import "react-image-lightbox/style.css";
 import { AdvertorialLiftup } from "./advertorial-liftup.js"
@@ -44,11 +43,19 @@ class Article extends Component {
   };
 
   getMostReadArticles() {
+    const headers = {
+      "content-type": "application/json",
+      "Accept": "application/json",
+    };
     const mostreadReq =
       process.env.LETTERA_URL +
-      `/mostread?start=0&limit=10&paper=${this.props.paper}&onlySubscribers=${this.props.paper === "hbl"}`;
-    axios(mostreadReq).then((res) => {
-      this.setState({ mostReadArticles: res.data });
+      `/list/mostread?start=0&limit=11&paper=${this.props.paper}&onlySubscribers=${this.props.paper === "hbl"}`;
+      axios.get(mostreadReq, {headers: headers}).then((res) => {
+        this.setState(
+          { mostReadArticles:
+            res.data.filter(a => a.uuid != this.props.uuid).slice(0,10)
+          }
+        );
     });
   }
 
@@ -64,7 +71,7 @@ class Article extends Component {
 
   render() {
     return (
-      <div className={`article ${this.props.darkModeEnabled ? "darkMode" : ""}`}>
+      <div className={`article ${this.props.darkModeEnabled ? "darkMode" : ""}`} id="HBL">
         {this.state.isImageModalOpen && (
           <Lightbox
             mainSrc={this.state.modalImage + "&width=1200"}
@@ -134,16 +141,6 @@ class Article extends Component {
               queryString={this.props.queryString}
               adsAreShown={this.state.adsAreShown}
             />
-            {this.props.relatedArticles.length > 0 ? (
-              <RelatedArticles
-                relatedArticles={this.props.relatedArticles}
-                queryString={this.props.queryString}
-                darkModeEnabled={this.props.darkModeEnabled}
-                paper={this.props.paper}
-              />
-            ) : (
-              ""
-            )}
             {this.state.adsAreShown && (
                 <AdvertorialLiftup
                   darkModeEnabled={this.props.darkModeEnabled}

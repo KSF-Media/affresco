@@ -1,11 +1,5 @@
 import React, { Component } from "react";
 
-const getBrandMessage = (brand) => {
-  if (brand === "hbl") {
-    return "En obundet liberalt borgerlig tidning";
-  }
-};
-
 const getSiteDomainName = (brand) => {
   switch (brand) {
     case "vn":
@@ -20,7 +14,6 @@ const getSiteDomainName = (brand) => {
 const Footer = (props) => {
   return (
     <div className={"footer"}>
-      <h4 className={"headline"}>{getBrandMessage(props.brandValueName)}</h4>
       <a href={`https://www.${getSiteDomainName(props.brandValueName)}.fi/sida/kontakt`}>
         Ta kontakt
       </a>

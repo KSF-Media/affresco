@@ -73,6 +73,26 @@ dateTimeFormatter =
     , Placeholder "Z"
     ]
 
+-- Used in Expires header
+rfc1123Formatter :: Formatter
+rfc1123Formatter =
+  fromFoldable
+    [ DayOfWeekNameShort
+    , Placeholder ", "
+    , DayOfMonth
+    , Placeholder " "
+    , MonthShort
+    , Placeholder " "
+    , YearFull
+    , Placeholder " "
+    , Hours24
+    , Placeholder ":"
+    , MinutesTwoDigits
+    , Placeholder ":"
+    , SecondsTwoDigits
+    , Placeholder " GMT"
+    ]
+
 formatEur :: Int -> String
 formatEur amountCent =
   let eurString = show $ toNumber amountCent / 100.0

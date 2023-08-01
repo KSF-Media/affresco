@@ -17,7 +17,7 @@ import Data.Int (round, toNumber)
 import Data.JSDate as JSDate
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe, fromJust)
 import Data.Newtype (class Newtype, un, unwrap)
 import Data.Show.Generic (genericShow)
 import Data.String (toLower)
@@ -27,12 +27,14 @@ import Data.String.Pattern (Pattern(..), Replacement(..))
 import Data.Time.Duration as Duration
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..), swap)
+import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Class.Console as Console
 import Foreign.Object as Object
 import KSF.Helpers (dateTimeFormatter)
 import KSF.LocalDateTime (LocalDateTime(..), formatLocalDateTime, parseLocalDateTime)
 import KSF.Paper as Paper
+import Partial.Unsafe (unsafePartial)
 import Record (merge, modify)
 import Type.Prelude (Proxy(..))
 
@@ -156,10 +158,12 @@ type ArticleStubCommon =
   , premium   :: Boolean
   , removeAds :: Boolean
   , shareUrl  :: Maybe String
+  , authors   :: Array Author
   )
 
 type JSArticleStub =
   { publishingTime     :: String
+  , updateTime         :: Maybe String
   , tags               :: Array String
   , articleType        :: String
   , articleTypeDetails :: Maybe ArticleTypeDetails
@@ -168,6 +172,7 @@ type JSArticleStub =
 
 type ArticleStub =
   { publishingTime     :: Maybe LocalDateTime
+  , updateTime         :: Maybe LocalDateTime
   , tags               :: Array Tag
   , articleType        :: ArticleType
   , articleTypeDetails :: Maybe ArticleTypeDetails
@@ -262,10 +267,12 @@ articleToArticleStub a =
   , preamble: a.preamble
   , mainImage: a.mainImage
   , listImage: Nothing
+  , authors: a.authors
   , premium: a.premium
   , removeAds: a.removeAds
   , shareUrl: a.shareUrl
   , publishingTime: a.publishingTime
+  , updateTime: a.updateTime
   , tags: a.tags
   , articleType: a.articleType
   , articleTypeDetails: a.articleTypeDetails
@@ -304,6 +311,7 @@ articleStubToJson = encodeJson
                     <<< modify (Proxy :: Proxy "articleType") (fromMaybe "NyhetStor" <<< flip lookup articleTypes)
                     <<< modify (Proxy :: Proxy "tags") (map unwrap)
                     <<< modify (Proxy :: Proxy "publishingTime") (foldMap formatLocalDateTime)
+                    <<< modify (Proxy :: Proxy "updateTime") (foldMap formatLocalDateTime)
 
 parseArticleWith :: forall a b. DecodeJson b => (b -> Effect a) -> Json -> Effect (Either String a)
 parseArticleWith parseFn articleResponse = do
@@ -343,6 +351,7 @@ parseArticleStubWithoutLocalizing =
   parseArticlePure
     \jsStub -> pure $
                jsStub { publishingTime = parseLocalDateTime jsStub.publishingTime
+                      , updateTime     = parseLocalDateTime jsStub.updateTime
                       , tags           = map Tag jsStub.tags
                       , articleType    = fromMaybe NyhetStor $ lookup jsStub.articleType $ map swap articleTypes
                       }
@@ -379,10 +388,12 @@ parseDateTime :: String -> Maybe DateTime
 parseDateTime = hush <<< unformat dateTimeFormatter
 
 fromJSArticleStub :: JSArticleStub -> Effect ArticleStub
-fromJSArticleStub jsStub@{ uuid, publishingTime, tags, articleType } = do
+fromJSArticleStub jsStub@{ uuid, publishingTime, updateTime, tags, articleType } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
+  localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
   pure jsStub
     { publishingTime = localPublishingTime
+    , updateTime = localUpdateTime
     , tags = map Tag tags
     , articleType = fromMaybe NyhetStor $ lookup articleType $ map swap articleTypes
     }
@@ -487,6 +498,7 @@ data CategoryType
   | CategoryTag
 
 derive instance eqCategoryType :: Eq CategoryType
+derive instance ordCategoryType :: Ord CategoryType
 
 toString :: CategoryType -> String
 toString Feed = "feed"
@@ -505,6 +517,13 @@ instance categoryTypeDecodeJson :: DecodeJson CategoryType where
       "prerendered" -> Right Prerendered
       "tag"         -> Right CategoryTag
       _             -> Left $ UnexpectedValue json
+
+instance categoryTypeEncodeJson :: EncodeJson CategoryType where
+  encodeJson Feed = encodeJson "feed"
+  encodeJson Webview = encodeJson "webview"
+  encodeJson Link = encodeJson "link"
+  encodeJson Prerendered = encodeJson "prerendered"
+  encodeJson CategoryTag = encodeJson "tag"
 
 newtype CategoryLabel = CategoryLabel String
 derive instance newtypeCategoryLabel :: Newtype CategoryLabel _
@@ -586,10 +605,10 @@ categoriesMap =
 newtype Tag = Tag String
 
 uriComponentToTag :: String -> Tag
-uriComponentToTag = Tag <<< String.replaceAll (String.Pattern "-") (String.Replacement " ")
+uriComponentToTag = Tag <<< String.replaceAll (String.Pattern "_") (String.Replacement " ")
 
 tagToURIComponent :: Tag -> String
-tagToURIComponent = String.replaceAll (String.Pattern " ") (String.Replacement "-") <<< un Tag
+tagToURIComponent = String.replaceAll (String.Pattern " ") (String.Replacement "_") <<< un Tag
 
 instance eqTag :: Eq Tag where
   eq (Tag a) (Tag b) = String.toLower a == String.toLower b
@@ -601,3 +620,16 @@ derive newtype instance ordTag :: Ord Tag
 derive instance newtypeTag :: Newtype Tag _
 
 data Platform = Desktop | Mobile
+
+-- This same deterministic function is in Lettera's code
+editorialIdToUuid :: String -> UUID.UUID
+editorialIdToUuid editorialId =
+  UUID.genv5UUID ("https://hblmedia.fi/" <> editorialId) url_namespace
+
+-- A constant defined in the UUIDv5 standard. Explanations:
+--   - https://stackoverflow.com/questions/10867405/generating-v5-uuid-what-is-name-and-namespace
+--   - https://en.wikipedia.org/wiki/Universally_unique_identifier#Versions_3_and_5_(namespace_name-based)
+--   - https://datatracker.ietf.org/doc/html/rfc4122
+url_namespace :: UUID.UUID
+url_namespace = unsafePartial $ fromJust $ UUID.parseUUID "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
+

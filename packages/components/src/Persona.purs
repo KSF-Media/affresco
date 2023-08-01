@@ -32,6 +32,7 @@ import Foreign.Object as Object
 import KSF.Api (AuthScope(..), InvalidateCache, Password, Token, UserAuth, invalidateCacheHeader, oauthToken)
 import KSF.Api.Address (Address)
 import KSF.Api.Consent (GdprConsent, LegalConsent)
+import KSF.Api.Entitlements (AllowEntitlementsQuery, PaywallOpening)
 import KSF.Api.Error (ServerError)
 import KSF.Api.Search (SearchQuery, SearchResult, JanrainUser, FaroUser)
 import KSF.Api.Subscription (BaseSubscription, Subscription, PendingAddressChange, Subsno(..), isSubscriptionExpired)
@@ -47,6 +48,7 @@ import Simple.JSON (class ReadForeign, class WriteForeign)
 
 foreign import accountApi :: Api
 foreign import adminApi :: Api
+foreign import entitlementsApi :: Api
 foreign import loginApi :: Api
 foreign import usersApi :: Api
 foreign import rawJSONStringify :: Foreign -> String
@@ -86,6 +88,18 @@ getUser invalidateCache uuid auth = do
 getUserEntitlements :: UserAuth -> Aff (Array String)
 getUserEntitlements auth =
   callApi usersApi "usersUuidEntitlementGet" [ unsafeToForeign auth.userId ] $ authHeaders auth.userId auth
+
+getPaywallOpenings :: UserAuth -> Aff (Array PaywallOpening)
+getPaywallOpenings auth =
+  callApi entitlementsApi "entitlementsAllowGet" [] $ authHeaders UUID.emptyUUID auth
+
+openPaywall :: AllowEntitlementsQuery -> UserAuth -> Aff Unit
+openPaywall query auth =
+  callApi entitlementsApi "entitlementsAllowPost" [ unsafeToForeign query ] $ authHeaders UUID.emptyUUID auth
+
+deletePaywallOpening :: Int -> UserAuth -> Aff Unit
+deletePaywallOpening id auth =
+  callApi entitlementsApi "entitlementsAllowDelete" [ unsafeToForeign (show id) ] $ authHeaders UUID.emptyUUID auth
 
 updateUser :: UUID -> UserUpdate -> UserAuth -> Aff User
 updateUser uuid update auth = do

@@ -8,7 +8,6 @@ import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
 import Web.HTML (window) as Web.HTML
-import Web.HTML.Window (Window)
 import Web.HTML.Window as Window
 
 render :: JSX

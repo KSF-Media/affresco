@@ -21,6 +21,18 @@ As an alternative to exporting PUBLIC_URL for every new shell you can also use [
 
 A server in port `8003` should be now up. Here's an example article for you to test it `http://localhost:8003/article/44f345b5-eb92-4e60-a884-26396cd3d831`.
 
+## Debugging
+
+It might be helpful to use React development build instead of the production
+build to avoid minified error messages (see <https://reactjs.org/docs/error-decoder.html?invariant=152&args[]=f>).
+To use development React, simply run
+
+```
+export NODE_ENV=development
+```
+
+before building the app.
+
 ## Tests
 TODO
 

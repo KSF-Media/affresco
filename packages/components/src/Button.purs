@@ -1,12 +1,10 @@
-module KSF.Button.Component where
+module KSF.Button where
 
 import Prelude
 
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import React.Basic (JSX)
-import React.Basic.Classic (make)
-import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.Events as Event
 import Record (merge)
@@ -17,19 +15,8 @@ type Props =
   , onClick :: Effect Unit
   }
 
-type State = { }
-
-component :: React.Component Props
-component = React.createComponent "Button"
-
-button :: Props -> JSX
-button = make component
-  { initialState: {}
-  , render
-  }
-
-render :: React.Self Props State -> JSX
-render { props } =
+render :: Props -> JSX
+render props =
   case props.destination of
     Just href -> DOM.a $ merge attrs { href, target: "_blank" }
     _ -> DOM.a attrs

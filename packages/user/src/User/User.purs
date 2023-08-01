@@ -1,55 +1,58 @@
 module KSF.User
-  ( UserError (..)
-  , User
+  ( ConflictingUser(..)
   , MergeInfo
+  , User
+  , UserError(..)
   , ValidationServerError
-  , ConflictingUser (..)
-  , module PersonaReExport
-  , module BottegaReExport
-  , module Address
-  , loginTraditional
-  , magicLogin
-  , loginIP
-  , logout
-  , someAuth
-  , facebookSdk
+  , createCusnoUser
+  , createDeliveryReclamation
+  , createOrder
   , createUser
   , createUserWithEmail
-  , createCusnoUser
-  , getUser
-  , fromPersonaUser
-  , isAdminUser
-  , updateUser
-  , setCusno
-  , updatePassword
-  , requestPasswordReset
-  , startPasswordReset
-  , updateForgottenPassword
-  , hasScope
-  , pauseSubscription
-  , editSubscriptionPause
-  , unpauseSubscription
-  , temporaryAddressChange
-  , editTemporaryAddressChange
-  , deleteTemporaryAddressChange
-  , createDeliveryReclamation
-  , searchUsers
-  , getPayments
-  , createOrder
-  , payOrder
-  , getOrder
-  , getCreditCards
-  , getCreditCard
   , deleteCreditCard
-  , registerCreditCardFromExisting
+  , deletePaywallOpening
+  , deleteTemporaryAddressChange
+  , editSubscriptionPause
+  , editTemporaryAddressChange
+  , facebookSdk
+  , fromPersonaUser
+  , getCreditCard
   , getCreditCardRegister
+  , getCreditCards
+  , getOrder
   , getPackages
+  , getPayments
+  , getPaywallOpenings
+  , getUser
   , getUserEntitlements
   , getUserEntitlementsLoadToken
   , getUserNewsletters
-  , updateUserNewsletters
+  , hasScope
+  , isAdminUser
+  , loginIP
+  , loginTraditional
+  , logout
+  , magicLogin
+  , module Address
   , module Api
+  , module BottegaReExport
+  , module PersonaReExport
   , module Subscription
+  , openPaywall
+  , pauseSubscription
+  , payOrder
+  , registerCreditCardFromExisting
+  , requestPasswordReset
+  , searchUsers
+  , setCusno
+  , someAuth
+  , startPasswordReset
+  , temporaryAddressChange
+  , unpauseSubscription
+  , updateForgottenPassword
+  , updatePassword
+  , updateUser
+  , updateUserNewsletters
   )
 where
 
@@ -91,6 +94,7 @@ import Foreign.Object (Object)
 import KSF.Api (AuthScope, InvalidateCache, UserAuth)
 import KSF.Api (Token(..), Password, UserAuth, oauthToken, parseToken) as Api
 import KSF.Api.Address (Address) as Address
+import KSF.Api.Entitlements (AllowEntitlementsQuery, PaywallOpening)
 import KSF.Api.Error as Api.Error
 import KSF.Api.Package (Package)
 import KSF.Api.Search (SearchQuery, SearchResult)
@@ -758,3 +762,15 @@ callBottega f = do
 
 getPackages :: Aff (Array Package)
 getPackages = Bottega.getPackages
+
+getPaywallOpenings :: Aff (Array PaywallOpening)
+getPaywallOpenings =
+  Persona.getPaywallOpenings =<< requireToken
+
+openPaywall :: AllowEntitlementsQuery -> Aff Unit
+openPaywall query =
+  Persona.openPaywall query =<< requireToken
+
+deletePaywallOpening :: Int -> Aff Unit
+deletePaywallOpening id =
+  Persona.deletePaywallOpening id =<< requireToken

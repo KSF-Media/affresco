@@ -14,15 +14,12 @@ import Effect.Unsafe (unsafePerformEffect)
 import KSF.InputField (generateIdNumber)
 import Prim.Row (class Nub, class Union)
 import React.Basic (JSX)
-import React.Basic.Classic as React
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (targetChecked)
 import React.Basic.Events (handler)
 import Record as Record
 
-type Self = React.Self (Record Props) State
-
-type Props =
+type PropsRow =
   ( type_           :: InputType
   , name            :: String
   , value           :: String
@@ -35,7 +32,7 @@ type Props =
   , checkboxFirst   :: Boolean
   )
 
-type OptionalProps =
+type OptionalPropsRow =
   ( value           :: String
   , label           :: Maybe String
   , labelJSX        :: Maybe JSX
@@ -44,8 +41,7 @@ type OptionalProps =
   , checkboxFirst   :: Boolean
   )
 
-type State =
-  { }
+type Props = Record PropsRow
 
 data InputType = Checkbox
 
@@ -53,16 +49,14 @@ derive instance genericInputType :: Generic InputType _
 instance showInputType :: Show InputType where
   show = toLower <<< genericShow
 
-component :: React.Component (Record Props)
-component = React.createComponent "InputCheckbox"
-
-inputCheckbox :: forall attrs attrs_. Union attrs OptionalProps attrs_ => Nub attrs_ Props => Record attrs -> JSX
-inputCheckbox props = React.make component
-  { render, initialState } $ Record.merge props defaultProps
+inputCheckbox
+  :: forall attrs attrs_. Union attrs OptionalPropsRow attrs_
+  => Nub attrs_ PropsRow
+  => Record attrs
+  -> JSX
+inputCheckbox props = render $ Record.merge props defaultProps
   where
-    initialState :: State
-    initialState = { }
-    defaultProps :: Record OptionalProps
+    defaultProps :: Record OptionalPropsRow
     defaultProps =
       { value: ""
       , label: Nothing
@@ -72,8 +66,8 @@ inputCheckbox props = React.make component
       , checkboxFirst: false
       }
 
-render :: Self -> JSX
-render { props } =
+render :: Props -> JSX
+render props =
   DOM.div
     { className: "input-checkbox--checkbox-container" <>
         if isNothing props.label && isNothing props.labelJSX then " input-field--no-label" else ""
