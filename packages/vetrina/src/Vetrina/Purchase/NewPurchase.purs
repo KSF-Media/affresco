@@ -106,13 +106,13 @@ component logger = do
 
 render :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 render props state setState onSubmit =
-  title props
-  <> newPurchaseLinks props
+  newPurchaseLinks props
+  <> title props
   <> case props.accountStatus of
     LoggedInAccount user
       | isNothing $ toMaybe user.firstName ->
         DOM.div
-          { className: "vetrina--temporary-user-email"
+          { className: "vetrina--new-purchase-temporary-user-email"
           , children: [ DOM.text user.email ]
           }
     _ -> mempty
@@ -133,8 +133,8 @@ title props =
   where
     headline child =
       DOM.div
-        { id: "tb-paywall--headline-" <> maybe "KSF" Paper.toString props.paper
-        , className: "vetrina--headline-" <> maybe "KSF" Paper.toString props.paper <>
+        --{ id: "tb-paywall--headline-" <> maybe "KSF" Paper.toString props.paper
+        { className: "vetrina--new-purchase-headline-" <> maybe "KSF" Paper.toString props.paper <>
                      case props.accountStatus of
                        NewAccount -> mempty
                        _          -> " vetrina--headline-existing-account"
@@ -147,10 +147,10 @@ title props =
 description :: Props -> JSX
 description props =
   DOM.p
-    { id: "tb-paywall--description-text-" <> maybe "KSF" Paper.toString props.paper
-    , className: "vetrina--description-text" <>
+    --{ id: "tb-paywall--description-text-" <> maybe "KSF" Paper.toString props.paper
+    { className: "vetrina--new-purchase-description-text" <>
                  case props.accountStatus of
-                       LoggedInAccount _ -> " vetrina--description-text-existing-account"
+                       LoggedInAccount _ -> " vetrina--new-purchase-description-text-existing-account"
                        _                 -> mempty
     , children: Array.singleton $
         case props.accountStatus of
@@ -161,7 +161,7 @@ description props =
 
 form :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 form props state setState onSubmit = DOM.form $
-  { className: "vetrina--form"
+  { className: "vetrina--new-purchase-form"
   , onSubmit
     -- NOTE: We need to have `emailInput` here (opposed to in `children`),
     -- as we don't want to re-render it when `accountStatus` changes.
@@ -286,7 +286,7 @@ links props =
   where
     linksDiv linksJsx =
       DOM.div
-        { className: "vetrina--links"
+        { className: "vetrina--new-purchase-links"
         , children: linksJsx
         }
 
@@ -297,18 +297,18 @@ resetPasswordLink =
 loginLink :: Props -> JSX
 loginLink props =
   DOM.div
-    { className: "vetrina--login-link"
+    { className: "vetrina--new-purchase-login-link bg-neutral text-white"
     , children:
         [ DOM.p
-          { className: "vetrina--login-text"
+          { className: "vetrina--new-purchase-login-text"
           , children: [ DOM.text "Detta är en låst artikel för prenumeranter. "]
           }
         , DOM.span
-          { className: "vetrina--login-text"
+          { className: "vetrina--new-purchase-login-text"
           , children: [ DOM.text "Redan prenumerant? "]
           }
         , DOM.span
-            { className:"vetrina--login-callback"
+            { className:"vetrina--new-purchase-login-callback"
             , children: [ DOM.text "Logga in här" ]
             , onClick: props.onLogin
             }
