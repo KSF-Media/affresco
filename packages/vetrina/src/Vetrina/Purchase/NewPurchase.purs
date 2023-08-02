@@ -106,21 +106,26 @@ component logger = do
 
 render :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 render props state setState onSubmit =
-  newPurchaseLinks props
-  <> title props
-  <> case props.accountStatus of
-    LoggedInAccount user
-      | isNothing $ toMaybe user.firstName ->
-        DOM.div
-          { className: "vetrina--new-purchase-temporary-user-email"
-          , children: [ DOM.text user.email ]
-          }
-    _ -> mempty
-  <> case props.accountStatus of
-       NewAccount -> mempty
-       _ -> description props
-  <> form props state setState onSubmit
-  <> links props
+  DOM.div
+    { className: "vetrina--new-purchase-container flex flex-col items-stretch col-span-3 bg-white"
+    , children:
+      [ newPurchaseLinks props
+      , title props
+      , case props.accountStatus of
+          LoggedInAccount user
+            | isNothing $ toMaybe user.firstName ->
+              DOM.div
+                { className: "vetrina--new-purchase-temporary-user-email"
+                , children: [ DOM.text user.email ]
+                }
+          _ -> mempty
+      , case props.accountStatus of
+          NewAccount -> mempty
+          _ -> description props
+      , form props state setState onSubmit
+      , links props
+      ]
+    }
 
 title :: Props -> JSX
 title props =
@@ -135,6 +140,7 @@ title props =
       DOM.div
         --{ id: "tb-paywall--headline-" <> maybe "KSF" Paper.toString props.paper
         { className: "vetrina--new-purchase-headline-" <> maybe "KSF" Paper.toString props.paper <>
+                     " font-duplexserif" <>
                      case props.accountStatus of
                        NewAccount -> mempty
                        _          -> " vetrina--headline-existing-account"
@@ -297,7 +303,7 @@ resetPasswordLink =
 loginLink :: Props -> JSX
 loginLink props =
   DOM.div
-    { className: "vetrina--new-purchase-login-link bg-neutral text-white"
+    { className: "vetrina--new-purchase-login-link bg-neutral text-white text-center"
     , children:
         [ DOM.p
           { className: "vetrina--new-purchase-login-text"
@@ -308,8 +314,8 @@ loginLink props =
           , children: [ DOM.text "Redan prenumerant? "]
           }
         , DOM.span
-            { className:"vetrina--new-purchase-login-callback"
-            , children: [ DOM.text "Logga in här" ]
+            { className:"vetrina--new-purchase-login-callback underline"
+            , children: [ DOM.text "Logga in här." ]
             , onClick: props.onLogin
             }
         ]
@@ -335,7 +341,10 @@ formSubmitButton :: Props -> State -> JSX
 formSubmitButton props state =
   DOM.input
     { type: "submit"
-    , className: "vetrina--button"
+    , className: "vetrina--button" <>
+                 case props.accountStatus of
+                  NewAccount -> "-new-account bg-neutral text-white text-lg w-[70%] mx-[15%] my-5 font-normal py-0.5 px-11 border-neutral rounded-sm"
+                  _          -> mempty
     , disabled
     , value
     }
