@@ -64,8 +64,6 @@ class Article extends Component {
       return (
         <div className="ksf-app-ad" id={this.state.paper + "/" + this.state.paper + "_" + adName.toLowerCase()}></div>
       );
-    } else {
-      console.log("Ads have been removed for this article.");
     }
   }
 
