@@ -140,9 +140,8 @@ title props =
       DOM.div
         --{ id: "tb-paywall--headline-" <> maybe "KSF" Paper.toString props.paper
         { className: "vetrina--new-purchase-headline-" <> maybe "KSF" Paper.toString props.paper <>
-                     " font-duplexserif" <>
                      case props.accountStatus of
-                       NewAccount -> mempty
+                       NewAccount -> " font-duplexserif text-center px-3 my-3"
                        _          -> " vetrina--headline-existing-account"
         , _data: Object.fromFoldable $ case props.accountStatus of
                    NewAccount -> mempty
@@ -167,7 +166,7 @@ description props =
 
 form :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 form props state setState onSubmit = DOM.form $
-  { className: "vetrina--new-purchase-form"
+  { className: "vetrina--new-purchase-form px-5"
   , onSubmit
     -- NOTE: We need to have `emailInput` here (opposed to in `children`),
     -- as we don't want to re-render it when `accountStatus` changes.
@@ -330,7 +329,7 @@ mkLink linkDescription href linkText = Array.singleton $
   DOM.span_
     [ DOM.text $ linkDescription <> " "
     , DOM.a
-        { className: "vetrina--link"
+        { className: "vetrina--link text-neutral underline"
         , href
         , children: [ DOM.text linkText ]
         , target: "_blank"
@@ -428,7 +427,7 @@ passwordInput state setState =
 acceptTerms :: JSX
 acceptTerms =
   DOM.div
-    { className: "vetrina--terms-conditions"
+    { className: "vetrina--terms-conditions text-center text-sm px-1 mb-4"
     , children:
       [ DOM.text "Genom att klicka på \"Vidare\" godkänner du KSF Medias " ]
           <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "prenumerationsvillkor"
