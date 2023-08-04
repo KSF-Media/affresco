@@ -110,6 +110,7 @@ render props state setState onSubmit =
     { className: "vetrina--new-purchase-container flex flex-col items-stretch col-span-3 bg-white"
     , children:
       [ newPurchaseLinks props
+      , image props
       , title props
       , case props.accountStatus of
           LoggedInAccount user
@@ -126,6 +127,12 @@ render props state setState onSubmit =
       , links props
       ]
     }
+
+image :: Props -> JSX
+image props =
+  case props.accountStatus of
+    NewAccount -> DOM.div { className: "h-48 maskimage-vetrinaNewPurchase mask-repeat-none mask-size-contain mask-position-center" }
+    _          -> mempty
 
 title :: Props -> JSX
 title props =
@@ -166,7 +173,7 @@ description props =
 
 form :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 form props state setState onSubmit = DOM.form $
-  { className: "vetrina--new-purchase-form px-5"
+  { className: "vetrina--new-purchase-form flex flex-wrap justify-center px-5"
   , onSubmit
     -- NOTE: We need to have `emailInput` here (opposed to in `children`),
     -- as we don't want to re-render it when `accountStatus` changes.

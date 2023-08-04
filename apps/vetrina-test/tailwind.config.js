@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+const plugin = require("tailwindcss/plugin");
+
 const sansFonts = [
   "ui-sans-serif",
   "system-ui",
@@ -28,6 +30,73 @@ const monoFonts = [
   '"Courier New"',
   "monospace",
 ];
+
+const listOfIcons = {
+  vetrinaNewPurchase: `url("../../images/subscribe-paywall-icon.svg")`
+};
+
+const maskImagePlugin = plugin(
+  function ({ matchUtilities, theme }) {
+    matchUtilities(
+      {
+        maskimage: (value) => ({
+          maskImage: value,
+          maskPosition: "0 0",
+          maskRepeat: "no-repeat",
+        }),
+      },
+      { values: theme("maskImage") }
+    );
+  },
+
+  {
+    theme: {
+      maskImage: listOfIcons,
+    },
+  }
+);
+
+const maskSizePlugin = plugin(function ({ matchUtilities, theme }) {
+  matchUtilities(
+    {
+      "mask-size": (value) => (
+          value == "cover" || value == "contain"
+            ? { maskSize: `${value}` }
+            : { maskSize: `${value} ${value}` })
+    },
+    { values: {...theme("spacing"), "cover": "cover", "contain": "contain"} }
+  );
+});
+
+const maskPositionPlugin = plugin(function ({ matchUtilities }) {
+  matchUtilities(
+    {
+      "mask-position": (value) => ({"mask-position": `${value}`})
+    },
+    { values: {"center": "center"} }
+  );
+});
+
+const maskRepeatPlugin = plugin(function ({ addUtilities, matchUtilities }) {
+  addUtilities({
+    '.mask-repeat': {
+      'mask-repeat': 'repeat',
+    },
+  });
+  matchUtilities(
+    {
+      "mask-repeat": (value) => ({ "mask-repeat": `${value}` }),
+    },
+    {
+      values: {
+        none: "no-repeat",
+        x: "repeat-x",
+        y: "repeat-y",
+      },
+    }
+  );
+});
+
 
 module.exports = {
   content: {
@@ -87,6 +156,6 @@ module.exports = {
       lg: "1020px", // @breakpoint-3col
     },
   },
-  plugins: [],
+  plugins: [maskImagePlugin, maskSizePlugin, maskPositionPlugin, maskRepeatPlugin],
 }
 
