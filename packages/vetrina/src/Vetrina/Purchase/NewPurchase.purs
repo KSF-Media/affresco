@@ -131,7 +131,7 @@ render props state setState onSubmit =
 image :: Props -> JSX
 image props =
   case props.accountStatus of
-    NewAccount -> DOM.div { className: "h-48 maskimage-vetrinaNewPurchase mask-repeat-none mask-size-contain mask-position-center" }
+    NewAccount -> DOM.div { className: "h-28 bg-no-repeat bg-center bg-contain bg-[url('../../../images/subscribe-paywall-icon.svg')]" }
     _          -> mempty
 
 title :: Props -> JSX
@@ -148,7 +148,7 @@ title props =
         --{ id: "tb-paywall--headline-" <> maybe "KSF" Paper.toString props.paper
         { className: "vetrina--new-purchase-headline-" <> maybe "KSF" Paper.toString props.paper <>
                      case props.accountStatus of
-                       NewAccount -> " font-duplexserif text-center px-3 my-3"
+                       NewAccount -> " font-duplexserif text-center px-3 my-3 text-[28px] leading-tight font-semibold"
                        _          -> " vetrina--headline-existing-account"
         , _data: Object.fromFoldable $ case props.accountStatus of
                    NewAccount -> mempty
@@ -309,7 +309,7 @@ resetPasswordLink =
 loginLink :: Props -> JSX
 loginLink props =
   DOM.div
-    { className: "vetrina--new-purchase-login-link bg-neutral text-white text-center"
+    { className: "vetrina--new-purchase-login-link bg-neutral text-white text-center py-2"
     , children:
         [ DOM.p
           { className: "vetrina--new-purchase-login-text"

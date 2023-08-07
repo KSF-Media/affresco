@@ -13,7 +13,7 @@ hblPremium =
   , description:
       DOM.div
         { id: "tb-paywall--product-text-hbl"
-        , className: "vetrina--form-product-text"
+        , className: "vetrina--form-product-text text-center"
         , children:
             [ DOM.text "Läs HBL digitalt gratis i en månad, därefter 9,99€ per månad. Avsluta enkelt när du vill." ]
         }

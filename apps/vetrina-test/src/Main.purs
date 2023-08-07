@@ -62,7 +62,7 @@ app = do
 vetrinaTestHeadline :: JSX
 vetrinaTestHeadline =
   DOM.div
-    { className: "text-3xl"
+    { className: "vetrinaTest--headline"
     , children: [ DOM.text $ "Prova HBL Digital utan kostnad i en månad"]
     }
 
