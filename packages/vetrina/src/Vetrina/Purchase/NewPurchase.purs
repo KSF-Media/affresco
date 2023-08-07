@@ -123,6 +123,7 @@ render props state setState onSubmit =
       , case props.accountStatus of
           NewAccount -> mempty
           _ -> description props
+      , productDescription props state
       , form props state setState onSubmit
       , links props
       ]
@@ -171,6 +172,17 @@ description props =
           LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
       }
 
+productDescription :: Props -> State -> JSX
+productDescription props state =
+  -- Don't show the product selection if we are asking the user to login
+  if not isExistingAccount props.accountStatus
+     || isNothing state.productSelection
+  then foldMap _.description state.productSelection
+  else mempty
+  where
+    isExistingAccount (ExistingAccount _) = true
+    isExistingAccount _ = false
+
 form :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 form props state setState onSubmit = DOM.form $
   { className: "vetrina--new-purchase-form flex flex-wrap justify-center px-5"
@@ -184,19 +196,11 @@ form props state setState onSubmit = DOM.form $
         then productDropdown props.products
         else mempty
       , renderPaymentMethods props.paymentMethods
-       -- Don't show the product selection if we are asking the user to login
-      , if not isExistingAccount props.accountStatus
-           || isNothing state.productSelection
-        then foldMap _.description state.productSelection
-        else mempty
       , state.errorMessage
       , emailInput props state setState
       ] <> children
   }
   where
-    isExistingAccount (ExistingAccount _) = true
-    isExistingAccount _ = false
-
     children = case props.accountStatus of
         NewAccount ->
           [ additionalFormRequirements props.accountStatus
@@ -309,7 +313,7 @@ resetPasswordLink =
 loginLink :: Props -> JSX
 loginLink props =
   DOM.div
-    { className: "vetrina--new-purchase-login-link bg-neutral text-white text-center py-2"
+    { className: "vetrina--new-purchase-login-link bg-neutral text-white text-center text-base leading-tight py-2"
     , children:
         [ DOM.p
           { className: "vetrina--new-purchase-login-text"
@@ -377,7 +381,7 @@ emailInput :: Props -> State -> ((State -> State) -> Effect Unit) -> JSX
 emailInput {accountStatus: (LoggedInAccount _)} _ _ = mempty
 emailInput props state setState =
   DOM.div
-    { className: "vetrina--input-wrapper vetrina--with-label"
+    { className: "vetrina--input-wrapper vetrina--with-label text-base"
     , children:
         [ InputField.inputField
             { type_: InputField.Email
@@ -434,7 +438,7 @@ passwordInput state setState =
 acceptTerms :: JSX
 acceptTerms =
   DOM.div
-    { className: "vetrina--terms-conditions text-center text-sm px-1 mb-4"
+    { className: "vetrina--terms-conditions text-center text-sm leading-tight mb-4"
     , children:
       [ DOM.text "Genom att klicka på \"Vidare\" godkänner du KSF Medias " ]
           <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "prenumerationsvillkor"
