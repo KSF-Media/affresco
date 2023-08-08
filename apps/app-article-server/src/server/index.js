@@ -145,5 +145,11 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 }
 
 app.listen(port, () => {
+  console.log("Persona URL: " + process.env.PERSONA_URL);
+  console.log("Lettera URL: " + process.env.LETTERA_URL);
+  console.log("Share URL: " + process.env.SHARE_URL);
+  console.log("Sentry DSN: " + process.env.SENTRY_DSN);
+  console.log("Public URL: " + process.env.PUBLIC_URL);
+  console.log("Port: " + process.env.PORT);
   console.log(`Up and running!`);
 });
