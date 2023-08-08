@@ -150,7 +150,6 @@ class Content extends Component {
           </div>
           <div className={`col-10 quote ${this.props.darkModeEnabled ? "darkMode" : ""}`} style={{ paddingLeft: "0px" }}>
               {block.quote.body}
-              {/* After the upgrade to Lettera V4, block.quote.author available. */}
           </div>
         </div>
       </div>
