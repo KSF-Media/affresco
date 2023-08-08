@@ -61,7 +61,7 @@
 
 /* Try to remove grey background sometimes present on hyperlinks */
 a {
-  background-color: transparent;
+  background-color: transparent !important;
 }
 
 body {
