@@ -60,6 +60,7 @@ class Content extends Component {
       <figure className="relatedArticles" key={key}>
         <ul>
           {block.related.map((item, index) => {
+            delete item.externalScripts;
             return (
               <li key={"related-article-" + index}>
                 <a href={"/article/" + item.uuid + this.props.queryString}>
