@@ -18,7 +18,6 @@ import Foreign.Object as Object
 import KSF.Api.Package (toSwedish)
 import KSF.Helpers (formatEur)
 import KSF.Helpers as Helpers
-import KSF.Icons (paywallIcons)
 import KSF.InputField as InputField
 import KSF.Paper as Paper
 import KSF.PaymentMethod (paymentMethodOption)
@@ -134,7 +133,7 @@ image :: Props -> JSX
 image props =
   case props.accountStatus of
     --Tailwind doesn't show the background image, therefore it is inline CSS, Tailwind does show it as an img but this should be a background image
-    NewAccount -> DOM.div { className: "h-28 bg-no-repeat bg-center bg-contain bg-[url('https://cdn.ksfmedia.fi/assets/images/subscribe-paywall-icon.svg')", style: DOM.css { backgroundImage: "url(" <> paywallIcons.subscribePaywall <> ")"} }
+    NewAccount -> DOM.div { className: "h-28 bg-no-repeat bg-center bg-contain", style: DOM.css { backgroundImage: "url('https://cdn.ksfmedia.fi/assets/images/subscribe-paywall-icon.svg')"} }
     _          -> mempty
 
 title :: Props -> JSX
