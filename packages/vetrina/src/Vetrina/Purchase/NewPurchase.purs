@@ -18,6 +18,7 @@ import Foreign.Object as Object
 import KSF.Api.Package (toSwedish)
 import KSF.Helpers (formatEur)
 import KSF.Helpers as Helpers
+import KSF.Icons (paywallIcons)
 import KSF.InputField as InputField
 import KSF.Paper as Paper
 import KSF.PaymentMethod (paymentMethodOption)
@@ -28,11 +29,11 @@ import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
 import KSF.Window (clearOpener)
 import React.Basic (JSX)
-import React.Basic.Hooks as React
-import React.Basic.Hooks (Component, useState, (/\))
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (EventHandler, handler, handler_)
+import React.Basic.Hooks (Component, useState, (/\))
+import React.Basic.Hooks as React
 import Vetrina.Purchase.NewPurchase.Order (Props, PurchaseInput, createNewAccount, loginToExistingAccount, mkPurchase)
 import Vetrina.Types (AccountStatus(..), ExistingAccountForm, FormInputField(..), NewAccountForm, OrderFailure, Product, ProductContent, PurchaseParameters)
 import Web.HTML as Web.HTML
@@ -132,7 +133,8 @@ render props state setState onSubmit =
 image :: Props -> JSX
 image props =
   case props.accountStatus of
-    NewAccount -> DOM.div { className: "h-28 bg-no-repeat bg-center bg-contain bg-[url('../../../images/subscribe-paywall-icon.svg')]" }
+    --Tailwind doesn't show the background image, therefore it is inline CSS, Tailwind does show it as an img but this should be a background image
+    NewAccount -> DOM.div { className: "h-28 bg-no-repeat bg-center bg-contain", style: DOM.css { backgroundImage: "url(" <> paywallIcons.subscribePaywall <> ")"} } --"bg-[url('" <> paywallIcons.subscribePaywall <> "')]" }
     _          -> mempty
 
 title :: Props -> JSX
