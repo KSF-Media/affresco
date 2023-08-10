@@ -134,7 +134,7 @@ image :: Props -> JSX
 image props =
   case props.accountStatus of
     --Tailwind doesn't show the background image, therefore it is inline CSS, Tailwind does show it as an img but this should be a background image
-    NewAccount -> DOM.div { className: "h-28 bg-no-repeat bg-center bg-contain", style: DOM.css { backgroundImage: "url(" <> paywallIcons.subscribePaywall <> ")"} } --"bg-[url('" <> paywallIcons.subscribePaywall <> "')]" }
+    NewAccount -> DOM.div { className: "h-28 bg-no-repeat bg-center bg-contain bg-[url('https://cdn.ksfmedia.fi/assets/images/subscribe-paywall-icon.svg')", style: DOM.css { backgroundImage: "url(" <> paywallIcons.subscribePaywall <> ")"} }
     _          -> mempty
 
 title :: Props -> JSX
