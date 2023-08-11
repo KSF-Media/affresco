@@ -16,7 +16,6 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Foreign.Object as Object
 import KSF.Api.Package (toSwedish)
-import KSF.Helpers (formatEur)
 import KSF.Helpers as Helpers
 import KSF.InputField as InputField
 import KSF.Paper as Paper
@@ -30,11 +29,11 @@ import KSF.Window (clearOpener)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
-import React.Basic.Events (EventHandler, handler, handler_)
+import React.Basic.Events (EventHandler, handler)
 import React.Basic.Hooks (Component, useState, (/\))
 import React.Basic.Hooks as React
 import Vetrina.Purchase.NewPurchase.Order (Props, PurchaseInput, createNewAccount, loginToExistingAccount, mkPurchase)
-import Vetrina.Types (AccountStatus(..), ExistingAccountForm, FormInputField(..), NewAccountForm, OrderFailure, Product, ProductContent, PurchaseParameters)
+import Vetrina.Types (AccountStatus(..), ExistingAccountForm, FormInputField(..), NewAccountForm, OrderFailure, Product, PurchaseParameters)
 import Web.HTML as Web.HTML
 import Web.HTML.Window as Window
 
@@ -354,7 +353,7 @@ formSubmitButton props state =
     { type: "submit"
     , className: "vetrina--button" <>
                  case props.accountStatus of
-                  NewAccount -> "-new-account bg-neutral text-white text-lg w-[70%] mx-[15%] my-5 font-normal py-0.5 px-11 border-neutral rounded-sm"
+                  NewAccount -> "-new-account bg-neutral text-white text-lg w-[80%] max-w-[400px] mx-[10%] my-5 font-normal py-0.5 px-11 border-neutral rounded"
                   _          -> mempty
     , disabled
     , value

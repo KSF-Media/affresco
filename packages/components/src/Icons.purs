@@ -7,6 +7,3 @@ foreign import papers ::
   , ksf    :: String
   , junior :: String
   }
-
-foreign import paywallIcons ::
-  { subscribePaywall  :: String }
