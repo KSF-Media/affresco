@@ -110,8 +110,8 @@ render props state setState onSubmit =
     { className: "vetrina--new-purchase-container flex flex-col items-stretch col-span-3 bg-white" <>
                  case props.accountStatus of
                        NewAccount -> " vetrina--new-account-container"
-                       ExistingAccount _ -> " vetrina--existing-account-container"
-                       LoggedInAccount _ -> " vetrina--loggedin-account-container"
+                       ExistingAccount _ -> " vetrina--existing-account-container p-5 border-4 border-neutral"
+                       LoggedInAccount _ -> " vetrina--loggedin-account-container p-5 border-4 border-neutral"
     , children:
       [ newPurchaseLinks props
       , case props.accountStatus of
@@ -163,8 +163,8 @@ title props =
         { className: "vetrina--new-purchase-headline-" <> maybe "KSF" Paper.toString props.paper <>
                      case props.accountStatus of
                        NewAccount -> " font-duplexserif text-center px-3 my-3 text-[28px] leading-tight font-semibold"
-                       ExistingAccount _ -> " vetrina--headline-existing-account"
-                       LoggedInAccount _ -> " vetrina--headline-loggedin-account"
+                       ExistingAccount _ -> " vetrina--headline-existing-account text-center"
+                       LoggedInAccount _ -> " vetrina--headline-loggedin-account text-center"
         , _data: Object.fromFoldable $ case props.accountStatus of
                    NewAccount -> mempty
                    _          -> [ Tuple.Tuple "existing-account" "1" ]
@@ -175,7 +175,7 @@ description :: Props -> JSX
 description props =
   DOM.p
     --{ id: "tb-paywall--description-text-" <> maybe "KSF" Paper.toString props.paper
-    { className: "vetrina--new-purchase-description-text" <>
+    { className: "vetrina--new-purchase-description-text text-center" <>
                  case props.accountStatus of
                        ExistingAccount _ -> " vetrina--new-purchase-description-text-existing-account"
                        LoggedInAccount _ -> " vetrina--new-purchase-description-text-loggedin-account"
@@ -312,12 +312,12 @@ links :: Props -> JSX
 links props =
   case props.accountStatus of
     NewAccount        -> mempty -- Login link shown elsewhere
-    ExistingAccount _ -> linksDiv $ resetPasswordLink <> subscribePagesLink
-    LoggedInAccount _ -> linksDiv $ subscribePagesLink
+    ExistingAccount _ -> linksDiv $ resetPasswordLink
+    _                 -> mempty
   where
     linksDiv linksJsx =
       DOM.div
-        { className: "vetrina--new-purchase-links"
+        { className: "vetrina--new-purchase-links text-center my-3"
         , children: linksJsx
         }
 
