@@ -19,6 +19,7 @@ import KSF.Api.Package (toSwedish)
 import KSF.Helpers as Helpers
 import KSF.InputField as InputField
 import KSF.Paper as Paper
+import KSF.Paper (Paper(..))
 import KSF.PaymentMethod (paymentMethodOption)
 import KSF.Sentry as Sentry
 import KSF.User (PaymentMethod(..))
@@ -109,7 +110,9 @@ render props state setState onSubmit =
     { className: "vetrina--new-purchase-container flex flex-col items-stretch col-span-3 bg-white"
     , children:
       [ newPurchaseLinks props
-      , image props
+      , case props.accountStatus of
+          NewAccount  -> image props
+          _ -> mempty
       , title props
       , case props.accountStatus of
           LoggedInAccount user
@@ -129,11 +132,18 @@ render props state setState onSubmit =
     }
 
 image :: Props -> JSX
-image props =
-  case props.accountStatus of
-    --Tailwind doesn't show the background image, therefore it is inline CSS, Tailwind does show it as an img but this should be a background image
-    NewAccount -> DOM.div { className: "h-28 bg-no-repeat bg-center bg-contain", style: DOM.css { backgroundImage: "url('https://cdn.ksfmedia.fi/assets/images/subscribe-paywall-icon.svg')"} }
-    _          -> mempty
+image props = DOM.div
+          { className: "h-28 bg-no-repeat bg-center bg-contain"
+          --Tailwind doesn't show the background image, therefore it is inline CSS, Tailwind does show it as an img but this should be a background image
+          , style: DOM.css { backgroundImage: imgUrl props.paper }
+          }
+  where
+    imgUrl paper =
+      case paper of
+        Just HBL -> "url('https://cdn.ksfmedia.fi/assets/images/subscribe-paywall-icon-hbl.svg')"
+        Just ON  -> "url('https://cdn.ksfmedia.fi/assets/images/subscribe-paywall-icon-on.svg')"
+        Just VN  -> "url('https://cdn.ksfmedia.fi/assets/images/subscribe-paywall-icon-vn.svg')"
+        _   -> mempty
 
 title :: Props -> JSX
 title props =
@@ -146,7 +156,6 @@ title props =
   where
     headline child =
       DOM.div
-        --{ id: "tb-paywall--headline-" <> maybe "KSF" Paper.toString props.paper
         { className: "vetrina--new-purchase-headline-" <> maybe "KSF" Paper.toString props.paper <>
                      case props.accountStatus of
                        NewAccount -> " font-duplexserif text-center px-3 my-3 text-[28px] leading-tight font-semibold"
