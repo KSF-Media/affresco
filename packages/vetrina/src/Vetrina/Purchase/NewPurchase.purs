@@ -194,7 +194,7 @@ productDescription props state =
 
 form :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 form props state setState onSubmit = DOM.form $
-  { className: "vetrina--new-purchase-form flex flex-wrap justify-center px-5"
+  { className: "vetrina--new-purchase-form flex flex-col justify-center items-center content-center px-5"
   , onSubmit
     -- NOTE: We need to have `emailInput` here (opposed to in `children`),
     -- as we don't want to re-render it when `accountStatus` changes.
@@ -390,7 +390,7 @@ emailInput :: Props -> State -> ((State -> State) -> Effect Unit) -> JSX
 emailInput {accountStatus: (LoggedInAccount _)} _ _ = mempty
 emailInput props state setState =
   DOM.div
-    { className: "vetrina--input-wrapper vetrina--with-label text-base"
+    { className: "vetrina--input-wrapper vetrina--with-label text-base max-w-[400px]"
     , children:
         [ InputField.inputField
             { type_: InputField.Email
@@ -447,7 +447,7 @@ passwordInput state setState =
 acceptTerms :: JSX
 acceptTerms =
   DOM.div
-    { className: "vetrina--terms-conditions text-center text-sm leading-tight mb-4"
+    { className: "vetrina--terms-conditions max-w-[400px] text-center text-sm leading-tight mb-4"
     , children:
       [ DOM.text "Genom att klicka på \"Vidare\" godkänner du KSF Medias " ]
           <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "prenumerationsvillkor"
