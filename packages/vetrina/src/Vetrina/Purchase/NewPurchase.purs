@@ -107,7 +107,11 @@ component logger = do
 render :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 render props state setState onSubmit =
   DOM.div
-    { className: "vetrina--new-purchase-container flex flex-col items-stretch col-span-3 bg-white"
+    { className: "vetrina--new-purchase-container flex flex-col items-stretch col-span-3 bg-white" <>
+                 case props.accountStatus of
+                       NewAccount -> " vetrina--new-account-container"
+                       ExistingAccount _ -> " vetrina--existing-account-container"
+                       LoggedInAccount _ -> " vetrina--loggedin-account-container"
     , children:
       [ newPurchaseLinks props
       , case props.accountStatus of
@@ -159,7 +163,8 @@ title props =
         { className: "vetrina--new-purchase-headline-" <> maybe "KSF" Paper.toString props.paper <>
                      case props.accountStatus of
                        NewAccount -> " font-duplexserif text-center px-3 my-3 text-[28px] leading-tight font-semibold"
-                       _          -> " vetrina--headline-existing-account"
+                       ExistingAccount _ -> " vetrina--headline-existing-account"
+                       LoggedInAccount _ -> " vetrina--headline-loggedin-account"
         , _data: Object.fromFoldable $ case props.accountStatus of
                    NewAccount -> mempty
                    _          -> [ Tuple.Tuple "existing-account" "1" ]
@@ -172,7 +177,8 @@ description props =
     --{ id: "tb-paywall--description-text-" <> maybe "KSF" Paper.toString props.paper
     { className: "vetrina--new-purchase-description-text" <>
                  case props.accountStatus of
-                       LoggedInAccount _ -> " vetrina--new-purchase-description-text-existing-account"
+                       ExistingAccount _ -> " vetrina--new-purchase-description-text-existing-account"
+                       LoggedInAccount _ -> " vetrina--new-purchase-description-text-loggedin-account"
                        _                 -> mempty
     , children: Array.singleton $
         case props.accountStatus of
@@ -332,8 +338,8 @@ loginLink props =
           { className: "vetrina--new-purchase-login-text"
           , children: [ DOM.text "Redan prenumerant? "]
           }
-        , DOM.span
-            { className:"vetrina--new-purchase-login-callback underline"
+        , DOM.a
+            { className:"vetrina--login-callback cursor-pointer underline"
             , children: [ DOM.text "Logga in här." ]
             , onClick: props.onLogin
             }
@@ -360,10 +366,11 @@ formSubmitButton :: Props -> State -> JSX
 formSubmitButton props state =
   DOM.input
     { type: "submit"
-    , className: "vetrina--button" <>
+    , className: "vetrina--submit-button bg-neutral text-white text-lg w-[80%] max-w-[400px] mx-[10%] my-5 font-normal py-0.5 px-11 border-neutral rounded cursor-pointer" <>
                  case props.accountStatus of
-                  NewAccount -> "-new-account bg-neutral text-white text-lg w-[80%] max-w-[400px] mx-[10%] my-5 font-normal py-0.5 px-11 border-neutral rounded"
-                  _          -> mempty
+                  NewAccount        -> " vetrina--submit-button-new-account"
+                  ExistingAccount _ -> " vetrina--submit-button-existing-account"
+                  LoggedInAccount _ -> " vetrina--submit-button-loggedin-account"
     , disabled
     , value
     }
