@@ -110,8 +110,8 @@ render props state setState onSubmit =
     { className: "vetrina--new-purchase-container flex flex-col items-stretch col-span-3 bg-white" <>
                  case props.accountStatus of
                        NewAccount -> " vetrina--new-account-container"
-                       ExistingAccount _ -> " vetrina--existing-account-container p-5 border-4 border-neutral"
-                       LoggedInAccount _ -> " vetrina--loggedin-account-container p-5 border-4 border-neutral"
+                       ExistingAccount _ -> " vetrina--existing-account-container p-5"
+                       LoggedInAccount _ -> " vetrina--loggedin-account-container p-5"
     , children:
       [ newPurchaseLinks props
       , case props.accountStatus of
@@ -122,7 +122,7 @@ render props state setState onSubmit =
           LoggedInAccount user
             | isNothing $ toMaybe user.firstName ->
               DOM.div
-                { className: "vetrina--new-purchase-temporary-user-email"
+                { className: "vetrina--new-purchase-temporary-user-email text-center border-neutral border-r-2 border-l-2"
                 , children: [ DOM.text user.email ]
                 }
           _ -> mempty
@@ -163,8 +163,8 @@ title props =
         { className: "vetrina--new-purchase-headline-" <> maybe "KSF" Paper.toString props.paper <>
                      case props.accountStatus of
                        NewAccount -> " font-duplexserif text-center px-3 my-3 text-[28px] leading-tight font-semibold"
-                       ExistingAccount _ -> " vetrina--headline-existing-account text-center"
-                       LoggedInAccount _ -> " vetrina--headline-loggedin-account text-center"
+                       ExistingAccount _ -> " vetrina--headline-existing-account text-center pt-5 border-neutral border-t-2 border-r-2 border-l-2"
+                       LoggedInAccount _ -> " vetrina--headline-loggedin-account text-center pt-5 border-neutral border-t-2 border-r-2 border-l-2"
         , _data: Object.fromFoldable $ case props.accountStatus of
                    NewAccount -> mempty
                    _          -> [ Tuple.Tuple "existing-account" "1" ]
@@ -177,8 +177,8 @@ description props =
     --{ id: "tb-paywall--description-text-" <> maybe "KSF" Paper.toString props.paper
     { className: "vetrina--new-purchase-description-text text-center" <>
                  case props.accountStatus of
-                       ExistingAccount _ -> " vetrina--new-purchase-description-text-existing-account"
-                       LoggedInAccount _ -> " vetrina--new-purchase-description-text-loggedin-account"
+                       ExistingAccount _ -> " vetrina--new-purchase-description-text-existing-account pb-5 border-neutral border-r-2 border-b-2 border-l-2"
+                       LoggedInAccount _ -> " vetrina--new-purchase-description-text-loggedin-account font-normal py-5 border-neutral border-r-2 border-l-2"
                        _                 -> mempty
     , children: Array.singleton $
         case props.accountStatus of
@@ -189,14 +189,21 @@ description props =
 
 productDescription :: Props -> State -> JSX
 productDescription props state =
+  if isNothing state.productSelection
+    then mempty
+    else case props.accountStatus of
+      NewAccount -> foldMap _.description state.productSelection
+      LoggedInAccount _ -> foldMap _.descriptionLoggedInAccount state.productSelection
+      _ -> mempty
+
   -- Don't show the product selection if we are asking the user to login
-  if not isExistingAccount props.accountStatus
-     || isNothing state.productSelection
-  then foldMap _.description state.productSelection
-  else mempty
-  where
-    isExistingAccount (ExistingAccount _) = true
-    isExistingAccount _ = false
+  --if not isExistingAccount props.accountStatus
+  --   || isNothing state.productSelection
+  --then foldMap _.description state.productSelection
+  --else mempty
+  --where
+  --  isExistingAccount (ExistingAccount _) = true
+  --  isExistingAccount _ = false
 
 form :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 form props state setState onSubmit = DOM.form $
