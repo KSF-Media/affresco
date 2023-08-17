@@ -172,7 +172,6 @@ title props =
 description :: Props -> JSX
 description props =
   DOM.p
-    --{ id: "tb-paywall--description-text-" <> maybe "KSF" Paper.toString props.paper
     { className: "vetrina--new-purchase-description-text" <>
                  case props.accountStatus of
                        ExistingAccount _ -> " vetrina--new-purchase-description-text-existing-account  text-center pb-5 border-neutral border-r-2 border-b-2 border-l-2"
@@ -187,21 +186,13 @@ description props =
 
 productDescription :: Props -> State -> JSX
 productDescription props state =
+  -- Don't show the product selection if we are asking the user to login
   if isNothing state.productSelection
     then mempty
     else case props.accountStatus of
       NewAccount -> foldMap _.description state.productSelection
       LoggedInAccount _ -> foldMap _.descriptionLoggedInAccount state.productSelection
       _ -> mempty
-
-  -- Don't show the product selection if we are asking the user to login
-  --if not isExistingAccount props.accountStatus
-  --   || isNothing state.productSelection
-  --then foldMap _.description state.productSelection
-  --else mempty
-  --where
-  --  isExistingAccount (ExistingAccount _) = true
-  --  isExistingAccount _ = false
 
 form :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 form props state setState onSubmit = DOM.form $
@@ -223,7 +214,8 @@ form props state setState onSubmit = DOM.form $
   where
     children = case props.accountStatus of
         NewAccount ->
-          [ formSubmitButton props state
+          [ additionalFormRequirements props.accountStatus
+          , formSubmitButton props state
           ]
         ExistingAccount _ ->
           [ passwordInput state setState
@@ -231,6 +223,9 @@ form props state setState onSubmit = DOM.form $
           ]
         LoggedInAccount _ ->
           [ formSubmitButton props state ]
+
+    additionalFormRequirements NewAccount = acceptTerms
+    additionalFormRequirements _ = mempty
 
     renderPaymentMethods :: Array User.PaymentMethod -> JSX
     renderPaymentMethods paymentMethods =
