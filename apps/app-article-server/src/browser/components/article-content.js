@@ -60,6 +60,7 @@ class Content extends Component {
       <figure className="relatedArticles" key={key}>
         <ul>
           {block.related.map((item, index) => {
+            delete item.externalScripts;
             return (
               <li key={"related-article-" + index}>
                 <a href={"/article/" + item.uuid + this.props.queryString}>
@@ -149,7 +150,6 @@ class Content extends Component {
           </div>
           <div className={`col-10 quote ${this.props.darkModeEnabled ? "darkMode" : ""}`} style={{ paddingLeft: "0px" }}>
               {block.quote.body}
-              {/* After the upgrade to Lettera V4, block.quote.author available. */}
           </div>
         </div>
       </div>
