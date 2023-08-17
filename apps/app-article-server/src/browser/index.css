@@ -1091,18 +1091,19 @@ html iframe {
   font-size: 1.3rem;
 }
 
+/* The !importants are needed because of the global fix to backgrounds that sometimes show up behind links */
 .adv-link,
 .adv-link:hover {
   display: block;
   padding: 0.75rem;
   color: black;
   text-decoration-line: none;
-  background-color: #fff3e6;
+  background-color: #fff3e6 !important;
 }
 
 .adv-link.darkMode,
 .adv-link.darkMode:hover {
-  background-color: #27797e;
+  background-color: #27797e !important;
   color: #ffffff;
 }
 
