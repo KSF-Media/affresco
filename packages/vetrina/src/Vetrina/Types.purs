@@ -63,7 +63,6 @@ type PurchaseParameters =
 
 type NewAccountForm =
   { emailAddress     :: Maybe String
-  , acceptLegalTerms :: Boolean
   | PurchaseParameters
   }
 

@@ -419,7 +419,6 @@ staticRender paper products headline = -- headline paper
   , orderSource: PaywallSource
   }
   { emailAddress: Nothing
-  , acceptLegalTerms: false
   , password: Nothing
   , serverErrors: []
   , errorMessage: mempty

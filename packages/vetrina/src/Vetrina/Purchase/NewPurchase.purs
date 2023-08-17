@@ -40,7 +40,6 @@ import Web.HTML.Window as Window
 
 type State =
   { emailAddress        :: Maybe String
-  , acceptLegalTerms    :: Boolean
   , password            :: Maybe String
   , serverErrors        :: Array (Form.ValidationError FormInputField)
   , errorMessage        :: JSX
@@ -57,7 +56,6 @@ component logger = do
       { emailAddress: case props.accountStatus of
            ExistingAccount email -> Just email
            _                     -> Nothing
-      , acceptLegalTerms: false
       , password: Nothing
       , serverErrors: []
       , errorMessage: mempty
@@ -225,8 +223,7 @@ form props state setState onSubmit = DOM.form $
   where
     children = case props.accountStatus of
         NewAccount ->
-          [ additionalFormRequirements props.accountStatus
-          , formSubmitButton props state
+          [ formSubmitButton props state
           ]
         ExistingAccount _ ->
           [ passwordInput state setState
@@ -234,9 +231,6 @@ form props state setState onSubmit = DOM.form $
           ]
         LoggedInAccount _ ->
           [ formSubmitButton props state ]
-
-    additionalFormRequirements NewAccount = acceptTerms
-    additionalFormRequirements _ = mempty
 
     renderPaymentMethods :: Array User.PaymentMethod -> JSX
     renderPaymentMethods paymentMethods =
@@ -477,7 +471,6 @@ newAccountFormValidations state =
   , productSelection: _
     -- TODO: Validate this and show error message. We are checking this on server side and with
     -- default browser validation. However, a custom JS validation is missing.
-  , acceptLegalTerms: state.acceptLegalTerms
   , paymentMethod: _
   }
   <$> Form.validateField EmailAddress state.emailAddress []
