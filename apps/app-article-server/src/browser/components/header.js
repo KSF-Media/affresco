@@ -30,7 +30,7 @@ const Header = (props) => {
         <p
           className={`caption ${classNames.get(props.fontSize)}`}
           dangerouslySetInnerHTML={{
-            __html: props.caption + " " + props.appendBylineLabel + " " + props.byline,
+            __html: props.caption + " " + props.appendBylineLabel + " " + props.byline.toUpperCase(),
           }}
         />
       </div>
