@@ -122,7 +122,7 @@ render props state setState onSubmit =
           LoggedInAccount user
             | isNothing $ toMaybe user.firstName ->
               DOM.div
-                { className: "vetrina--new-purchase-temporary-user-email text-center border-neutral border-r-2 border-l-2"
+                { className: "vetrina--new-purchase-temporary-user-email pt-1 px-5 border-neutral border-r-2 border-l-2"
                 , children: [ DOM.text user.email ]
                 }
           _ -> mempty
