@@ -175,7 +175,7 @@ class Content extends Component {
   renderImage(block, key) {
     let appendBylineLabel = block.image.byline !== "" ? "BILD:" : "";
     let caption = block.image.caption === null ? "" : block.image.caption;
-    let byline = block.image.byline === null ? "" : block.image.byline;
+    let byline = block.image.byline === null ? "" : block.image.byline.toUpperCase();
     return (
       <div className={"image"} key={key}>
         <LazyLoadImage
