@@ -164,7 +164,7 @@ title props =
                      case props.accountStatus of
                        NewAccount -> " font-duplexserif text-center px-3 my-3 text-[28px] leading-tight font-semibold"
                        ExistingAccount _ -> " vetrina--headline-existing-account text-center pt-5 border-neutral border-t-2 border-r-2 border-l-2"
-                       LoggedInAccount _ -> " vetrina--headline-loggedin-account text-center pt-5 border-neutral border-t-2 border-r-2 border-l-2"
+                       LoggedInAccount _ -> " vetrina--headline-loggedin-account pt-5 px-5 border-neutral border-t-2 border-r-2 border-l-2"
         , _data: Object.fromFoldable $ case props.accountStatus of
                    NewAccount -> mempty
                    _          -> [ Tuple.Tuple "existing-account" "1" ]
@@ -175,11 +175,11 @@ description :: Props -> JSX
 description props =
   DOM.p
     --{ id: "tb-paywall--description-text-" <> maybe "KSF" Paper.toString props.paper
-    { className: "vetrina--new-purchase-description-text text-center" <>
+    { className: "vetrina--new-purchase-description-text" <>
                  case props.accountStatus of
-                       ExistingAccount _ -> " vetrina--new-purchase-description-text-existing-account pb-5 border-neutral border-r-2 border-b-2 border-l-2"
-                       LoggedInAccount _ -> " vetrina--new-purchase-description-text-loggedin-account font-normal py-5 border-neutral border-r-2 border-l-2"
-                       _                 -> mempty
+                       ExistingAccount _ -> " vetrina--new-purchase-description-text-existing-account  text-center pb-5 border-neutral border-r-2 border-b-2 border-l-2"
+                       LoggedInAccount _ -> " vetrina--new-purchase-description-text-loggedin-account font-normal p-5 border-neutral border-r-2 border-l-2"
+                       NewAccount        -> " text-center"
     , children: Array.singleton $
         case props.accountStatus of
           NewAccount        -> mempty
