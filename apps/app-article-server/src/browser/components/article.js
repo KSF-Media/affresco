@@ -69,7 +69,7 @@ class Article extends Component {
 
   render() {
     return (
-      <div className={`article ${this.props.darkModeEnabled ? "darkMode" : ""}`} id="HBL">
+      <div className={`article ${this.props.darkModeEnabled ? "darkMode" : ""}`} id={`${this.props.paper.toUpperCase()}`}>
         {this.state.isImageModalOpen && (
           <Lightbox
             mainSrc={this.state.modalImage + "&width=1200"}
