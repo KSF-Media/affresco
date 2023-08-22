@@ -340,10 +340,14 @@ vetrinaContainer purchaseState child =
     DOM.div
       { className:
           joinWith " "
-          $ take 2
-          $ filter (not String.null) [ "vetrina--container", errorClass ]
+          $ take 3
+          $ filter (not String.null) [ "vetrina--container", errorClass, newPurchaseClass ]
       , children: [ child ]
       }
+  where
+    newPurchaseClass = case purchaseState of
+                        NewPurchase -> "vetrina--container-new-purchase"
+                        _           -> mempty
 
 orderErrorMessage :: OrderFailure -> String
 orderErrorMessage failure =
@@ -415,7 +419,6 @@ staticRender paper products headline = -- headline paper
   , orderSource: PaywallSource
   }
   { emailAddress: Nothing
-  , acceptLegalTerms: false
   , password: Nothing
   , serverErrors: []
   , errorMessage: mempty

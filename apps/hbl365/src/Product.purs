@@ -23,6 +23,7 @@ getProduct = try do
       { id: "HBL 365"
       , name: hbl365.name
       , description: mempty
+      , descriptionLoggedInAccount: mempty
       , descriptionPurchaseCompleted: mempty
       , priceCents
       , campaign: find (\x -> x.id == "1M1E") hbl365.campaigns

@@ -13,13 +13,16 @@ hblPremium =
   , description:
       DOM.div
         { id: "tb-paywall--product-text-hbl"
-        , className: "vetrina--form-product-text"
+        , className: "vetrina--product-text text-center text-base leading-tight px-5 pb-5"
         , children:
-            [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
-            , DOM.br {}
-            , DOM.text "Läs Hufvudstadsbladet gratis i en månad, därefter 9,99€ / månad tills vidare. Avsluta när du vill."
-            ]
+            [ DOM.text "Läs HBL digitalt gratis i en månad, därefter 9,99€ per månad. Avsluta enkelt när du vill." ]
         }
+  , descriptionLoggedInAccount:
+      DOM.div
+          { className: "vetrina--product-text text-base leading-tight px-5 pb-5 border-neutral border-r-2 border-b-2 border-l-2"
+          , children:
+              [ DOM.text "Du har ett gratiskonto. För att läsa fler artiklar behöver du en digital prenumeration. Den kostar 9,99€ per månad. Du kan avsluta när du vill." ]
+          }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi."
   , campaign: Just
       { no: 4349
@@ -53,13 +56,19 @@ vnPremium =
   , description:
       DOM.div
         { id: "tb-paywall--product-text-vn"
-        , className: "vetrina--form-product-text"
+        , className: "vetrina--product-text  text-center text-base leading-tight px-5 pb-5"
         , children:
             [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
             , DOM.br {}
             , DOM.text "Läs Västra Nyland för 1€ i en månad, därefter 6,90€ / månad tills vidare. Avsluta när du vill."
             ]
         }
+  , descriptionLoggedInAccount:
+      DOM.div
+          { className: "vetrina--product-text text-base leading-tight px-5 pb-5 border-neutral border-r-2 border-b-2 border-l-2"
+          , children:
+              [ DOM.text "Du har ett gratiskonto. För att läsa fler artiklar behöver du en digital prenumeration. Den kostar 6,90€ per månad. Du kan avsluta när du vill." ]
+          }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på vastranyland.fi."
   , campaign: Just
       { no: 4072
@@ -96,13 +105,19 @@ onPremium =
   , description:
       DOM.div
         { id: "tb-paywall--product-text-on"
-        , className: "vetrina--form-product-text"
+        , className: "vetrina--product-text text-center text-base leading-tight px-5 pb-5"
         , children:
             [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
             , DOM.br {}
             , DOM.text "Läs Östnyland för 1€ i en månad, därefter 6,90€ / månad tills vidare. Avsluta när du vill."
             ]
         }
+  , descriptionLoggedInAccount:
+      DOM.div
+          { className: "vetrina--product-text text-base leading-tight px-5 pb-5 border-neutral border-r-2 border-b-2 border-l-2"
+          , children:
+              [ DOM.text "Du har ett gratiskonto. För att läsa fler artiklar behöver du en digital prenumeration. Den kostar 6,90€ per månad. Du kan avsluta när du vill." ]
+          }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på ostnyland.fi."
   , campaign: Just
       { length: 1

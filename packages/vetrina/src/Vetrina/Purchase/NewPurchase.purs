@@ -16,10 +16,10 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Foreign.Object as Object
 import KSF.Api.Package (toSwedish)
-import KSF.Helpers (formatEur)
 import KSF.Helpers as Helpers
 import KSF.InputField as InputField
 import KSF.Paper as Paper
+import KSF.Paper (Paper(..))
 import KSF.PaymentMethod (paymentMethodOption)
 import KSF.Sentry as Sentry
 import KSF.User (PaymentMethod(..))
@@ -28,19 +28,18 @@ import KSF.ValidatableForm (isNotInitialized)
 import KSF.ValidatableForm as Form
 import KSF.Window (clearOpener)
 import React.Basic (JSX)
-import React.Basic.Hooks as React
-import React.Basic.Hooks (Component, useState, (/\))
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
-import React.Basic.Events (EventHandler, handler, handler_)
+import React.Basic.Events (EventHandler, handler)
+import React.Basic.Hooks (Component, useState, (/\))
+import React.Basic.Hooks as React
 import Vetrina.Purchase.NewPurchase.Order (Props, PurchaseInput, createNewAccount, loginToExistingAccount, mkPurchase)
-import Vetrina.Types (AccountStatus(..), ExistingAccountForm, FormInputField(..), NewAccountForm, OrderFailure, Product, ProductContent, PurchaseParameters)
+import Vetrina.Types (AccountStatus(..), ExistingAccountForm, FormInputField(..), NewAccountForm, OrderFailure, Product, PurchaseParameters)
 import Web.HTML as Web.HTML
 import Web.HTML.Window as Window
 
 type State =
   { emailAddress        :: Maybe String
-  , acceptLegalTerms    :: Boolean
   , password            :: Maybe String
   , serverErrors        :: Array (Form.ValidationError FormInputField)
   , errorMessage        :: JSX
@@ -57,7 +56,6 @@ component logger = do
       { emailAddress: case props.accountStatus of
            ExistingAccount email -> Just email
            _                     -> Nothing
-      , acceptLegalTerms: false
       , password: Nothing
       , serverErrors: []
       , errorMessage: mempty
@@ -106,24 +104,48 @@ component logger = do
 
 render :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 render props state setState onSubmit =
-  title props
-  <> newPurchaseLinks props
-  <> case props.accountStatus of
-    LoggedInAccount user
-      | isNothing $ toMaybe user.firstName ->
-        DOM.div
-          { className: "vetrina--temporary-user-email"
-          , children: [ DOM.text user.email ]
+  DOM.div
+    { className: "vetrina--new-purchase-container flex flex-col items-stretch col-span-3 bg-white" <>
+                 case props.accountStatus of
+                       NewAccount -> " vetrina--new-account-container"
+                       ExistingAccount _ -> " vetrina--existing-account-container p-5"
+                       LoggedInAccount _ -> " vetrina--loggedin-account-container p-5"
+    , children:
+      [ newPurchaseLinks props
+      , case props.accountStatus of
+          NewAccount  -> image props
+          _ -> mempty
+      , title props
+      , case props.accountStatus of
+          LoggedInAccount user
+            | isNothing $ toMaybe user.firstName ->
+              DOM.div
+                { className: "vetrina--new-purchase-temporary-user-email pt-1 px-5 border-neutral border-r-2 border-l-2"
+                , children: [ DOM.text user.email ]
+                }
+          _ -> mempty
+      , case props.accountStatus of
+          NewAccount -> mempty
+          _ -> description props
+      , productDescription props state
+      , form props state setState onSubmit
+      , links props
+      ]
+    }
+
+image :: Props -> JSX
+image props = DOM.div
+          { className: "h-28 bg-no-repeat bg-center bg-contain"
+          --Tailwind doesn't show the background image, therefore it is inline CSS, Tailwind does show it as an img but this should be a background image
+          , style: DOM.css { backgroundImage: imgUrl props.paper }
           }
-    _ -> mempty
-  <> case props.accountStatus of
-       NewAccount -> mempty
-       _ -> description props
-  <> form props state setState onSubmit
-  <> links props
-  <> if length props.products == 1
-     then productInformation state setState
-     else mempty
+  where
+    imgUrl paper =
+      case paper of
+        Just HBL -> "url('https://cdn.ksfmedia.fi/assets/images/subscribe-paywall-icon-hbl.svg')"
+        Just ON  -> "url('https://cdn.ksfmedia.fi/assets/images/subscribe-paywall-icon-on.svg')"
+        Just VN  -> "url('https://cdn.ksfmedia.fi/assets/images/subscribe-paywall-icon-vn.svg')"
+        _   -> mempty
 
 title :: Props -> JSX
 title props =
@@ -136,11 +158,11 @@ title props =
   where
     headline child =
       DOM.div
-        { id: "tb-paywall--headline-" <> maybe "KSF" Paper.toString props.paper
-        , className: "vetrina--headline-" <> maybe "KSF" Paper.toString props.paper <>
+        { className: "vetrina--new-purchase-headline-" <> maybe "KSF" Paper.toString props.paper <>
                      case props.accountStatus of
-                       NewAccount -> mempty
-                       _          -> " vetrina--headline-existing-account"
+                       NewAccount -> " font-duplexserif text-center px-3 my-3 text-[28px] leading-tight font-semibold"
+                       ExistingAccount _ -> " vetrina--headline-existing-account text-center pt-5 border-neutral border-t-2 border-r-2 border-l-2"
+                       LoggedInAccount _ -> " vetrina--headline-loggedin-account pt-5 px-5 border-neutral border-t-2 border-r-2 border-l-2"
         , _data: Object.fromFoldable $ case props.accountStatus of
                    NewAccount -> mempty
                    _          -> [ Tuple.Tuple "existing-account" "1" ]
@@ -150,11 +172,11 @@ title props =
 description :: Props -> JSX
 description props =
   DOM.p
-    { id: "tb-paywall--description-text-" <> maybe "KSF" Paper.toString props.paper
-    , className: "vetrina--description-text" <>
+    { className: "vetrina--new-purchase-description-text" <>
                  case props.accountStatus of
-                       LoggedInAccount _ -> " vetrina--description-text-existing-account"
-                       _                 -> mempty
+                       ExistingAccount _ -> " vetrina--new-purchase-description-text-existing-account  text-center pb-5 border-neutral border-r-2 border-b-2 border-l-2"
+                       LoggedInAccount _ -> " vetrina--new-purchase-description-text-loggedin-account font-normal p-5 border-neutral border-r-2 border-l-2"
+                       NewAccount        -> " text-center"
     , children: Array.singleton $
         case props.accountStatus of
           NewAccount        -> mempty
@@ -162,9 +184,19 @@ description props =
           LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
       }
 
+productDescription :: Props -> State -> JSX
+productDescription props state =
+  -- Don't show the product selection if we are asking the user to login
+  if isNothing state.productSelection
+    then mempty
+    else case props.accountStatus of
+      NewAccount -> foldMap _.description state.productSelection
+      LoggedInAccount _ -> foldMap _.descriptionLoggedInAccount state.productSelection
+      _ -> mempty
+
 form :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 form props state setState onSubmit = DOM.form $
-  { className: "vetrina--form"
+  { className: "vetrina--new-purchase-form flex flex-col justify-center items-center content-center px-5"
   , onSubmit
     -- NOTE: We need to have `emailInput` here (opposed to in `children`),
     -- as we don't want to re-render it when `accountStatus` changes.
@@ -175,19 +207,11 @@ form props state setState onSubmit = DOM.form $
         then productDropdown props.products
         else mempty
       , renderPaymentMethods props.paymentMethods
-       -- Don't show the product selection if we are asking the user to login
-      , if not isExistingAccount props.accountStatus
-           || isNothing state.productSelection
-        then foldMap _.description state.productSelection
-        else mempty
       , state.errorMessage
       , emailInput props state setState
       ] <> children
   }
   where
-    isExistingAccount (ExistingAccount _) = true
-    isExistingAccount _ = false
-
     children = case props.accountStatus of
         NewAccount ->
           [ additionalFormRequirements props.accountStatus
@@ -200,7 +224,7 @@ form props state setState onSubmit = DOM.form $
         LoggedInAccount _ ->
           [ formSubmitButton props state ]
 
-    additionalFormRequirements NewAccount = acceptTermsCheckbox
+    additionalFormRequirements NewAccount = acceptTerms
     additionalFormRequirements _ = mempty
 
     renderPaymentMethods :: Array User.PaymentMethod -> JSX
@@ -284,12 +308,12 @@ links :: Props -> JSX
 links props =
   case props.accountStatus of
     NewAccount        -> mempty -- Login link shown elsewhere
-    ExistingAccount _ -> linksDiv $ resetPasswordLink <> subscribePagesLink
-    LoggedInAccount _ -> linksDiv $ subscribePagesLink
+    ExistingAccount _ -> linksDiv $ resetPasswordLink
+    _                 -> mempty
   where
     linksDiv linksJsx =
       DOM.div
-        { className: "vetrina--links"
+        { className: "vetrina--new-purchase-links text-center my-3"
         , children: linksJsx
         }
 
@@ -299,13 +323,20 @@ resetPasswordLink =
 
 loginLink :: Props -> JSX
 loginLink props =
-  DOM.span
-    { className: "vetrina--login-link"
+  DOM.div
+    { className: "vetrina--new-purchase-login-link bg-neutral text-white text-center text-base leading-tight py-2"
     , children:
-        [ DOM.text "Redan prenumerant? "
+        [ DOM.p
+          { className: "vetrina--new-purchase-login-text"
+          , children: [ DOM.text "Detta är en låst artikel för prenumeranter. "]
+          }
         , DOM.span
-            { className:"vetrina--login-callback"
-            , children: [ DOM.text "Logga in för att fortsätta läsa" ]
+          { className: "vetrina--new-purchase-login-text"
+          , children: [ DOM.text "Redan prenumerant? "]
+          }
+        , DOM.a
+            { className:"vetrina--login-callback cursor-pointer underline"
+            , children: [ DOM.text "Logga in här." ]
             , onClick: props.onLogin
             }
         ]
@@ -320,7 +351,7 @@ mkLink linkDescription href linkText = Array.singleton $
   DOM.span_
     [ DOM.text $ linkDescription <> " "
     , DOM.a
-        { className: "vetrina--link"
+        { className: "vetrina--link text-neutral underline"
         , href
         , children: [ DOM.text linkText ]
         , target: "_blank"
@@ -331,13 +362,17 @@ formSubmitButton :: Props -> State -> JSX
 formSubmitButton props state =
   DOM.input
     { type: "submit"
-    , className: "vetrina--button"
+    , className: "vetrina--submit-button bg-neutral text-white text-lg w-[80%] max-w-[400px] mx-[10%] my-5 font-normal py-0.5 px-11 border-neutral rounded cursor-pointer" <>
+                 case props.accountStatus of
+                  NewAccount        -> " vetrina--submit-button-new-account"
+                  ExistingAccount _ -> " vetrina--submit-button-existing-account"
+                  LoggedInAccount _ -> " vetrina--submit-button-loggedin-account"
     , disabled
     , value
     }
   where
     value = case props.accountStatus of
-      NewAccount        -> "Bekräfta och gå vidare"
+      NewAccount        -> "VIDARE"
       ExistingAccount _ -> "Logga in"
       LoggedInAccount _ -> "Bekräfta och gå vidare"
     disabled = case props.accountStatus of
@@ -358,23 +393,11 @@ emailInput :: Props -> State -> ((State -> State) -> Effect Unit) -> JSX
 emailInput {accountStatus: (LoggedInAccount _)} _ _ = mempty
 emailInput props state setState =
   DOM.div
-    { className: "vetrina--input-wrapper vetrina--with-label"
+    { className: "vetrina--input-wrapper vetrina--with-label text-base max-w-[400px]"
     , children:
-        [ if props.accountStatus == NewAccount
-          then DOM.div
-                 { className: "vetrina--step vetrina--create-account"
-                 , children:
-                     [ DOM.span
-                         { className: "vetrina--step__headline"
-                         , children: [ DOM.text "Skapa konto" ]
-                         }
-                     , DOM.text "STEG 1 / 2 KONTOINFORMATION"
-                     ]
-                 }
-          else mempty
-        , InputField.inputField
+        [ InputField.inputField
             { type_: InputField.Email
-            , label: Just "E-postadress"
+            , label: Just "Fyll i din e-post för att börja:"
             , name: "emailAddress"
             , placeholder: "Fyll i din e-postadress"
             , onChange: onChange
@@ -424,89 +447,18 @@ passwordInput state setState =
     }
 
 
-acceptTermsCheckbox :: JSX
-acceptTermsCheckbox =
-  let id    = "accept-terms"
-      label =
-        DOM.span_ $
-          [ DOM.text "Jag godkänner KSF Medias " ]
-          <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "användarvillkor"
-          <> [ DOM.text " och bekräftar att jag har läst och förstått " ]
-          <> mkLink "" "https://www.ksfmedia.fi/dataskydd" "integritets-policyn"
-
-  in DOM.div
-    { className: "vetrina--checkbox-container"
-    , children:
-        [ DOM.input
-            { className: "vetrina--checkbox"
-            , type: "checkbox"
-            , id
-            , required: true
-            }
-        , DOM.label
-            { className: "vetrina--checkbox-label"
-            , htmlFor: id
-            , children: [ label ]
-            }
-        ]
-    }
-
-productInformation :: State -> ((State -> State) -> Effect Unit) -> JSX
-productInformation state setState =
+acceptTerms :: JSX
+acceptTerms =
   DOM.div
-    { className: "vetrina--product-container"
-    , children: Array.singleton $
-        DOM.div
-          { className: "vetrina--product-information"
-          , children:
-              [ DOM.div
-                  { className: "vetrina--product-information__headline"
-                  , onClick: handler_ $ setState _ { showProductContents = not state.showProductContents }
-                  , children:
-                      [ DOM.span
-                         { className: "vetrina--product-information__name"
-                         , children: [ DOM.text $ foldMap _.name state.productSelection ]
-                         }
-                     , DOM.span
-                         { className: "vetrina--product-information__description"
-                         , children:
-                             [ DOM.text $ foldMap (formatEur <<< _.priceCents) state.productSelection
-                             , DOM.text "€/månad" -- TODO: Always maybe not month
-                             ]
-                         }
-                     , DOM.span
-                         { className: "vetrina--product-information__arrow-"
-                                      <> if state.showProductContents
-                                         then "down"
-                                         else "up"
-                         }
-                     ]
-                  }
-              ] <> if state.showProductContents
-                   then (foldMap (map renderProductContents) $ _.contents <$> state.productSelection)
-                   else mempty
-          }
+    { className: "vetrina--terms-conditions max-w-[400px] text-center text-sm leading-tight mb-4"
+    , children:
+      [ DOM.text "Genom att klicka på \"Vidare\" godkänner du KSF Medias " ]
+          <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "prenumerationsvillkor"
+          <> [ DOM.text " och " ]
+          <> mkLink "" "https://www.ksfmedia.fi/dataskydd" "personuppgiftspolicy"
+          <> [ DOM.text ". ", DOM.br {} ]
+          <> [ DOM.text "Du uppger kortuppgifter i nästa steg." ]
     }
-  where
-    renderProductContents :: ProductContent -> JSX
-    renderProductContents productContent =
-      DOM.span
-        { className: "vetrina--product-information__contents"
-        , children:
-            [ DOM.strong
-                { className: "vetrina--product-information__contents-name"
-                , children: [ DOM.text productContent.title ]
-                }
-            , DOM.span
-                { className: "vetrina--product-information__contents-description"
-                , children: [ DOM.text productContent.description ]
-                }
-            , DOM.span
-                { className: "vetrina--product-information__checkmark"
-                , children: []
-                }
-            ]
-        }
 
 newAccountFormValidations :: State -> Form.ValidatedForm FormInputField NewAccountForm
 newAccountFormValidations state =
@@ -514,7 +466,6 @@ newAccountFormValidations state =
   , productSelection: _
     -- TODO: Validate this and show error message. We are checking this on server side and with
     -- default browser validation. However, a custom JS validation is missing.
-  , acceptLegalTerms: state.acceptLegalTerms
   , paymentMethod: _
   }
   <$> Form.validateField EmailAddress state.emailAddress []
