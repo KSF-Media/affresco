@@ -56,7 +56,7 @@ vnPremium =
   , description:
       DOM.div
         { id: "tb-paywall--product-text-vn"
-        , className: "vetrina--product-text  text-center text-base leading-tight px-5 pb-5"
+        , className: "vetrina--product-text text-center text-base leading-tight px-5 pb-5"
         , children:
             [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
             , DOM.br {}
