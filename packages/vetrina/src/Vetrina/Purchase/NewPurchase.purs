@@ -215,6 +215,7 @@ form props state setState onSubmit = DOM.form $
     children = case props.accountStatus of
         NewAccount ->
           [ additionalFormRequirements props.accountStatus
+          , coverReservationText
           , formSubmitButton props state
           ]
         ExistingAccount _ ->
@@ -324,7 +325,7 @@ resetPasswordLink =
 loginLink :: Props -> JSX
 loginLink props =
   DOM.div
-    { className: "vetrina--new-purchase-login-link bg-neutral text-white text-center text-base leading-tight py-2"
+    { className: "vetrina--new-purchase-login-link bg-neutral font-duplexsans font-light text-white text-center text-base leading-tight py-2"
     , children:
         [ DOM.p
           { className: "vetrina--new-purchase-login-text"
@@ -458,6 +459,14 @@ acceptTerms =
           <> mkLink "" "https://www.ksfmedia.fi/dataskydd" "personuppgiftspolicy"
           <> [ DOM.text ". ", DOM.br {} ]
           <> [ DOM.text "Du uppger kortuppgifter i nästa steg." ]
+    }
+
+coverReservationText :: JSX
+coverReservationText =
+  DOM.div
+    { className: "vetrina--cover-reservation max-w-[400px] text-center text-xs leading-tight mb-4"
+    , children:
+      [ DOM.text "På kortet görs en täckningsreservering på en euro för att bekräfta att kortet är giltigt. Den här summan debiteras inte från kortet." ]
     }
 
 newAccountFormValidations :: State -> Form.ValidatedForm FormInputField NewAccountForm
