@@ -55,17 +55,6 @@ let apps =
               ''
           }
         , App::{
-          , name = "HBL365"
-          , buildDir = "hbl365"
-          , deployDir = "hbl365"
-          , lockfile = Some "yarn.lock"
-          , caches = Some
-              ''
-              apps/hbl365/.spago
-              apps/hbl365/output
-              ''
-          }
-        , App::{
           , name = "Prenumerera"
           , buildDir = "prenumerera"
           , deployDir = "prenumerera"

@@ -78,7 +78,7 @@ renderRemind =
         [ DOM.p_
             [ DOM.strong_ [ DOM.text "Hoppsan!" ]
             , DOM.br {}
-            , DOM.text "Vänligen godkänn KSF Medias bruksvillkor för att fortsätta."
+            , DOM.text "Vänligen godkänn Hufvudstadsbladet Abs bruksvillkor för att fortsätta."
             ]
         ]
     }
@@ -156,7 +156,7 @@ renderAccept accept setAccept =
             , onChange: setAccept
             , labelJSX: Just $
                 React.fragment
-                  [ DOM.text "Jag har läst och godkänner KSF Medias "
+                  [ DOM.text "Jag har läst och godkänner Hufvudstadsbladet Abs "
                   , DOM.a
                       { href: "https://www.hbl.fi/bruksvillkor/"
                       , target: "_blank"

@@ -244,7 +244,7 @@ packageDescriptions = fromFoldable
           ]
       , ribbon: React.fragment
           [ DOM.span_ [ DOM.text "första månaden" ], DOM.span_ [ DOM.strong_ [ DOM.text "1€" ] ] ]
-      , url: Just "https://customer.hbl.fi/hbl365"
+      , url: Just "https://www.ksfmedia.fi/prenumerera-hbl-digital-plus"
       , weekdays: "Allt digitalt innehåll inkl. e-tidningar"
       , ordering: 2
       , image: "HBL365365.png"

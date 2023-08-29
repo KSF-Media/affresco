@@ -137,6 +137,7 @@ inputField FirstName { formData } setState = InputField.inputField
   , onChange: (\val -> setState _ { formData { firstName = val } })
   , validationError: inputFieldErrorMessage $ validateField FirstName formData.firstName []
   , value: formData.firstName
+  , inputClass: ""
   }
 
 inputField LastName { formData } setState = InputField.inputField
@@ -147,6 +148,7 @@ inputField LastName { formData } setState = InputField.inputField
   , onChange: (\val -> setState _ { formData { lastName = val } })
   , validationError: inputFieldErrorMessage $ validateField LastName formData.lastName []
   , value: formData.lastName
+  , inputClass: ""
   }
 
 inputField StreetAddress { formData } setState = InputField.inputField
@@ -157,6 +159,7 @@ inputField StreetAddress { formData } setState = InputField.inputField
   , onChange: (\val -> setState _ { formData { streetAddress = val } })
   , validationError: inputFieldErrorMessage $ validateField StreetAddress formData.streetAddress []
   , value: formData.streetAddress
+  , inputClass: ""
   }
 
 inputField City { formData } setState = InputField.inputField
@@ -167,6 +170,7 @@ inputField City { formData } setState = InputField.inputField
   , onChange: (\val -> setState _ { formData { city = val } })
   , validationError: inputFieldErrorMessage $ validateField City formData.city []
   , value: formData.city
+  , inputClass: ""
   }
 
 inputField (Zip _) { formData } setState = InputField.inputField
@@ -177,6 +181,7 @@ inputField (Zip _) { formData } setState = InputField.inputField
   , onChange: (\val -> setState _ { formData { zipCode = val } })
   , validationError: inputFieldErrorMessage $ validateField (Zip formData.country) formData.zipCode []
   , value: formData.zipCode
+  , inputClass: ""
   }
 
 inputField Country { formData } setState =
@@ -194,6 +199,7 @@ inputField EmailAddress { formData, serverErrors } setState = InputField.inputFi
                                   })
   , validationError: inputFieldErrorMessage $ validateField EmailAddress formData.emailAddress serverErrors
   , value: formData.emailAddress
+  , inputClass: ""
   }
 
 inputField Password { formData, serverErrors } setState = InputField.inputField
@@ -207,6 +213,7 @@ inputField Password { formData, serverErrors } setState = InputField.inputField
                                    }
     , value: formData.password
     , validationError: inputFieldErrorMessage $ validateField Password formData.password serverErrors
+    , inputClass: ""
     }
 
 inputField (ConfirmPassword _) { formData } setState = InputField.inputField
@@ -217,6 +224,7 @@ inputField (ConfirmPassword _) { formData } setState = InputField.inputField
     , onChange: \val -> setState _ { formData { confirmPassword = val } }
     , value: formData.confirmPassword
     , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword formData.password) formData.confirmPassword []
+    , inputClass: ""
     }
 
 confirm :: Self -> JSX

@@ -107,7 +107,7 @@ component = do
 
     acceptChangesButton user setNewslettersUpdated newslettersUpdated newsletters =
       DOM.div_
-        [ DOM.p_ [ DOM.text "Hantera dina nyhetsbrev genom att kryssa för de nyhetsbrev du vill få och tryck på Spara. Genom att beställa godkänner du KSF Medias bruksvillkor." ]
+        [ DOM.p_ [ DOM.text "Hantera dina nyhetsbrev genom att kryssa för de nyhetsbrev du vill få och tryck på Spara. Genom att beställa godkänner du Hufvudstadsbladet Abs bruksvillkor." ]
         , DOM.p_ [ DOM.text "Om du inte tidigare prenumererat på ett nyhetsbrev måste du först bekräfta din e-postadress. Vi skickar ett meddelande till din e-postadress där du kan bekräfta att adressen är rätt." ]
         , DOM.button
             { className: "button-green newsletters--update-submit"
