@@ -1,7 +1,7 @@
 {
   "name": "@ksf-media/vetrina",
   "version": "4.1.1",
-  "description": "Vetrina, frontend for purchasing KSF Media products",
+  "description": "Vetrina, frontend for purchasing Hufvudstadsbladet Ab products",
   "license": "MIT",
   "scripts": {
     "build-npm": "spago bundle-module -m KSF.Vetrina -t build.js && parcel build --no-source-maps -d build ../../less/Vetrina.less",

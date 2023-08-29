@@ -1,7 +1,7 @@
 {
   "name": "@affresco/components",
   "version": "1.0.0",
-  "description": "Components for KSF Media apps",
+  "description": "Components for Hufvudstadsbladet Ab apps",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
