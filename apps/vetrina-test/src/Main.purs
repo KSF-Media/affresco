@@ -14,6 +14,7 @@ import KSF.User.Login as Login
 import KSF.Vetrina as Vetrina
 import KSF.Vetrina.Products.Premium (hblPremium)
 import React.Basic (JSX)
+import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_)
 import React.Basic.Hooks as React
 import React.Basic.Hooks (Component, useState', (/\))
@@ -39,7 +40,7 @@ app = do
         , products: [ hblPremium ]
         , unexpectedError: mempty
         , accessEntitlements: Set.fromFoldable ["hbl-365", "hbl-web"]
-        , headline: Nothing
+        , headline: Just $ vetrinaTestHeadline
         , paper: Just HBL
         , paymentMethods: [CreditCard]
         , customNewPurchase: Nothing
@@ -57,6 +58,13 @@ app = do
         , paper: Just HBL
         , disableSocialLogins: mempty
         }
+
+vetrinaTestHeadline :: JSX
+vetrinaTestHeadline =
+  DOM.div
+    { className: "vetrinaTest--headline"
+    , children: [ DOM.text $ "Prova HBL Digital utan kostnad i en månad"]
+    }
 
 jsApp :: {} -> JSX
 jsApp = unsafePerformEffect app

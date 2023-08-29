@@ -30,6 +30,7 @@ type Product =
   { id                           :: String
   , name                         :: String
   , description                  :: JSX
+  , descriptionLoggedInAccount   :: JSX
   , descriptionPurchaseCompleted :: JSX
   , priceCents                   :: Int
   , campaign                     :: Maybe Campaign
@@ -62,7 +63,6 @@ type PurchaseParameters =
 
 type NewAccountForm =
   { emailAddress     :: Maybe String
-  , acceptLegalTerms :: Boolean
   | PurchaseParameters
   }
 
