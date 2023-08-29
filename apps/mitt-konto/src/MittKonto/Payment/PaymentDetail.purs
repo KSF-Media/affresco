@@ -54,7 +54,7 @@ render name payment =
             , children:
                 [ DOM.tbody_ $ map renderRow
                     [ "Utskrivningsdatum" /\ formatDateDots payment.date
-                    , "Mottagare" /\ "KSF Media Ab"
+                    , "Mottagare" /\ "Hufvudstadsbladet Ab"
                     , "Adress" /\ "Mannerheimvägen 18, 00100 HELSINGFORS"
                     , "Momsnummer" /\ "FI21372401"
                     , "Produkt" /\ name

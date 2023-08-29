@@ -151,7 +151,7 @@ title :: Props -> JSX
 title props =
   let headlineText =
         case props.accountStatus of
-          ExistingAccount _    -> Just $ DOM.text "Du har redan ett KSF Media-konto"
+          ExistingAccount _    -> Just $ DOM.text "Du har redan ett konto"
           LoggedInAccount user -> Just $ DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
           NewAccount -> props.headline
   in foldMap headline headlineText
@@ -180,7 +180,7 @@ description props =
     , children: Array.singleton $
         case props.accountStatus of
           NewAccount        -> mempty
-          ExistingAccount _ -> DOM.text "Vänligen logga in med ditt KSF Media lösenord."
+          ExistingAccount _ -> DOM.text "Vänligen logga in med ditt lösenord."
           LoggedInAccount _ -> DOM.text "Den här artikeln är exklusiv för våra prenumeranter."
       }
 
@@ -452,7 +452,7 @@ acceptTerms =
   DOM.div
     { className: "vetrina--terms-conditions max-w-[400px] text-center text-sm leading-tight mb-4"
     , children:
-      [ DOM.text "Genom att klicka på \"Vidare\" godkänner du KSF Medias " ]
+      [ DOM.text "Genom att klicka på \"Vidare\" godkänner du Hufvudstadsbladet Abs " ]
           <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "prenumerationsvillkor"
           <> [ DOM.text " och " ]
           <> mkLink "" "https://www.ksfmedia.fi/dataskydd" "personuppgiftspolicy"

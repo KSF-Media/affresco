@@ -2,7 +2,7 @@
 
 ![Affresco](http://www.hotelfororomano.com/wp-content/gallery/gallery-arte-braocca-roma/vita-di-mose-affresco-cappella-sistina-michelangelo.jpg)
 
-Affresco (IPA: */af'fresko/*) is KSF Media's frontend monorepo: as many beautiful scenes are contained in a fresco, many beautiful frontends can be found in this repo.
+Affresco (IPA: */af'fresko/*) is Hufvudstadsbladet Ab's frontend monorepo: as many beautiful scenes are contained in a fresco, many beautiful frontends can be found in this repo.
 
 ![production](https://github.com/KSF-Media/affresco/workflows/production/badge.svg)
 

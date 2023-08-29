@@ -113,7 +113,7 @@ subscribeNewCustomerPaySetPassword page password = do
   let titleSelector = Chrome.Selector ".vetrina--headline"
   log "Check that we land on the right page at the end"
   Chrome.waitForLong_ titleSelector page
-  Chrome.assertContent titleSelector "Ditt KSF Media-konto är klart!" page
+  Chrome.assertContent titleSelector "Ditt konto är klart!" page
 
 subscribe365NewCustomer :: Test
 subscribe365NewCustomer page email password = do
