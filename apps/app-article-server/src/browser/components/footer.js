@@ -18,8 +18,9 @@ const Footer = (props) => {
         Ta kontakt
       </a>
       <br />
-      <strong>KSF Media {new Date().getFullYear()}</strong>
-      <p><small>KSF Media ägs av Bonnier News och Konstsamfundet</small></p>
+      <strong>Hufvudstadsbladet Ab {new Date().getFullYear()}</strong>
+      <p class="company-info"><small>Hufvudstadsbladet Ab ger ut Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior.</small></p>
+      <p class="company-info"><small>Hufvudstadsbladet Ab ägs av Bonnier News och Konstsamfundet.</small></p>
     </div>
   );
 };
