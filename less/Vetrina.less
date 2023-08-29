@@ -58,6 +58,9 @@
     background-color: var(--vetrina-background, @grey-light);
     margin: 0;
     margin-bottom: 40px;
+    &.vetrina--container-new-purchase {
+        padding: 0;
+    }
     .spinner--loading-spinner {
 	background-color: var(--vetrina-background, @grey-light);
     }
@@ -201,11 +204,6 @@ triggerbee-widget {
 
 .vetrina--login-link {
     grid-area: login-link;
-}
-
-.vetrina--login-callback {
-  color: var(--vetrina-link-color, @brand-neutral);
-  cursor: pointer;
 }
 
 .vetrina-purchase-completed--submit-password {
