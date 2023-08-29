@@ -114,6 +114,7 @@ updatePasswordForm = do
                     , onChange: \newPw -> setForm _ { password = newPw }
                     , label: Just "Nytt lösenord"
                     , validationError: inputFieldErrorMessage $ validateField Password password state.serverErrors
+                    , inputClass: ""
                     }
                 , InputField.inputField
                     { type_: InputField.Password
@@ -123,6 +124,7 @@ updatePasswordForm = do
                     , onChange: \newPw -> setForm _ { confirmPassword = newPw }
                     , label: Just "Bekräfta lösenord"
                     , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword password) confirmPassword []
+                    , inputClass: ""
                     }
                 , DOM.button
                     { type: "submit"
