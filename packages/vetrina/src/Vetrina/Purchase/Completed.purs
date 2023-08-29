@@ -24,7 +24,7 @@ completed props =
     { className: "vetrina--headline"
     , children:
         [ case props.accountStatus of
-             NewAccount      -> DOM.text "Ditt KSF Media-konto är klart!"
+             NewAccount      -> DOM.text "Ditt konto är klart!"
              _               -> DOM.text "Tack för din beställning!"
         ]
     }

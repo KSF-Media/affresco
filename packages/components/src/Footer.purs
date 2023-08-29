@@ -34,7 +34,7 @@ ksfAddress =
   DOM.div
     { className: "footer--ksf-address"
     , children:
-      [ addressText "KSF Media"
+      [ addressText "Hufvudstadsbladet Ab"
       , separator
       , addressText "Mannerheimvägen 18"
       , separator
