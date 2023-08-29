@@ -13,7 +13,7 @@ hblPremium =
   , description:
       DOM.div
         { id: "tb-paywall--product-text-hbl"
-        , className: "vetrina--product-text text-center text-base leading-tight px-5 pb-5"
+        , className: "vetrina--product-text font-duplexsans font-light text-center text-base leading-tight px-5 pb-5"
         , children:
             [ DOM.text "Läs HBL digitalt gratis i en månad, därefter 9,99€ per månad. Avsluta enkelt när du vill." ]
         }
@@ -56,7 +56,7 @@ vnPremium =
   , description:
       DOM.div
         { id: "tb-paywall--product-text-vn"
-        , className: "vetrina--product-text  text-center text-base leading-tight px-5 pb-5"
+        , className: "vetrina--product-text font-duplexsans font-light text-center text-base leading-tight px-5 pb-5"
         , children:
             [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
             , DOM.br {}
@@ -105,7 +105,7 @@ onPremium =
   , description:
       DOM.div
         { id: "tb-paywall--product-text-on"
-        , className: "vetrina--product-text text-center text-base leading-tight px-5 pb-5"
+        , className: "vetrina--product-text font-duplexsans font-light text-center text-base leading-tight px-5 pb-5"
         , children:
             [ DOM.text "Kvalitetsjournalistik när, var och hur du vill."
             , DOM.br {}
