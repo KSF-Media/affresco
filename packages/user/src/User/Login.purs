@@ -358,6 +358,7 @@ renderLoginForm self =
                 , validationError:
                    Form.inputFieldErrorMessage $
                      Form.validateField UsernameField self.state.formEmail []
+                , inputClass: ""
                 }
             , InputField.inputField
                 { type_: InputField.Password
@@ -370,6 +371,7 @@ renderLoginForm self =
                 , validationError:
                    Form.inputFieldErrorMessage $
                      Form.validateField PasswordField self.state.formPassword []
+                , inputClass: ""
                 }
             , DOM.input
                 { className: "button-green"
@@ -467,6 +469,7 @@ renderMerge self@{ props } mergeInfo =
                 , validationError:
                    Form.inputFieldErrorMessage $
                      Form.validateField UsernameField self.state.formEmail []
+                , inputClass: ""
                 }
             , DOM.input
                 { className: "button-green"

@@ -403,6 +403,7 @@ emailInput props state setState =
             , onChange: onChange
             , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress state.emailAddress state.serverErrors
             , value: state.emailAddress
+            , inputClass: ""
             }
         ]
     }
@@ -442,6 +443,7 @@ passwordInput state setState =
             , validationError:
               Form.inputFieldErrorMessage $
               Form.validateField Password state.password []
+            , inputClass: ""
             }
         ]
     }
