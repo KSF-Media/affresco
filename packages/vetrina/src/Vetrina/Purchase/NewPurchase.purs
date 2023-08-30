@@ -405,7 +405,7 @@ emailInput props state setState =
             , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress state.emailAddress state.serverErrors
             , value: state.emailAddress
             , inputClass: "border"
-            , extraClass: "font-duplexsans"
+            , extraClass: "font-duplexsans font-light"
             }
         ]
     }
