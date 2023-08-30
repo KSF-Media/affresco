@@ -135,7 +135,7 @@ render props state setState onSubmit =
 
 image :: Props -> JSX
 image props = DOM.div
-          { className: "h-28 bg-no-repeat bg-center bg-contain"
+          { className: "vetrina--new-purchase-bg-img h-28 bg-no-repeat bg-center bg-contain"
           --Tailwind doesn't show the background image, therefore it is inline CSS, Tailwind does show it as an img but this should be a background image
           , style: DOM.css { backgroundImage: imgUrl props.paper }
           }
