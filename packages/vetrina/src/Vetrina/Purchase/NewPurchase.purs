@@ -324,7 +324,7 @@ resetPasswordLink =
 loginLink :: Props -> JSX
 loginLink props =
   DOM.div
-    { className: "vetrina--new-purchase-link bg-neutral text-center text-base leading-tight py-2"
+    { className: "vetrina--new-purchase-link bg-neutral text-white text-center text-base leading-tight py-2"
     , children:
         [ DOM.p
           { className: "vetrina--new-purchase-login-text"
@@ -351,7 +351,7 @@ mkLink linkDescription href linkText = Array.singleton $
   DOM.span_
     [ DOM.text $ linkDescription <> " "
     , DOM.a
-        { className: "vetrina--link text-neutral underline"
+        { className: "vetrina--link underline"
         , href
         , children: [ DOM.text linkText ]
         , target: "_blank"
