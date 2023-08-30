@@ -1,0 +1,21 @@
+@import (reference) 'ksf-colors';
+@import (reference) 'ksf-variables';
+@import 'ksf-fonts';
+@import 'Components';
+@import 'Product';
+@import 'Spinner';
+
+.vetrina--new-purchase-container {
+  background-color: var(--vetrina-background, white);
+  .spinner--loading-spinner {
+    background-color: var(--vetrina-background, white);
+  }
+}
+
+.vetrina--new-purchase-temporary-user-email{
+  background: var(--vetrina-footer-background, @footer-background);
+}
+
+.vetrina--new-purchase-bg-img{
+  filter: drop-shadow(0 0 5px #fff);
+}
