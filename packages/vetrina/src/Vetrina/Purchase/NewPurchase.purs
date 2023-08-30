@@ -105,7 +105,7 @@ component logger = do
 render :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 render props state setState onSubmit =
   DOM.div
-    { className: "vetrina--new-purchase-container flex flex-col items-stretch col-span-3 bg-white" <>
+    { className: "vetrina--new-purchase-container flex flex-col items-stretch col-span-3" <>
                  case props.accountStatus of
                        NewAccount -> " vetrina--new-account-container"
                        ExistingAccount _ -> " vetrina--existing-account-container p-5"
@@ -135,7 +135,7 @@ render props state setState onSubmit =
 
 image :: Props -> JSX
 image props = DOM.div
-          { className: "h-28 bg-no-repeat bg-center bg-contain"
+          { className: "vetrina--new-purchase-bg-img h-28 bg-no-repeat bg-center bg-contain"
           --Tailwind doesn't show the background image, therefore it is inline CSS, Tailwind does show it as an img but this should be a background image
           , style: DOM.css { backgroundImage: imgUrl props.paper }
           }
@@ -325,7 +325,7 @@ resetPasswordLink =
 loginLink :: Props -> JSX
 loginLink props =
   DOM.div
-    { className: "vetrina--new-purchase-login-link bg-neutral font-duplexsans font-light text-white text-center text-base leading-tight py-2"
+    { className: "vetrina--new-purchase-link bg-neutral font-duplexsans font-light text-white text-center text-base leading-tight py-2"
     , children:
         [ DOM.p
           { className: "vetrina--new-purchase-login-text"
@@ -352,7 +352,7 @@ mkLink linkDescription href linkText = Array.singleton $
   DOM.span_
     [ DOM.text $ linkDescription <> " "
     , DOM.a
-        { className: "vetrina--link text-neutral underline"
+        { className: "vetrina--link underline"
         , href
         , children: [ DOM.text linkText ]
         , target: "_blank"
@@ -363,7 +363,7 @@ formSubmitButton :: Props -> State -> JSX
 formSubmitButton props state =
   DOM.input
     { type: "submit"
-    , className: "vetrina--submit-button bg-neutral text-white text-lg w-[80%] max-w-[400px] mx-[10%] my-5 font-normal py-0.5 px-11 border-neutral rounded cursor-pointer" <>
+    , className: "vetrina--submit-button bg-neutral text-white text-lg w-[80%] max-w-[400px] mx-[10%] mt-5 mb-20 font-normal py-0.5 px-11 border-neutral rounded cursor-pointer" <>
                  case props.accountStatus of
                   NewAccount        -> " vetrina--submit-button-new-account"
                   ExistingAccount _ -> " vetrina--submit-button-existing-account"
