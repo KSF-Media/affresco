@@ -105,7 +105,7 @@ component logger = do
 render :: Props -> State -> ((State -> State) -> Effect Unit) -> EventHandler -> JSX
 render props state setState onSubmit =
   DOM.div
-    { className: "vetrina--new-purchase-container flex flex-col items-stretch col-span-3 bg-white" <>
+    { className: "vetrina--new-purchase-container flex flex-col items-stretch col-span-3" <>
                  case props.accountStatus of
                        NewAccount -> " vetrina--new-account-container"
                        ExistingAccount _ -> " vetrina--existing-account-container p-5"
@@ -324,7 +324,7 @@ resetPasswordLink =
 loginLink :: Props -> JSX
 loginLink props =
   DOM.div
-    { className: "vetrina--new-purchase-login-link bg-neutral text-white text-center text-base leading-tight py-2"
+    { className: "vetrina--new-purchase-link bg-neutral text-center text-base leading-tight py-2"
     , children:
         [ DOM.p
           { className: "vetrina--new-purchase-login-text"
