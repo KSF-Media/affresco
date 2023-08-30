@@ -277,6 +277,7 @@ renderRegister reg@{ form } setState save cancel =
         , onChange: const $ pure unit
         , validationError: Nothing
         , disabled: true
+        , inputClass: ""
         }
     inputField Country =
       DOM.div
