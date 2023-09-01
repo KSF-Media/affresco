@@ -4,7 +4,7 @@
   "description": "Vetrina, frontend for purchasing Hufvudstadsbladet Ab products",
   "license": "MIT",
   "scripts": {
-    "build-npm": "spago bundle-module -m KSF.Vetrina -t build.js && parcel build --no-source-maps -d",
+    "build-npm": "spago bundle-module -m KSF.Vetrina -t build.js && parcel build --no-source-maps -d  build ../../less/Vetrina.less",
     "prepublishOnly": "yarn --cwd ../../apps/vetrina-test test",
     "test": "echo 'n/a'"
   },
