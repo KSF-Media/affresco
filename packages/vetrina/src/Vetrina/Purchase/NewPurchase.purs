@@ -120,7 +120,7 @@ render props state setState onSubmit =
           LoggedInAccount user
             | isNothing $ toMaybe user.firstName ->
               DOM.div
-                { className: "vetrina--new-purchase-temporary-user-email pt-1 px-5 border-neutral border-r-2 border-l-2"
+                { className: "vetrina--new-purchase-temporary-user-email font-duplexsans font-light pt-1 px-5 border-neutral border-r-2 border-l-2"
                 , children: [ DOM.text user.email ]
                 }
           _ -> mempty
@@ -158,11 +158,11 @@ title props =
   where
     headline child =
       DOM.div
-        { className: "vetrina--new-purchase-headline-" <> maybe "KSF" Paper.toString props.paper <>
+        { className: "vetrina--headline-" <> maybe "KSF" Paper.toString props.paper <>
                      case props.accountStatus of
-                       NewAccount -> " font-duplexserif text-center px-3 my-3 text-[28px] leading-tight font-semibold"
-                       ExistingAccount _ -> " vetrina--headline-existing-account max-w-[600px] w-full font-duplexsans self-center text-center pt-2 border-neutral border-t-2 border-r-2 border-l-2"
-                       LoggedInAccount _ -> " vetrina--headline-loggedin-account font-duplexsans pt-5 px-5 border-neutral border-t-2 border-r-2 border-l-2"
+                       NewAccount -> " vetrina--new-purchase-headline font-duplexserif text-center px-3 my-3 text-[28px] leading-tight font-semibold"
+                       ExistingAccount _ -> " vetrina--headline-existing-account font-duplexsans max-w-[600px] w-full font-duplexsans self-center text-center pt-2 border-neutral border-t-2 border-r-2 border-l-2"
+                       LoggedInAccount _ -> " vetrina--headline-loggedin-account font-duplexsans font-light pt-5 px-5 border-neutral border-t-2 border-r-2 border-l-2"
         , _data: Object.fromFoldable $ case props.accountStatus of
                    NewAccount -> mempty
                    _          -> [ Tuple.Tuple "existing-account" "1" ]
@@ -174,9 +174,9 @@ description props =
   DOM.p
     { className: "vetrina--new-purchase-description-text" <>
                  case props.accountStatus of
-                       ExistingAccount _ -> " vetrina--new-purchase-description-text-existing-account w-full max-w-[600px] self-center text-center pb-2 border-neutral border-r-2 border-b-2 border-l-2"
-                       LoggedInAccount _ -> " vetrina--new-purchase-description-text-loggedin-account font-normal p-5 mb-10 border-neutral border-r-2 border-l-2"
-                       NewAccount        -> " text-center"
+                       ExistingAccount _ -> " vetrina--new-purchase-description-text-existing-account w-full max-w-[600px] self-center font-duplexsans text-center pb-2 border-neutral border-r-2 border-b-2 border-l-2"
+                       LoggedInAccount _ -> " vetrina--new-purchase-description-text-loggedin-account font-duplexsans font-normal p-5 border-neutral border-r-2 border-l-2"
+                       NewAccount        -> mempty
     , children: Array.singleton $
         case props.accountStatus of
           NewAccount        -> mempty
@@ -442,7 +442,7 @@ passwordInput state setState =
               Form.inputFieldErrorMessage $
               Form.validateField Password state.password []
             , inputClass: "border mt-1 p-2"
-            , extraClass: "font-duplexsans font-light flex flex-col pb-10"
+            , extraClass: "font-duplexsans font-light flex flex-col pb-8"
             }
         ]
     }
