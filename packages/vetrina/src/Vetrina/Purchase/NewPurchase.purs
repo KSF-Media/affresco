@@ -161,8 +161,8 @@ title props =
         { className: "vetrina--new-purchase-headline-" <> maybe "KSF" Paper.toString props.paper <>
                      case props.accountStatus of
                        NewAccount -> " font-duplexserif text-center px-3 my-3 text-[28px] leading-tight font-semibold"
-                       ExistingAccount _ -> " vetrina--headline-existing-account text-center pt-5 border-neutral border-t-2 border-r-2 border-l-2"
-                       LoggedInAccount _ -> " vetrina--headline-loggedin-account pt-5 px-5 border-neutral border-t-2 border-r-2 border-l-2"
+                       ExistingAccount _ -> " vetrina--headline-existing-account max-w-[600px] w-full font-duplexsans self-center text-center pt-2 border-neutral border-t-2 border-r-2 border-l-2"
+                       LoggedInAccount _ -> " vetrina--headline-loggedin-account font-duplexsans pt-5 px-5 border-neutral border-t-2 border-r-2 border-l-2"
         , _data: Object.fromFoldable $ case props.accountStatus of
                    NewAccount -> mempty
                    _          -> [ Tuple.Tuple "existing-account" "1" ]
@@ -174,8 +174,8 @@ description props =
   DOM.p
     { className: "vetrina--new-purchase-description-text" <>
                  case props.accountStatus of
-                       ExistingAccount _ -> " vetrina--new-purchase-description-text-existing-account  text-center pb-5 border-neutral border-r-2 border-b-2 border-l-2"
-                       LoggedInAccount _ -> " vetrina--new-purchase-description-text-loggedin-account font-normal p-5 border-neutral border-r-2 border-l-2"
+                       ExistingAccount _ -> " vetrina--new-purchase-description-text-existing-account w-full max-w-[600px] self-center text-center pb-2 border-neutral border-r-2 border-b-2 border-l-2"
+                       LoggedInAccount _ -> " vetrina--new-purchase-description-text-loggedin-account font-normal p-5 mb-10 border-neutral border-r-2 border-l-2"
                        NewAccount        -> " text-center"
     , children: Array.singleton $
         case props.accountStatus of
@@ -309,18 +309,14 @@ links :: Props -> JSX
 links props =
   case props.accountStatus of
     NewAccount        -> mempty -- Login link shown elsewhere
-    ExistingAccount _ -> linksDiv $ resetPasswordLink
+    ExistingAccount _ -> resetPasswordLink
     _                 -> mempty
   where
-    linksDiv linksJsx =
+    resetPasswordLink =
       DOM.div
-        { className: "vetrina--new-purchase-links text-center my-3"
-        , children: linksJsx
-        }
-
-resetPasswordLink :: Array JSX
-resetPasswordLink =
-  mkLink "Glömt lösenordet?" "https://konto.ksfmedia.fi/#lösenord" "Klicka här" ""
+            { className: "vetrina--new-purchase-links font-duplexsans text-center mb-3"
+            , children: mkLink "Glömt lösenordet?" "https://konto.ksfmedia.fi/#lösenord" "Klicka här" " text-neutral"
+            }
 
 loginLink :: Props -> JSX
 loginLink props =
@@ -363,10 +359,10 @@ formSubmitButton :: Props -> State -> JSX
 formSubmitButton props state =
   DOM.input
     { type: "submit"
-    , className: "vetrina--submit-button bg-neutral text-white text-lg w-[80%] max-w-[400px] mx-[10%] mt-5 mb-20 font-duplexsans font-normal py-0.5 px-11 border-neutral rounded cursor-pointer" <>
+    , className: "vetrina--submit-button bg-neutral text-white text-lg w-[80%] max-w-[400px] mx-[10%] mt-5 font-duplexsans font-normal py-0.5 px-11 border-neutral rounded cursor-pointer" <>
                  case props.accountStatus of
-                  NewAccount        -> " vetrina--submit-button-new-account"
-                  ExistingAccount _ -> " vetrina--submit-button-existing-account"
+                  NewAccount        -> " vetrina--submit-button-new-account mb-20"
+                  ExistingAccount _ -> " vetrina--submit-button-existing-account mb-10"
                   LoggedInAccount _ -> " vetrina--submit-button-loggedin-account"
     , disabled
     , value
@@ -433,11 +429,11 @@ emailInput props state setState =
 passwordInput :: State -> ((State -> State) -> Effect Unit) -> JSX
 passwordInput state setState =
   DOM.div
-    { className: "vetrina--input-wrapper vetrina--with-label"
+    { className: "vetrina--input-wrapper vetrina--with-label text-base w-full max-w-[400px]"
     , children:
         [ InputField.inputField
             { type_: InputField.Password
-            , placeholder: "Fyll i ditt lösenord"
+            , placeholder: "Fyll i ditt lösenord:"
             , label: Just "Lösenord"
             , name: "password"
             , value: state.password
@@ -445,7 +441,8 @@ passwordInput state setState =
             , validationError:
               Form.inputFieldErrorMessage $
               Form.validateField Password state.password []
-            , inputClass: ""
+            , inputClass: "border mt-1 p-2"
+            , extraClass: "font-duplexsans font-light flex flex-col pb-10"
             }
         ]
     }
