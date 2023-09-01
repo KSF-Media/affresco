@@ -320,7 +320,7 @@ links props =
 
 resetPasswordLink :: Array JSX
 resetPasswordLink =
-  mkLink "Glömt lösenordet?" "https://konto.ksfmedia.fi/#lösenord" "Klicka här"
+  mkLink "Glömt lösenordet?" "https://konto.ksfmedia.fi/#lösenord" "Klicka här" ""
 
 loginLink :: Props -> JSX
 loginLink props =
@@ -345,14 +345,14 @@ loginLink props =
 
 subscribePagesLink :: Array JSX
 subscribePagesLink =
-  mkLink "" "https://prenumerera.ksfmedia.fi/" "Övriga prenumerationer och betalningssätt"
+  mkLink "" "https://prenumerera.ksfmedia.fi/" "Övriga prenumerationer och betalningssätt" ""
 
-mkLink :: String -> String -> String -> Array JSX
-mkLink linkDescription href linkText = Array.singleton $
+mkLink :: String -> String -> String -> String -> Array JSX
+mkLink linkDescription href linkText linkClass = Array.singleton $
   DOM.span_
     [ DOM.text $ linkDescription <> " "
     , DOM.a
-        { className: "vetrina--link underline"
+        { className: "vetrina--link underline" <> linkClass
         , href
         , children: [ DOM.text linkText ]
         , target: "_blank"
@@ -363,7 +363,7 @@ formSubmitButton :: Props -> State -> JSX
 formSubmitButton props state =
   DOM.input
     { type: "submit"
-    , className: "vetrina--submit-button bg-neutral text-white text-lg w-[80%] max-w-[400px] mx-[10%] mt-5 mb-20 font-normal py-0.5 px-11 border-neutral rounded cursor-pointer" <>
+    , className: "vetrina--submit-button bg-neutral text-white text-lg w-[80%] max-w-[400px] mx-[10%] mt-5 mb-20 font-duplexsans font-normal py-0.5 px-11 border-neutral rounded cursor-pointer" <>
                  case props.accountStatus of
                   NewAccount        -> " vetrina--submit-button-new-account"
                   ExistingAccount _ -> " vetrina--submit-button-existing-account"
@@ -394,7 +394,7 @@ emailInput :: Props -> State -> ((State -> State) -> Effect Unit) -> JSX
 emailInput {accountStatus: (LoggedInAccount _)} _ _ = mempty
 emailInput props state setState =
   DOM.div
-    { className: "vetrina--input-wrapper vetrina--with-label text-base max-w-[400px]"
+    { className: "vetrina--input-wrapper vetrina--with-label text-base w-full max-w-[400px]"
     , children:
         [ InputField.inputField
             { type_: InputField.Email
@@ -404,8 +404,8 @@ emailInput props state setState =
             , onChange: onChange
             , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress state.emailAddress state.serverErrors
             , value: state.emailAddress
-            , inputClass: "border"
-            , extraClass: "font-duplexsans font-light"
+            , inputClass: "border mt-1 p-2"
+            , extraClass: "font-duplexsans font-light flex flex-col pt-4 pb-10"
             }
         ]
     }
@@ -454,12 +454,12 @@ passwordInput state setState =
 acceptTerms :: JSX
 acceptTerms =
   DOM.div
-    { className: "vetrina--terms-conditions max-w-[400px] text-center text-sm leading-tight mb-4"
+    { className: "vetrina--terms-conditions max-w-[400px] font-duplexsans font-light text-center text-sm leading-tight mb-4"
     , children:
       [ DOM.text "Genom att klicka på \"Vidare\" godkänner du KSF Medias " ]
-          <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "prenumerationsvillkor"
+          <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "prenumerationsvillkor" " text-neutral"
           <> [ DOM.text " och " ]
-          <> mkLink "" "https://www.ksfmedia.fi/dataskydd" "personuppgiftspolicy"
+          <> mkLink "" "https://www.ksfmedia.fi/dataskydd" "personuppgiftspolicy" " text-neutral"
           <> [ DOM.text ". ", DOM.br {} ]
           <> [ DOM.text "Du uppger kortuppgifter i nästa steg." ]
     }
@@ -467,7 +467,7 @@ acceptTerms =
 coverReservationText :: JSX
 coverReservationText =
   DOM.div
-    { className: "vetrina--cover-reservation max-w-[400px] text-center text-xs leading-tight mb-4"
+    { className: "vetrina--cover-reservation max-w-[400px] text-center text-xs font-light font-duplexsans leading-tight mb-4"
     , children:
       [ DOM.text "På kortet görs en täckningsreservering på en euro för att bekräfta att kortet är giltigt. Den här summan debiteras inte från kortet." ]
     }
