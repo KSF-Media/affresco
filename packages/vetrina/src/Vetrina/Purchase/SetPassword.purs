@@ -59,12 +59,12 @@ component = do
 render :: PasswordForm -> ((PasswordForm -> PasswordForm) -> Effect Unit) -> EventHandler -> JSX
 render form setForm onSubmit =
   DOM.h1
-    { className: "vetrina--headline"
+    { className: "vetrina--headline font-duplexsans font-light"
     , children:[ DOM.text "Tack för din beställning!" ]
     }
   <>
   DOM.p
-    { className: "vetrina--description-text"
+    { className: "vetrina--description-text font-duplexsans font-light"
     , children: [ DOM.text "Du är nästan klar! Skriv in önskat lösenord för ditt nya konto nedan." ]
     }
   <> setPasswordForm form setForm onSubmit
@@ -72,11 +72,11 @@ render form setForm onSubmit =
 setPasswordForm :: PasswordForm -> ((PasswordForm -> PasswordForm) -> Effect Unit) -> EventHandler -> JSX
 setPasswordForm form setForm onSubmit =
   DOM.form
-    { className: "vetrina--form"
+    { className: "vetrina--form flex flex-col items-stretch mt-4"
     , onSubmit
     , children:
         [ DOM.div
-            { className: "vetrina--input-wrapper"
+            { className: "vetrina--input-wrapper text-base w-full max-w-[400px]"
             , id: "setPassword"
             , children:
                 [ InputField.inputField
@@ -87,7 +87,8 @@ setPasswordForm form setForm onSubmit =
                    , onChange: \val -> setForm _ { newPassword = val }
                    , value: form.newPassword
                    , validationError: inputFieldErrorMessage $ validateField NewPassword form.newPassword []
-                   , inputClass: ""
+                   , inputClass: "border mt-1 p-2"
+                   , extraClass: "font-duplexsans font-light flex flex-col py-4"
                    }
                 , InputField.inputField
                     { placeholder: "Bekräfta lösenord"
@@ -97,13 +98,14 @@ setPasswordForm form setForm onSubmit =
                     , onChange: \val -> setForm _ { confirmPassword = val }
                     , value: form.confirmPassword
                     , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword form.newPassword) form.confirmPassword []
-                    , inputClass: ""
+                    , inputClass: "border mt-1 p-2"
+                    , extraClass: "font-duplexsans font-light flex flex-col pt-4 pb-10"
                     }
                 ]
             }
         , DOM.input
             { type: "submit"
-            , className: "vetrina--button vetrina--completed"
+            , className: "vetrina--button vetrina--completed bg-neutral text-white text-lg w-[80%] max-w-[400px] mx-[10%] mt-5 font-duplexsans font-normal py-0.5 px-11 border-neutral rounded cursor-pointer"
             , disabled: isFormInvalid $ formValidations form
             , value: "Fortsätt"
             }
