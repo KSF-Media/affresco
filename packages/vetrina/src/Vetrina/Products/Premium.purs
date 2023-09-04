@@ -58,7 +58,7 @@ vnPremium =
         { id: "tb-paywall--product-text-vn"
         , className: "vetrina--product-text font-duplexsans font-light text-center text-base leading-tight px-5 pb-5"
         , children:
-            [ DOM.text "Läs Västra Nyland digitalt gratis i en månad, därefter 6,90€ per månad. Avsluta enkelt när du vill." ]
+            [ DOM.text "Läs Västra Nyland digitalt för 1€ i en månad, därefter 6,90€ per månad. Avsluta enkelt när du vill." ]
         }
   , descriptionLoggedInAccount:
       DOM.div
@@ -104,7 +104,7 @@ onPremium =
         { id: "tb-paywall--product-text-on"
         , className: "vetrina--product-text font-duplexsans font-light text-center text-base leading-tight px-5 pb-5"
         , children:
-            [ DOM.text "Läs Östnyland digitalt gratis i en månad, därefter 6,90€ per månad. Avsluta enkelt när du vill." ]
+            [ DOM.text "Läs Östnyland digitalt för 1€ i en månad, därefter 6,90€ per månad. Avsluta enkelt när du vill." ]
         }
   , descriptionLoggedInAccount:
       DOM.div
