@@ -453,7 +453,7 @@ acceptTerms =
   DOM.div
     { className: "vetrina--terms-conditions max-w-[400px] font-duplexsans font-light text-center text-sm leading-tight mb-4"
     , children:
-      [ DOM.text "Genom att klicka på \"Vidare\" godkänner du KSF Medias " ]
+      [ DOM.text "Genom att klicka på \"Vidare\" godkänner du Hufvudstadsbladet Abs " ]
           <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "prenumerationsvillkor" " text-neutral"
           <> [ DOM.text " och " ]
           <> mkLink "" "https://www.ksfmedia.fi/dataskydd" "personuppgiftspolicy" " text-neutral"
