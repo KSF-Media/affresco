@@ -341,12 +341,14 @@ vetrinaContainer purchaseState child =
       { className:
           joinWith " "
           $ take 3
-          $ filter (not String.null) [ "vetrina--container", errorClass, newPurchaseClass ]
+          $ filter (not String.null) [ "vetrina--container", errorClass, purchaseStateClass ]
       , children: [ child ]
       }
   where
-    newPurchaseClass = case purchaseState of
+    purchaseStateClass = case purchaseState of
                         NewPurchase -> "vetrina--container-new-purchase"
+                        PurchaseSetPassword -> "flex flex-col justify-center content-center px-5 pt-14 pb-10"
+                        PurchaseCompleted _ -> "flex flex-col justify-center content-center font-duplexsans text-base px-5 pt-14 pb-10"
                         _           -> mempty
 
 orderErrorMessage :: OrderFailure -> String
