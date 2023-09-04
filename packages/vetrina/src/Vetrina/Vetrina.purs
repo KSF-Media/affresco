@@ -348,7 +348,7 @@ vetrinaContainer purchaseState child =
     purchaseStateClass = case purchaseState of
                         NewPurchase -> "vetrina--container-new-purchase"
                         PurchaseSetPassword -> "flex flex-col justify-center content-center px-5 pt-14 pb-10"
-                        PurchaseCompleted _ -> "flex flex-col justify-center content-center font-duplexsans text-base px-5 pt-14 pb-10"
+                        PurchaseCompleted _ -> "flex flex-col justify-center items-center content-center font-duplexsans font-light text-base px-5 pt-14 pb-10"
                         _           -> mempty
 
 orderErrorMessage :: OrderFailure -> String
