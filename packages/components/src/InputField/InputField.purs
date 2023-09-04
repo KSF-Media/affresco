@@ -33,6 +33,7 @@ type Props =
   , label           :: Maybe String
   , validationError :: Maybe String
   , disabled        :: Boolean
+  , inputClass      :: String
   , extraClass      :: String
   , autoComplete    :: String
   , autoFocus       :: Boolean
@@ -100,8 +101,8 @@ render self@{ props, state } =
                 props.onChange maybeNewVal
             , className:
                 if isJust props.validationError
-                then "input-field--invalid-field"
-                else mempty
+                then props.inputClass <> " input-field--invalid-field"
+                else props.inputClass
             , disabled: props.disabled
             , autoComplete: if props.autoComplete == "" then unsafeCoerce Nullable.null else props.autoComplete
             , autoFocus: props.autoFocus

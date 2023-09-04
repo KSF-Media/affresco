@@ -58,13 +58,6 @@ jobs:
           path: |
             apps/vetrina-test/.spago
             apps/vetrina-test/output
-      - name: Setup build cache for HBL365
-        uses: "actions/cache@v2"
-        with:
-          key: "${{ runner.os }}-hbl365-${{ hashFiles('apps/hbl365/yarn.lock')}}"
-          path: |
-            apps/hbl365/.spago
-            apps/hbl365/output
       - name: Build Scripts
         run: |2
             ruby deploy.rb scripts
@@ -85,11 +78,6 @@ jobs:
         run: |2
             ruby deploy.rb vetrina-test
             cp -R apps/vetrina-test/dist build/vetrina-test
-        shell: bash
-      - name: Build HBL365
-        run: |2
-            ruby deploy.rb hbl365
-            cp -R apps/hbl365/dist build/hbl365
         shell: bash
       - env:
           MAINTENANCE_MODE: 'false'
@@ -119,13 +107,6 @@ jobs:
           destination: ksf-frontends/vetrina-test
           parent: 'false'
           path: build/vetrina-test
-      - name: Upload HBL365
-        uses: "google-github-actions/upload-cloud-storage@v0.9.0"
-        with:
-          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          destination: ksf-frontends/hbl365
-          parent: 'false'
-          path: build/hbl365
       - name: Upload Prenumerera
         uses: "google-github-actions/upload-cloud-storage@v0.9.0"
         with:

@@ -61,7 +61,7 @@
 
 /* Try to remove grey background sometimes present on hyperlinks */
 a {
-  background-color: transparent;
+  background-color: transparent !important;
 }
 
 body {
@@ -497,10 +497,17 @@ h6 {
   padding: 10px;
   text-align: center;
   background-color: var(--color-bg);
+  max-width: 650px;
+  margin: 0 auto;
 }
 
 .footer h4, .footer strong, .footer small {
   color: var(--color-footer);
+}
+
+.footer .company-info {
+  margin: 5px 10px 0px;
+  line-height: 1.25rem;
 }
 
 .footer h6 {
@@ -1091,18 +1098,19 @@ html iframe {
   font-size: 1.3rem;
 }
 
+/* The !importants are needed because of the global fix to backgrounds that sometimes show up behind links */
 .adv-link,
 .adv-link:hover {
   display: block;
   padding: 0.75rem;
   color: black;
   text-decoration-line: none;
-  background-color: #fff3e6;
+  background-color: #fff3e6 !important;
 }
 
 .adv-link.darkMode,
 .adv-link.darkMode:hover {
-  background-color: #27797e;
+  background-color: #27797e !important;
   color: #ffffff;
 }
 

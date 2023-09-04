@@ -58,6 +58,9 @@
     background-color: var(--vetrina-background, @grey-light);
     margin: 0;
     margin-bottom: 40px;
+    &.vetrina--container-new-purchase {
+        padding: 0;
+    }
     .spinner--loading-spinner {
 	background-color: var(--vetrina-background, @grey-light);
     }
@@ -196,16 +199,10 @@ triggerbee-widget {
 .vetrina--link {
   color: var(--vetrina-link-color, @brand-neutral);
   outline: 0;
-  text-decoration: none;
 }
 
 .vetrina--login-link {
     grid-area: login-link;
-}
-
-.vetrina--login-callback {
-  color: var(--vetrina-link-color, @brand-neutral);
-  cursor: pointer;
 }
 
 .vetrina-purchase-completed--submit-password {
@@ -466,3 +463,19 @@ triggerbee-widget {
 .vetrina--paper-invoice-fee {
     margin-top: 1em;
 }
+
+.vetrina--new-purchase-container {
+    background-color: var(--vetrina-background, white);
+    .spinner--loading-spinner {
+	    background-color: var(--vetrina-background, white);
+    }
+}
+
+.vetrina--new-purchase-temporary-user-email{
+    background: var(--vetrina-background, white);
+}
+
+.vetrina--new-purchase-bg-img{
+    filter: drop-shadow(0 0 5px #fff);
+}
+

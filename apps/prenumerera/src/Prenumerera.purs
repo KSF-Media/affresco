@@ -308,7 +308,7 @@ renderMain navbar content =
                         [ DOM.div
                             { id: "ksf-infos"
                             , children:
-                                [ DOM.text "KSF Media "
+                                [ DOM.text "Hufvudstadsbladet Ab"
                                 , separator
                                 , DOM.text "Mannerheimvägen 18"
                                 , separator

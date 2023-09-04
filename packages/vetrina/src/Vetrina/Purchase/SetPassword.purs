@@ -87,6 +87,7 @@ setPasswordForm form setForm onSubmit =
                    , onChange: \val -> setForm _ { newPassword = val }
                    , value: form.newPassword
                    , validationError: inputFieldErrorMessage $ validateField NewPassword form.newPassword []
+                   , inputClass: ""
                    }
                 , InputField.inputField
                     { placeholder: "Bekräfta lösenord"
@@ -96,6 +97,7 @@ setPasswordForm form setForm onSubmit =
                     , onChange: \val -> setForm _ { confirmPassword = val }
                     , value: form.confirmPassword
                     , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword form.newPassword) form.confirmPassword []
+                    , inputClass: ""
                     }
                 ]
             }
