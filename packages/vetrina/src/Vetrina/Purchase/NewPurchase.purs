@@ -215,7 +215,7 @@ form props state setState onSubmit = DOM.form $
     children = case props.accountStatus of
         NewAccount ->
           [ additionalFormRequirements props.accountStatus
-          , coverReservationText
+          , maybe mempty coverReservationText state.productSelection
           , formSubmitButton props state
           ]
         ExistingAccount _ ->
@@ -461,13 +461,22 @@ acceptTerms =
           <> [ DOM.text "Du uppger kortuppgifter i nästa steg." ]
     }
 
-coverReservationText :: JSX
-coverReservationText =
-  DOM.div
-    { className: "vetrina--cover-reservation max-w-[400px] text-center text-xs font-light font-duplexsans leading-tight mb-4"
-    , children:
-      [ DOM.text "På kortet görs en täckningsreservering på en euro för att bekräfta att kortet är giltigt. Den här summan debiteras inte från kortet." ]
-    }
+coverReservationText :: Product -> JSX
+coverReservationText product =
+  let campaignPrice = case _.priceEur <$> product.campaign of
+                        Just campaignPriceEur -> Int.ceil $ campaignPriceEur * 100.0
+                        _ -> product.priceCents
+  in showCoverReservationText campaignPrice
+  where
+   showCoverReservationText campaignPrice =
+    if campaignPrice > 0
+    then mempty
+    else
+    DOM.div
+      { className: "vetrina--cover-reservation max-w-[400px] text-center text-xs font-light font-duplexsans leading-tight mb-4"
+      , children:
+        [ DOM.text "På kortet görs en täckningsreservering på en euro för att bekräfta att kortet är giltigt. Den här summan debiteras inte från kortet." ]
+      }
 
 newAccountFormValidations :: State -> Form.ValidatedForm FormInputField NewAccountForm
 newAccountFormValidations state =
