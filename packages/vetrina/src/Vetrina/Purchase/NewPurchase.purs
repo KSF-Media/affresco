@@ -359,7 +359,7 @@ formSubmitButton :: Props -> State -> JSX
 formSubmitButton props state =
   DOM.input
     { type: "submit"
-    , className: "vetrina--submit-button bg-neutral text-white text-lg w-[80%] max-w-[400px] mx-[10%] mt-5 font-duplexsans font-normal py-0.5 px-11 border-neutral rounded cursor-pointer" <>
+    , className: "vetrina--submit-button bg-neutral text-white text-lg w-[80%] max-w-[400px] min-w-[250px] mx-[10%] mt-5 font-duplexsans font-normal py-0.5 px-11 border-neutral rounded cursor-pointer" <>
                  case props.accountStatus of
                   NewAccount        -> " vetrina--submit-button-new-account mb-20"
                   ExistingAccount _ -> " vetrina--submit-button-existing-account mb-10"

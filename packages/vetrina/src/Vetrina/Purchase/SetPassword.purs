@@ -58,14 +58,18 @@ component = do
 
 render :: PasswordForm -> ((PasswordForm -> PasswordForm) -> Effect Unit) -> EventHandler -> JSX
 render form setForm onSubmit =
-  DOM.h1
-    { className: "vetrina--headline self-center font-duplexsans font-light"
-    , children:[ DOM.text "Tack för din beställning!" ]
-    }
-  <>
-  DOM.p
-    { className: "vetrina--description-text self-center font-duplexsans font-light"
-    , children: [ DOM.text "Du är nästan klar! Skriv in önskat lösenord för ditt nya konto nedan." ]
+  DOM.div
+    { className: "vetrina--set-pw-container self-center"
+    , children:
+      [ DOM.h1
+          { className: "vetrina--headline font-duplexsans font-light"
+          , children:[ DOM.text "Tack för din beställning!" ]
+          }
+      , DOM.p
+          { className: "vetrina--description-text font-duplexsans font-light"
+          , children: [ DOM.text "Du är nästan klar! Skriv in önskat lösenord för ditt nya konto nedan." ]
+          }
+      ]
     }
   <> setPasswordForm form setForm onSubmit
 
