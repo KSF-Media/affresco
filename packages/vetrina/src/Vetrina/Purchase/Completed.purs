@@ -29,7 +29,7 @@ completed props =
         ]
     }
   <> DOM.p
-       { className: "vetrina--description-text"
+       { className: "vetrina--description-text-product"
        , children: [ foldMap _.descriptionPurchaseCompleted props.purchasedProduct ]
        }
   <> DOM.p
@@ -42,7 +42,7 @@ completed props =
 completeButton :: Effect Unit -> JSX
 completeButton onClose =
   DOM.button
-    { className: "vetrina--button vetrina--completed-close"
+    { className: "vetrina--button vetrina--completed-close bg-neutral text-white text-lg w-[80%] max-w-[400px] mx-[10%] mt-5 font-duplexsans font-normal py-0.5 px-11 border-neutral rounded cursor-pointer"
     , children: [ DOM.text "Fortsätt läsa artikeln" ] -- TODO: This text may vary depending on use case
     , onClick: handler_ onClose
     }

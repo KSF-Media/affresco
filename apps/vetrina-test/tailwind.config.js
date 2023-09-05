@@ -31,7 +31,7 @@ const monoFonts = [
 
 module.exports = {
   content: {
-    files: ["./src/**/*", "../../packages/vetrina/src/**/*"],
+    files: ["./src/**/*", "../../packages/vetrina/src/**/*", "../../fonts/*"],
     transform: {
       // We have to use \\_ instead of \_ in purs files
       purs: (content) => content.replace(/\\\\/g, "\\"),
