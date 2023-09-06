@@ -358,6 +358,7 @@ renderLoginForm self =
                 , validationError:
                    Form.inputFieldErrorMessage $
                      Form.validateField UsernameField self.state.formEmail []
+                , labelClass: ""
                 , inputClass: ""
                 }
             , InputField.inputField
@@ -371,6 +372,7 @@ renderLoginForm self =
                 , validationError:
                    Form.inputFieldErrorMessage $
                      Form.validateField PasswordField self.state.formPassword []
+                , labelClass: ""
                 , inputClass: ""
                 }
             , DOM.input
@@ -469,6 +471,7 @@ renderMerge self@{ props } mergeInfo =
                 , validationError:
                    Form.inputFieldErrorMessage $
                      Form.validateField UsernameField self.state.formEmail []
+                , labelClass: ""
                 , inputClass: ""
                 }
             , DOM.input

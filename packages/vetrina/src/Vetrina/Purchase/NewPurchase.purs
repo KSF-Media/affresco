@@ -400,8 +400,9 @@ emailInput props state setState =
             , onChange: onChange
             , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress state.emailAddress state.serverErrors
             , value: state.emailAddress
-            , inputClass: "border mt-1 p-2"
-            , extraClass: "font-duplexsans font-light flex flex-col pt-4 pb-10"
+            , labelClass: "font-duplexsans font-light"
+            , inputClass: "font-duplexsans font-light border mt-1 p-2"
+            , extraClass: "flex flex-col pt-4 pb-10"
             }
         ]
     }
@@ -441,8 +442,9 @@ passwordInput state setState =
             , validationError:
               Form.inputFieldErrorMessage $
               Form.validateField Password state.password []
-            , inputClass: "border mt-1 p-2"
-            , extraClass: "font-duplexsans font-light flex flex-col pb-8"
+            , labelClass: "font-duplexsans font-light"
+            , inputClass: "font-duplexsans font-light border mt-1 p-2"
+            , extraClass: "flex flex-col pb-8"
             }
         ]
     }

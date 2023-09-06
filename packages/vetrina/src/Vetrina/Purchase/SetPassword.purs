@@ -91,6 +91,7 @@ setPasswordForm form setForm onSubmit =
                    , onChange: \val -> setForm _ { newPassword = val }
                    , value: form.newPassword
                    , validationError: inputFieldErrorMessage $ validateField NewPassword form.newPassword []
+                   , labelClass: ""
                    , inputClass: "border mt-1 p-2"
                    , extraClass: "font-duplexsans font-light flex flex-col py-4"
                    }
@@ -102,6 +103,7 @@ setPasswordForm form setForm onSubmit =
                     , onChange: \val -> setForm _ { confirmPassword = val }
                     , value: form.confirmPassword
                     , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword form.newPassword) form.confirmPassword []
+                    , labelClass: ""
                     , inputClass: "border mt-1 p-2"
                     , extraClass: "font-duplexsans font-light flex flex-col pt-4 pb-10"
                     }

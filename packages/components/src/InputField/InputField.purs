@@ -33,6 +33,7 @@ type Props =
   , label           :: Maybe String
   , validationError :: Maybe String
   , disabled        :: Boolean
+  , labelClass      :: String
   , inputClass      :: String
   , extraClass      :: String
   , autoComplete    :: String
@@ -88,7 +89,7 @@ render self@{ props, state } =
     , children:
         -- The final order of the children is defined in css!
         [ case props.label of
-             Just label -> inputLabel { label, nameFor: id }
+             Just label -> inputLabel { label, nameFor: id, labelClass: props.labelClass }
              _          -> mempty
         , DOM.input
             { type: show props.type_
@@ -126,14 +127,15 @@ errorMessage e =
     }
 
 type InputLabel =
-  { label   :: String -- ^ What to show in UI
-  , nameFor :: String -- ^ Which input field this is for
+  { label      :: String -- ^ What to show in UI
+  , nameFor    :: String -- ^ Which input field this is for
+  , labelClass :: String
   }
 
 inputLabel :: InputLabel -> JSX
-inputLabel { label, nameFor } =
+inputLabel { label, nameFor, labelClass } =
   DOM.label
-    { className: "input-field--input-label"
+    { className: "input-field--input-label " <> labelClass
     , children: [ DOM.text label ]
     , htmlFor: nameFor
     }

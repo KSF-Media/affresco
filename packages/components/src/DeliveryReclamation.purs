@@ -129,6 +129,7 @@ render self@{ state: { publicationDate, doorCode, claim }} =
         , value: Just "Extension"
         , label: Just "Jag klarar mig utan den uteblivna tidningen, förläng i stället min prenumeration med en dag"
         , validationError: Nothing
+        , labelClass: ""
         , inputClass: ""
         }
 
@@ -150,6 +151,7 @@ render self@{ state: { publicationDate, doorCode, claim }} =
         , value: Just "NewDelivery"
         , label: Just "Jag vill att den uteblivna tidningen levereras till mig"
         , validationError: Nothing
+        , labelClass: ""
         , inputClass: ""
         }
 
@@ -162,6 +164,7 @@ render self@{ state: { publicationDate, doorCode, claim }} =
         , value: self.state.doorCode
         , label: Just "Dörrkod"
         , validationError: Nothing
+        , labelClass: ""
         , inputClass: ""
         }
 
