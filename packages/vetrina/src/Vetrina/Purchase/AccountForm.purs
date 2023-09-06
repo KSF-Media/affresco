@@ -87,6 +87,7 @@ render props self@{ state: { contactForm } } = fragment
             , onChange: \newFirstName -> self.setState _ { contactForm { firstName = newFirstName }}
             , validationError: Form.inputFieldErrorMessage $ Form.validateField FirstName contactForm.firstName []
             , value: contactForm.firstName
+            , labelClass: ""
             , inputClass: ""
             }
         , InputField.inputField
@@ -97,6 +98,7 @@ render props self@{ state: { contactForm } } = fragment
             , onChange: \newLastName -> self.setState _ { contactForm { lastName = newLastName }}
             , validationError: Form.inputFieldErrorMessage $ Form.validateField LastName contactForm.lastName []
             , value: contactForm.lastName
+            , labelClass: ""
             , inputClass: ""
             }
         , InputField.inputField
@@ -107,6 +109,7 @@ render props self@{ state: { contactForm } } = fragment
             , onChange: \newStreetAddress -> self.setState _ { contactForm { streetAddress = newStreetAddress }}
             , validationError: Form.inputFieldErrorMessage $ Form.validateField StreetAddress contactForm.streetAddress []
             , value: contactForm.streetAddress
+            , labelClass: ""
             , inputClass: ""
             }
         , InputField.inputField
@@ -117,6 +120,7 @@ render props self@{ state: { contactForm } } = fragment
             , onChange: \newCity -> self.setState _ { contactForm { city = newCity }}
             , validationError: Form.inputFieldErrorMessage $ Form.validateField City contactForm.city []
             , value: contactForm.city
+            , labelClass: ""
             , inputClass: ""
             }
         , InputField.inputField
@@ -127,6 +131,7 @@ render props self@{ state: { contactForm } } = fragment
             , onChange: \newZipCode -> self.setState _ { contactForm { zipCode = newZipCode }}
             , validationError: Form.inputFieldErrorMessage $ Form.validateField Zip contactForm.zipCode []
             , value: contactForm.zipCode
+            , labelClass: ""
             , inputClass: ""
             }
         , CountryDropdown.defaultCountryDropDown
@@ -140,6 +145,7 @@ render props self@{ state: { contactForm } } = fragment
             , onChange: \newPhone -> self.setState _ { contactForm { phone = newPhone }}
             , validationError: Form.inputFieldErrorMessage $ Form.validateField Phone contactForm.phone []
             , value: contactForm.phone
+            , labelClass: ""
             , inputClass: ""
             }
         , DOM.input

@@ -305,6 +305,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.streetAddress
         , label: Just "Gatuadress"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField StreetAddress self.state.streetAddress []
+        , labelClass: ""
         , inputClass: ""
         }
 
@@ -317,6 +318,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.zipCode
         , label: Just "Postnummer"
         , validationError: VF.inputFieldErrorMessage $ VF.validateField Zip self.state.zipCode []
+        , labelClass: ""
         , inputClass: ""
         }
 
@@ -329,6 +331,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.cityName
         , validationError: Nothing
         , label: Just "Stad"
+        , labelClass: ""
         , inputClass: ""
         }
 
@@ -348,6 +351,7 @@ render self@{ state: { startDate, endDate, streetAddress, zipCode, countryCode, 
         , value: self.state.temporaryName
         , validationError: Nothing
         , label: Just "Tillfällig namnändring eller C/O"
+        , labelClass: ""
         , inputClass: ""
         }
 

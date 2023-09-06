@@ -429,6 +429,7 @@ editAddress props state setState resetField now =
             , onChange: \newStreetAddr -> setState _ { address { streetAddress = newStreetAddr } }
             , label: Just "Gatuadress"
             , validationError: inputFieldErrorMessage $ validateField StreetAddress state.address.streetAddress []
+            , labelClass: ""
             , inputClass: ""
             }
         , InputField.inputField
@@ -439,6 +440,7 @@ editAddress props state setState resetField now =
             , onChange: \newZip -> setState _ { address { zipCode = newZip } }
             , label: Just "Postnummer"
             , validationError: inputFieldErrorMessage $ validateField (Zip state.address.countryCode) state.address.zipCode []
+            , labelClass: ""
             , inputClass: ""
             }
         , InputField.inputField
@@ -449,6 +451,7 @@ editAddress props state setState resetField now =
             , onChange: \newCity -> setState _ { address { city = newCity } }
             , label: Just "Stad"
             , validationError: inputFieldErrorMessage $ validateField City state.address.city []
+            , labelClass: ""
             , inputClass: ""
             }
         , CountryDropDown.countryDropDown CountryDropDown.limitedCountries false
@@ -515,6 +518,7 @@ editEmail props state setState resetField =
                 _ -> pure unit
             , label: Just "E-postadress"
             , validationError: inputFieldErrorMessage $ validateField Email state.email []
+            , labelClass: ""
             , inputClass: ""
             }
         , submitButton
@@ -569,6 +573,7 @@ editPhone props state setState resetField =
             , onChange: \newPhone -> setState _ { phone = newPhone }
             , label: Just "Telefonnummer"
             , validationError: inputFieldErrorMessage $ validateField Phone state.phone []
+            , labelClass: ""
             , inputClass: ""
             }
         , submitButton
@@ -617,6 +622,7 @@ editName props state setState resetField =
             , onChange: \newFirstName -> setState _ { name { firstName = newFirstName } }
             , label: Just "Förnamn"
             , validationError: inputFieldErrorMessage $ validateField FirstName state.name.firstName []
+            , labelClass: ""
             , inputClass: ""
             }
         , InputField.inputField
@@ -627,6 +633,7 @@ editName props state setState resetField =
             , onChange: \newLastName -> setState _ { name { lastName = newLastName } }
             , label: Just "Efternamn"
             , validationError: inputFieldErrorMessage $ validateField LastName state.name.lastName []
+            , labelClass: ""
             , inputClass: ""
             }
         , submitButton
