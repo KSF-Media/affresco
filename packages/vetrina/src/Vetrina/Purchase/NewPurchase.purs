@@ -390,7 +390,7 @@ emailInput :: Props -> State -> ((State -> State) -> Effect Unit) -> JSX
 emailInput {accountStatus: (LoggedInAccount _)} _ _ = mempty
 emailInput props state setState =
   DOM.div
-    { className: "vetrina--input-wrapper vetrina--with-label text-base w-full max-w-[400px]  pt-4 pb-6"
+    { className: "vetrina--input-wrapper vetrina--with-label text-base w-full max-w-[400px]"
     , children:
         [ InputField.inputField
             { type_: InputField.Email
@@ -401,7 +401,7 @@ emailInput props state setState =
             , validationError: Form.inputFieldErrorMessage $ Form.validateField EmailAddress state.emailAddress state.serverErrors
             , value: state.emailAddress
             , labelClass: "font-duplexsans font-light font-lg m-0"
-            , inputClass: "font-duplexsans font-light border border-gray-400 m-0 p-2"
+            , inputClass: "vetrina--input-field font-duplexsans font-light border border-gray-400 m-0 p-2"
             , extraClass: "flex flex-col m-0 p-0"
             }
         ]
@@ -443,8 +443,8 @@ passwordInput state setState =
               Form.inputFieldErrorMessage $
               Form.validateField Password state.password []
             , labelClass: "font-duplexsans font-light font-lg m-0"
-            , inputClass: "font-duplexsans font-light border border-gray-400 m-0 p-2"
-            , extraClass: "flex flex-col pb-8"
+            , inputClass: "vetrina--input-field font-duplexsans font-light border border-gray-400 m-0 p-2"
+            , extraClass: "flex flex-col"
             }
         ]
     }

@@ -86,26 +86,26 @@ setPasswordForm form setForm onSubmit =
                 [ InputField.inputField
                    { placeholder: "Önskat lösenord"
                    , type_: InputField.Password
-                   , label: Nothing
+                   , label: Just "Välj önskat lösenord:"
                    , name: "password"
                    , onChange: \val -> setForm _ { newPassword = val }
                    , value: form.newPassword
                    , validationError: inputFieldErrorMessage $ validateField NewPassword form.newPassword []
-                   , labelClass: ""
-                   , inputClass: "border mt-1 p-2"
-                   , extraClass: "font-duplexsans font-light flex flex-col py-4"
+                   , labelClass: "font-duplexsans font-light font-lg m-0"
+                   , inputClass: "vetrina--input-field font-duplexsans font-light border border-gray-400 m-0 p-2"
+                   , extraClass: "flex flex-col"
                    }
                 , InputField.inputField
                     { placeholder: "Bekräfta lösenord"
                     , type_: InputField.Password
-                    , label: Nothing
+                    , label: Just "Bekräfta lösenord:"
                     , name: "confirmPassword"
                     , onChange: \val -> setForm _ { confirmPassword = val }
                     , value: form.confirmPassword
                     , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword form.newPassword) form.confirmPassword []
-                    , labelClass: ""
-                    , inputClass: "border mt-1 p-2"
-                    , extraClass: "font-duplexsans font-light flex flex-col pt-4 pb-10"
+                    , labelClass: "font-duplexsans font-light font-lg m-0"
+                    , inputClass: "vetrina--input-field font-duplexsans font-light border border-gray-400 m-0 p-2"
+                    , extraClass: "flex flex-col"
                     }
                 ]
             }
