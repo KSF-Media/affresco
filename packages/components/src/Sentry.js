@@ -18,7 +18,7 @@ export function initSentry_(sentryDsn, tSampleRate) {
       // Only allow errors from code hosted on our own domains
       allowUrls: 
         [
-          /https?:\/\/([a-z,\-]+\.)?([a-z,\-]+\.)?(hbl|ksfmedia|ostnyland|vastranyland)\.fi/i,
+          /https?:\/\/([a-z\-]+\.)?([a-z\-]+\.)?(hbl|ksfmedia|ostnyland|vastranyland)\.fi/i,
         ],
     });
     return Sentry;
