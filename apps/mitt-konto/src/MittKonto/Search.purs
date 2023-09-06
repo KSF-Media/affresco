@@ -320,6 +320,7 @@ search = do
                                 , value: query
                                 , onChange: setQuery
                                 , validationError: Nothing
+                                , labelClass: ""
                                 , inputClass: ""
                                 }
                             ]
@@ -599,6 +600,7 @@ renderEditNewUser submitNewAccount cancel setAccountData wrapperState =
                     , onChange: \newEmail -> setAccountData _ { email = fromMaybe "" newEmail }
                     , label: Just "E-post"
                     , validationError: inputFieldErrorMessage $ validateField EmailField (Just account.email) []
+                    , labelClass: ""
                     , inputClass: ""
                     }
                 ]
@@ -611,6 +613,7 @@ renderEditNewUser submitNewAccount cancel setAccountData wrapperState =
                  , onChange: \newName -> setAccountData _ { firstName = fromMaybe "" newName }
                  , label: Just "Förnamn"
                  , validationError: Nothing
+                 , labelClass: ""
                  , inputClass: ""
                  })
               (InputField.inputField
@@ -621,6 +624,7 @@ renderEditNewUser submitNewAccount cancel setAccountData wrapperState =
                  , onChange: \newName -> setAccountData _ { lastName = fromMaybe "" newName }
                  , label: Just "Efternamn"
                  , validationError: Nothing
+                 , labelClass: ""
                  , inputClass: ""
                  }) {}
             , Grid.row_
@@ -632,6 +636,7 @@ renderEditNewUser submitNewAccount cancel setAccountData wrapperState =
                     , onChange: \newpw -> setAccountData _ { password = fromMaybe "" newpw }
                     , label: Just "Lösenord"
                     , validationError: inputFieldErrorMessage $ validateField PasswordField (Just account.password) []
+                    , labelClass: ""
                     , inputClass: ""
                     }
                 ]
@@ -714,6 +719,7 @@ renderSetCusno submitCusno cancel setCusno wrapperState =
                               pure $ Cusno i) <|> c
                     , label: Just "Kundnummer"
                     , validationError: Nothing
+                    , labelClass: ""
                     , inputClass: ""
                     }
                 ]
@@ -782,6 +788,7 @@ renderControlPassword resetPassword submitPassword cancel setState wrapperState 
                         , onChange: \newpw -> setState _ { password = newpw }
                         , label: Just "Lösenord"
                         , validationError: inputFieldErrorMessage $ validateField PasswordField password []
+                        , labelClass: ""
                         , inputClass: ""
                         }
                     ]
