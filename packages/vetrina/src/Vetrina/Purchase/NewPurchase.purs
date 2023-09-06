@@ -160,7 +160,7 @@ title props =
       DOM.div
         { className: "vetrina--headline-" <> maybe "KSF" Paper.toString props.paper <>
                      case props.accountStatus of
-                       NewAccount -> " vetrina--new-purchase-headline font-duplexserif text-center px-3 my-3 text-[28px] leading-tight font-semibold"
+                       NewAccount -> " vetrina--new-purchase-headline font-duplexserif text-center px-3 my-3 text-3xl leading-tight font-semibold"
                        ExistingAccount _ -> " vetrina--headline-existing-account font-duplexsans max-w-[600px] w-full font-duplexsans self-center text-center pt-2 border-neutral border-t-2 border-r-2 border-l-2"
                        LoggedInAccount _ -> " vetrina--headline-loggedin-account font-duplexsans font-light pt-5 px-5 border-neutral border-t-2 border-r-2 border-l-2"
         , _data: Object.fromFoldable $ case props.accountStatus of
@@ -321,7 +321,7 @@ links props =
 loginLink :: Props -> JSX
 loginLink props =
   DOM.div
-    { className: "vetrina--new-purchase-link bg-neutral font-duplexsans font-light text-white text-center text-base leading-tight py-2"
+    { className: "vetrina--new-purchase-link bg-neutral font-duplexsans font-light text-white text-center text-lg leading-tight py-2"
     , children:
         [ DOM.p
           { className: "vetrina--new-purchase-login-text"
@@ -451,7 +451,7 @@ passwordInput state setState =
 acceptTerms :: JSX
 acceptTerms =
   DOM.div
-    { className: "vetrina--terms-conditions max-w-[400px] font-duplexsans font-light text-center text-sm leading-tight mb-4"
+    { className: "vetrina--terms-conditions max-w-[400px] font-duplexsans font-light text-center text-base leading-tight mb-4"
     , children:
       [ DOM.text "Genom att klicka på \"Vidare\" godkänner du Hufvudstadsbladet Abs " ]
           <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "prenumerationsvillkor" " text-neutral"
@@ -473,7 +473,7 @@ coverReservationText product =
     then mempty
     else
     DOM.div
-      { className: "vetrina--cover-reservation max-w-[400px] text-center text-xs font-light font-duplexsans leading-tight mb-4"
+      { className: "vetrina--cover-reservation max-w-[400px] text-center text-sm font-light font-duplexsans leading-tight mb-4"
       , children:
         [ DOM.text "På kortet görs en täckningsreservering på en euro för att bekräfta att kortet är giltigt. Den här summan debiteras inte från kortet." ]
       }
