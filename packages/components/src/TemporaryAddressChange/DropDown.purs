@@ -29,7 +29,7 @@ pastTemporaryAddressDropDown pastAddresses onChange =
     { className: "input-field--container"
     , style: DOM.css { "width": "100%" }
     , children:
-        [ inputLabel { label: "Välj adress", nameFor: "pastTemp" }
+        [ inputLabel { label: "Välj adress", nameFor: "pastTemp", labelClass: "" }
         , DOM.select
             { id: "pastTemp"
             , children:

@@ -76,6 +76,7 @@ requestResetLink = do
                             , onChange: setEmail
                             , label: Just "E-post"
                             , validationError: inputFieldErrorMessage $ validateField EmailField email []
+                            , labelClass: ""
                             , inputClass: ""
                             }
                         , DOM.button
