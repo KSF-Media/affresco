@@ -35,6 +35,13 @@
   font-weight: 700;
 }
 
+@font-face {
+  font-family: "Publico Text";
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/PublicoText-Roman.woff2") format("woff2"),
+       url("https://cdn.ksfmedia.fi/assets/fonts/PublicoText-Roman.otf") format("opentype");
+  font-weight: 400;
+}
+
 :root {
   --color-caption: #686868;
   --color-border: #dbd3d3;
@@ -100,6 +107,27 @@ h4,
 h5,
 h6 {
   font-family: sans-serif;
+}
+
+.article .content .html,
+.article .content .headline,
+.article .content .question {
+  font-family: "Publico Text", serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+.article .content .html {
+  font-weight: 400;
+}
+
+.article .content .headline,
+.article .content .question,
+.article .content .html b {
+  font-weight: 600;
 }
 
 .article {
