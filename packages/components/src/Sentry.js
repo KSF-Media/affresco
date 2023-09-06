@@ -15,14 +15,11 @@ export function initSentry_(sentryDsn, tSampleRate) {
       dsn: sentryDsn,
       integrations: [new Tracing.BrowserTracing()],
       tracesSampleRate: tSampleRate,
-      beforeSend(event, hint) {
-        const error = hint.originalException;
-        // Ignore an error caused by Instagram's browser
-        if (error && error.message && error.message.match(/_AutofillCallbackHandler/i)) {
-          return null;
-        }
-        return event;
-      },
+      // Only allow errors from code hosted on our own domains
+      allowUrls: 
+        [
+          /https?:\/\/([a-z\-]+\.)?([a-z\-]+\.)?(hbl|ksfmedia|ostnyland|vastranyland)\.fi/i,
+        ],
     });
     return Sentry;
   } else {
