@@ -360,7 +360,7 @@ orderErrorMessage failure =
 netsTerminalModal :: JSX
 netsTerminalModal =
   DOM.div
-    { className: "vetrina--payment-wrapper font-duplexsans font-light text-base p-4 border-neutral border-2"
+    { className: "vetrina--payment-wrapper font-duplexsans font-light text-base m-4 p-4 border-neutral border-2"
     , children:
       [ DOM.div_
           [ DOM.text "Betalningen öppnas i ett nytt fönster. Följ anvisningarna i det nya fönstret. Du kommer vidare till bekräftelsen när betalningen genomförts. Vid problem ta kontakt med vår kundtjänst på pren@ksfmedia.fi."
@@ -371,7 +371,7 @@ netsTerminalModal =
 scaRequired :: Maybe String -> (Boolean -> Effect Unit) -> JSX
 scaRequired Nothing _ =
     DOM.div
-      { className: "vetrina--payment-wrapper font-duplexsans font-light text-base p-4 border-neutral border-2"
+      { className: "vetrina--payment-wrapper font-duplexsans font-light text-base m-4 p-4 border-neutral border-2"
       , children: [ DOM.div_ [ DOM.text "Något gick fel. Vänligen försök igen om en stund." ] ]
       }
 scaRequired (Just paymentTerminalUrl) setScaShown =
