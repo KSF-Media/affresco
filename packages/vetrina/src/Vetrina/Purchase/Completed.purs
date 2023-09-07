@@ -3,7 +3,7 @@ module Vetrina.Purchase.Completed where
 import Prelude
 
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe, fromMaybe)
+import Data.Maybe (Maybe, maybe)
 import Effect (Effect)
 import KSF.User as User
 import React.Basic (JSX)
@@ -37,7 +37,7 @@ completed props =
           }
       , DOM.p
           { className: "vetrina--description-text"
-          , children: [ DOM.text $ "Vi har skickat en bekräftelse till " <> (fromMaybe "" $ map _.email props.user) ]
+          , children: [ DOM.text $ "Vi har skickat en bekräftelse till " <> maybe "" _.email props.user ]
           }
       ]
     }
