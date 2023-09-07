@@ -58,14 +58,18 @@ component = do
 
 render :: PasswordForm -> ((PasswordForm -> PasswordForm) -> Effect Unit) -> EventHandler -> JSX
 render form setForm onSubmit =
-  DOM.h1
-    { className: "vetrina--headline self-center font-duplexsans font-light"
-    , children:[ DOM.text "Tack för din beställning!" ]
-    }
-  <>
-  DOM.p
-    { className: "vetrina--description-text self-center font-duplexsans font-light"
-    , children: [ DOM.text "Du är nästan klar! Skriv in önskat lösenord för ditt nya konto nedan." ]
+  DOM.div
+    { className: "vetrina--set-pw-container self-center"
+    , children:
+      [ DOM.h1
+          { className: "vetrina--headline font-duplexsans font-light"
+          , children:[ DOM.text "Tack för din beställning!" ]
+          }
+      , DOM.p
+          { className: "vetrina--description-text font-duplexsans font-light"
+          , children: [ DOM.text "Du är nästan klar! Skriv in önskat lösenord för ditt nya konto nedan." ]
+          }
+      ]
     }
   <> setPasswordForm form setForm onSubmit
 
@@ -82,26 +86,26 @@ setPasswordForm form setForm onSubmit =
                 [ InputField.inputField
                    { placeholder: "Önskat lösenord"
                    , type_: InputField.Password
-                   , label: Nothing
+                   , label: Just "Välj önskat lösenord:"
                    , name: "password"
                    , onChange: \val -> setForm _ { newPassword = val }
                    , value: form.newPassword
                    , validationError: inputFieldErrorMessage $ validateField NewPassword form.newPassword []
-                   , labelClass: ""
-                   , inputClass: "border mt-1 p-2"
-                   , extraClass: "font-duplexsans font-light flex flex-col py-4"
+                   , labelClass: "font-duplexsans font-light font-lg m-0"
+                   , inputClass: "vetrina--input-field font-duplexsans font-light border border-gray-400 m-0 p-2"
+                   , extraClass: "flex flex-col"
                    }
                 , InputField.inputField
                     { placeholder: "Bekräfta lösenord"
                     , type_: InputField.Password
-                    , label: Nothing
+                    , label: Just "Bekräfta lösenord:"
                     , name: "confirmPassword"
                     , onChange: \val -> setForm _ { confirmPassword = val }
                     , value: form.confirmPassword
                     , validationError: inputFieldErrorMessage $ validateField (ConfirmPassword form.newPassword) form.confirmPassword []
-                    , labelClass: ""
-                    , inputClass: "border mt-1 p-2"
-                    , extraClass: "font-duplexsans font-light flex flex-col pt-4 pb-10"
+                    , labelClass: "font-duplexsans font-light font-lg m-0"
+                    , inputClass: "vetrina--input-field font-duplexsans font-light border border-gray-400 m-0 p-2"
+                    , extraClass: "flex flex-col"
                     }
                 ]
             }
