@@ -79,6 +79,7 @@ notFoundArticle =
         , aoiCropped: Nothing
       }
     , tags: []
+    , structuredTags: emptyStructuredTags
     , uuid: "notfound"
     , preamble: []
     , authors: []
@@ -165,6 +166,7 @@ type JSArticleStub =
   { publishingTime     :: String
   , updateTime         :: Maybe String
   , tags               :: Array String
+  , structuredTags     :: StructuredTags
   , articleType        :: String
   , articleTypeDetails :: Maybe ArticleTypeDetails
   | ArticleStubCommon
@@ -174,6 +176,7 @@ type ArticleStub =
   { publishingTime     :: Maybe LocalDateTime
   , updateTime         :: Maybe LocalDateTime
   , tags               :: Array Tag
+  , structuredTags     :: StructuredTags
   , articleType        :: ArticleType
   , articleTypeDetails :: Maybe ArticleTypeDetails
   | ArticleStubCommon
@@ -225,6 +228,7 @@ type JSArticle =
   , updateTime     :: Maybe String
   , body           :: Array Json
   , tags           :: Array String
+  , structuredTags :: StructuredTags
   , articleType    :: String
   , paper          :: String
   | ArticleCommon
@@ -236,6 +240,7 @@ type Article =
   , updateTime     :: Maybe LocalDateTime
   , body           :: Array BodyElement
   , tags           :: Array Tag
+  , structuredTags :: StructuredTags
   , articleType    :: ArticleType
   , paper          :: Paper.Paper
   | ArticleCommon
@@ -247,6 +252,7 @@ type JSDraftArticle =
   { publishingTime :: Maybe String
   , updateTime     :: Maybe String
   , tags           :: Array String
+  , structuredTags :: StructuredTags
   , articleType    :: String
   , body           :: Array Json
   , paper          :: String
@@ -274,6 +280,7 @@ articleToArticleStub a =
   , publishingTime: a.publishingTime
   , updateTime: a.updateTime
   , tags: a.tags
+  , structuredTags: a.structuredTags
   , articleType: a.articleType
   , articleTypeDetails: a.articleTypeDetails
   }
@@ -379,6 +386,7 @@ parseDraftArticle =
         , publishingTimeUtc: Nothing
         , updateTime: parseLocalDateTime =<< jsDraftArticle.updateTime
         , tags: map Tag jsDraftArticle.tags
+        , structuredTags: jsDraftArticle.structuredTags
         , body: body
         , articleType: fromMaybe NyhetStor $ lookup jsDraftArticle.articleType $ map swap articleTypes
         , paper: fromMaybe Paper.KSF $ Paper.fromString jsDraftArticle.paper
@@ -399,7 +407,7 @@ fromJSArticleStub jsStub@{ uuid, publishingTime, updateTime, tags, articleType }
     }
 
 fromJSArticle :: JSArticle -> Effect Article
-fromJSArticle jsArticle@{ uuid, publishingTime, updateTime, tags, body, articleType, paper } = do
+fromJSArticle jsArticle@{ uuid, publishingTime, updateTime, tags, structuredTags, body, articleType, paper } = do
   localPublishingTime <- localizeArticleDateTimeString uuid publishingTime
   localUpdateTime <- maybe (pure Nothing) (localizeArticleDateTimeString uuid) updateTime
   resolvedBody <- fromJSBody fromJSArticleStub body
@@ -408,6 +416,7 @@ fromJSArticle jsArticle@{ uuid, publishingTime, updateTime, tags, body, articleT
     , publishingTimeUtc: parseDateTime publishingTime
     , updateTime: localUpdateTime
     , tags: map Tag tags
+    , structuredTags
     , body: resolvedBody
     , articleType: fromMaybe NyhetStor $ lookup articleType $ map swap articleTypes
     , paper: fromMaybe Paper.KSF $ Paper.fromString paper
@@ -603,6 +612,31 @@ categoriesMap =
   foldr (\cat@(Category c) -> (Map.union $ categoriesMap c.subCategories) <<< Map.insert c.label cat) Map.empty
 
 newtype Tag = Tag String
+
+type StructuredTags =
+  { categories :: Array String
+  , topics :: Array String
+  , entities ::
+      { events :: Array String
+      , objects :: Array String
+      , organisations :: Array String
+      , people :: Array String
+      , places :: Array String
+      }
+  }
+
+emptyStructuredTags :: StructuredTags
+emptyStructuredTags =
+  { categories: []
+  , topics: []
+  , entities:
+    { events: []
+    , objects: []
+    , organisations: []
+    , people: []
+    , places: []
+    }
+  }
 
 uriComponentToTag :: String -> Tag
 uriComponentToTag = Tag <<< String.replaceAll (String.Pattern "_") (String.Replacement " ")
