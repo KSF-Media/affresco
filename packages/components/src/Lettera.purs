@@ -149,9 +149,6 @@ instance foldableLetteraResponse :: Foldable LetteraResponse where
   foldr f z = Foldable.foldr f z <<< responseBody
   foldMap f = foldMap f <<< responseBody
 
-handleLetteraError :: LetteraError -> Effect Unit
-handleLetteraError = Console.warn <<< show
-
 getArticleAuth :: UUID -> Paper -> Aff (Either String FullArticle)
 getArticleAuth articleId paper = do
   tokens <- Auth.loadToken
