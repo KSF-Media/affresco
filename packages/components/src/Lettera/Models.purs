@@ -296,6 +296,7 @@ articleToJsonWith localTimeSerialize article =
       , publishingTimeUtc = (\x -> format dateTimeFormatter x) <$> article.publishingTimeUtc
       , updateTime     = localTimeSerialize <$> article.updateTime
       , tags           = map unwrap article.tags
+      , structuredTags = article.structuredTags
       , body           = mapMaybe bodyElementToJson article.body
       , articleType    = fromMaybe "NyhetStor" $ lookup article.articleType articleTypes
       , paper          = Paper.toString article.paper
@@ -348,6 +349,7 @@ parseArticleWithoutLocalizing =
         , publishingTimeUtc: parseDateTime =<< jsArticle.publishingTimeUtc
         , updateTime: parseLocalDateTime =<< jsArticle.updateTime
         , tags: map Tag jsArticle.tags
+        , structuredTags: jsArticle.structuredTags
         , body: body
         , articleType: fromMaybe NyhetStor $ lookup jsArticle.articleType $ map swap articleTypes
         , paper: fromMaybe Paper.KSF $ Paper.fromString jsArticle.paper
@@ -360,6 +362,7 @@ parseArticleStubWithoutLocalizing =
                jsStub { publishingTime = parseLocalDateTime jsStub.publishingTime
                       , updateTime     = parseLocalDateTime jsStub.updateTime
                       , tags           = map Tag jsStub.tags
+                      , structuredTags = jsStub.structuredTags
                       , articleType    = fromMaybe NyhetStor $ lookup jsStub.articleType $ map swap articleTypes
                       }
 
