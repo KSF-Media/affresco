@@ -306,11 +306,11 @@ render (Self props state setState) components = vetrinaContainer state.purchaseS
             -- Can't do much without a user
             Nothing -> props.unexpectedError
         AuthenticationError _ -> components.newPurchase
-        RefusedByIssuer     -> Purchase.Error.refusedByIssuer { onRetry }
-        ServerError         -> Purchase.Error.error { onRetry }
-        UnexpectedError _   -> Purchase.Error.error { onRetry }
-        InitializationError -> props.unexpectedError
-        _                   -> Purchase.Error.error { onRetry }
+        RefusedByIssuer       -> Purchase.Error.refusedByIssuer { onRetry }
+        ServerError           -> Purchase.Error.error { onRetry }
+        UnexpectedError _     -> Purchase.Error.error { onRetry }
+        InitializationError   -> props.unexpectedError
+        _                     -> Purchase.Error.error { onRetry }
     PurchaseSetPassword ->
       case state.user of
         Just u -> components.setPassword u
