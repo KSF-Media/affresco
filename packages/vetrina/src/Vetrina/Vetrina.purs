@@ -351,7 +351,7 @@ vetrinaContainer purchaseState child =
                         PurchaseCompleted _ -> "flex flex-col justify-center items-center content-center font-duplexsans font-light text-base px-5 pt-14 pb-10"
                         _           -> mempty
 
-orderErrorMessage :: OrderFailure -> String
+orderErrorMessage :: OrderFailure -> String -- TODO this is actually never used
 orderErrorMessage failure =
   case failure of
     AuthenticationError _ -> "Kombinationen av e-postadress och lösenord finns inte"
