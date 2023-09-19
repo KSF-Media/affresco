@@ -335,8 +335,12 @@ parseArticleWith parseFn articleResponse = do
     Right jsArticle -> map Right $ parseFn jsArticle
     Left err -> do
       let parsingErrors = printJsonDecodeError err
+          uuid :: Either JsonDecodeError String
+          uuid = flip getField "uuid" =<< decodeJObject articleResponse
       -- TODO: Sentry and whatnot
-      Console.warn $ "Could not parse article JSON, errors: " <> parsingErrors
+      Console.warn $ case uuid of
+        Left _  -> "Could not parse article JSON, errors: " <> parsingErrors
+        Right x -> "Could not parse article " <> x <> " JSON, errors: " <> parsingErrors
       pure $ Left $ "Parsing error: " <> parsingErrors
 
 parseArticle :: Json -> Effect (Either String Article)
