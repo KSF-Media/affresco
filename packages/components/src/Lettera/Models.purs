@@ -2,15 +2,12 @@ module Lettera.Models where
 
 import Prelude
 
-import Affjax (Error, Response, Request, printError) as AX
-import Affjax.RequestHeader (RequestHeader(..)) as AX
-import Affjax.ResponseHeader (ResponseHeader(..)) as AX
-import Affjax.StatusCode (StatusCode(..)) as AX
-import Data.Argonaut.Core (Json, caseJsonObject, caseJsonString, jsonEmptyObject)
+import Data.Argonaut.Core (Json, caseJsonObject, jsonEmptyObject)
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, getField, printJsonDecodeError, (.!=), (.:), (.:?))
 import Data.Argonaut.Decode.Decoders (decodeJObject, decodeString)
-import Data.Argonaut.Encode (class EncodeJson, encodeJson, extend, (:=), (:=?), (~>), (~>?))
-import Data.Argonaut.Encode.Class (encodeJson)
+import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
+import Data.Argonaut.Encode.Combinators ((:=), (~>))
+import Data.Argonaut.Encode.Encoders (encodeString)
 import Data.Array (catMaybes, mapMaybe)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..), hush)
@@ -26,8 +23,8 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe, fromJust)
 import Data.Newtype (class Newtype, un, unwrap)
 import Data.Set (Set)
 import Data.Show.Generic (genericShow)
-import Data.String (toLower)
 import Data.String (Pattern(..), Replacement(..), replaceAll, toLower) as String
+import Data.String (toLower)
 import Data.String.Extra (kebabCase) as String
 import Data.String.Pattern (Pattern(..), Replacement(..))
 import Data.Time.Duration as Duration
