@@ -316,8 +316,8 @@ renderMain navbar content =
                                 ]
                             }
                         , DOM.img
-                            { src: "https://cdn.ksfmedia.fi/prenumerera.ksfmedia.fi/images/ksf-media.png"
-                            , alt: "KSF Media"
+                            { src: "https://cdn.ksfmedia.fi/prenumerera.ksfmedia.fi/images/hbl-ab-logo-2023.png"
+                            , alt: "Hufvudstadsbladet Ab"
                             }
                         ]
                     }
