@@ -31,7 +31,7 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (EventHandler, handler)
-import React.Basic.Hooks (Component, useState, (/\))
+import React.Basic.Hooks (Component, useEffect, useState, (/\))
 import React.Basic.Hooks as React
 import Vetrina.Purchase.NewPurchase.Order (Props, PurchaseInput, createNewAccount, loginToExistingAccount, mkPurchase)
 import Vetrina.Types (AccountStatus(..), ExistingAccountForm, FormInputField(..), NewAccountForm, OrderFailure, Product, PurchaseParameters)
@@ -46,15 +46,20 @@ type State =
   , productSelection    :: Maybe Product
   , paymentMethod       :: Maybe PaymentMethod
   , showProductContents :: Boolean
+  , invalidPassword     :: Boolean
   }
 
 component :: Sentry.Logger -> Component Props
 component logger = do
   window <- Web.HTML.window
   React.component "NewPurchase" $ \props -> React.do
+    let invalidPassword =
+          case props.accountStatus of
+            ExistingAccount x  -> x.invalidPassword
+            _                   -> false
     state /\ setState <- useState
       { emailAddress: case props.accountStatus of
-           ExistingAccount email -> Just email
+           ExistingAccount x -> Just x.email
            _                     -> Nothing
       , password: Nothing
       , serverErrors: []
@@ -64,7 +69,13 @@ component logger = do
       , productSelection: props.productSelection <|> head props.products
       , paymentMethod: props.paymentMethod
       , showProductContents: false
+      , invalidPassword: invalidPassword
       }
+
+    useEffect invalidPassword $ do
+      setState _ { invalidPassword = invalidPassword }
+      pure mempty
+
     let onSubmit = handler preventDefault $ \_ -> do
           let withWindow :: forall r. (PurchaseInput r ->  Aff (Either OrderFailure User.User))
                             -> PurchaseInput r -> Effect Unit
@@ -107,7 +118,7 @@ render props state setState onSubmit =
   DOM.div
     { className: "vetrina--new-purchase-container flex flex-col items-stretch col-span-3" <>
                  case props.accountStatus of
-                       NewAccount -> " vetrina--new-account-container"
+                       NewAccount        -> " vetrina--new-account-container"
                        ExistingAccount _ -> " vetrina--existing-account-container p-5"
                        LoggedInAccount _ -> " vetrina--loggedin-account-container p-5"
     , children:
@@ -153,14 +164,14 @@ title props =
         case props.accountStatus of
           ExistingAccount _    -> Just $ DOM.text "Du har redan ett konto"
           LoggedInAccount user -> Just $ DOM.text $ "Hej " <> (fromMaybe "" $ toMaybe user.firstName)
-          NewAccount -> props.headline
+          NewAccount           -> props.headline
   in foldMap headline headlineText
   where
     headline child =
       DOM.div
         { className: "vetrina--headline-" <> maybe "KSF" Paper.toString props.paper <>
                      case props.accountStatus of
-                       NewAccount -> " vetrina--new-purchase-headline font-duplexserif text-center px-3 my-3 text-3xl leading-tight font-semibold"
+                       NewAccount        -> " vetrina--new-purchase-headline font-duplexserif text-center px-3 my-3 text-3xl leading-tight font-semibold"
                        ExistingAccount _ -> " vetrina--headline-existing-account font-duplexsans max-w-[600px] w-full font-duplexsans self-center text-center pt-2 border-neutral border-t-2 border-r-2 border-l-2"
                        LoggedInAccount _ -> " vetrina--headline-loggedin-account font-duplexsans font-light pt-5 px-5 border-neutral border-t-2 border-r-2 border-l-2"
         , _data: Object.fromFoldable $ case props.accountStatus of
@@ -438,10 +449,13 @@ passwordInput state setState =
             , label: Just "Lösenord"
             , name: "password"
             , value: state.password
-            , onChange: \pw -> setState _ { password = pw }
+            , onChange: \pw -> setState _ { password = pw, invalidPassword = false }
             , validationError:
-              Form.inputFieldErrorMessage $
-              Form.validateField Password state.password []
+              if state.invalidPassword
+              then Just "Kombinationen av e-postadress och lösenord var felaktig."
+              else
+                Form.inputFieldErrorMessage $
+                Form.validateField Password state.password []
             , labelClass: "font-duplexsans font-light font-lg m-0"
             , inputClass: "vetrina--input-field font-duplexsans font-light border border-gray-400 m-0 p-2"
             , extraClass: "flex flex-col"

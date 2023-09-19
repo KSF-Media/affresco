@@ -244,7 +244,7 @@ pollOrder logger setState state (Right order) = do
         Tracking.transaction order.number productId productPrice productCampaignNo -- analyics
       where
         chooseAccountStatus user
-          | user.hasCompletedRegistration = ExistingAccount user.email
+          | user.hasCompletedRegistration = ExistingAccount { email: user.email, invalidPassword: false }
           | otherwise = NewAccount
     OrderFailed reason -> liftEffect do
       case reason of
@@ -305,7 +305,7 @@ render (Self props state setState) components = vetrinaContainer state.purchaseS
               components.accountForm u
             -- Can't do much without a user
             Nothing -> props.unexpectedError
-        AuthenticationError -> components.newPurchase
+        AuthenticationError _ -> components.newPurchase
         RefusedByIssuer     -> Purchase.Error.refusedByIssuer { onRetry }
         ServerError         -> Purchase.Error.error { onRetry }
         UnexpectedError _   -> Purchase.Error.error { onRetry }
@@ -331,11 +331,11 @@ vetrinaContainer :: PurchaseState -> JSX -> JSX
 vetrinaContainer purchaseState child =
   let errorClassString = "vetrina--purchase-error"
       errorClass       = case purchaseState of
-                           PurchaseFailed SubscriptionExists  -> mempty
-                           PurchaseFailed AuthenticationError -> mempty
-                           PurchaseFailed InsufficientAccount -> mempty
-                           PurchaseFailed _                   -> errorClassString
-                           _                                  -> mempty
+                           PurchaseFailed SubscriptionExists      -> mempty
+                           PurchaseFailed (AuthenticationError _) -> mempty
+                           PurchaseFailed InsufficientAccount     -> mempty
+                           PurchaseFailed _                       -> errorClassString
+                           _                                      -> mempty
   in
     DOM.div
       { className:
@@ -354,8 +354,8 @@ vetrinaContainer purchaseState child =
 orderErrorMessage :: OrderFailure -> String
 orderErrorMessage failure =
   case failure of
-    AuthenticationError -> "Kombinationen av e-postadress och lösenord finns inte"
-    _                   -> "Något gick fel. Vänligen försök igen om en stund."
+    AuthenticationError _ -> "Kombinationen av e-postadress och lösenord finns inte"
+    _                     -> "Något gick fel. Vänligen försök igen om en stund."
 
 netsTerminalModal :: JSX
 netsTerminalModal =
@@ -427,6 +427,7 @@ staticRender paper products headline = -- headline paper
   , productSelection: Nothing
   , paymentMethod: Nothing
   , showProductContents: false
+  , invalidPassword: false
   }
   (const $ pure unit)
   mempty

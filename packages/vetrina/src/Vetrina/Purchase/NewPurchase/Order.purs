@@ -131,11 +131,11 @@ mkPurchase props logger window askAccount validForm affUser = do
         let pError = props.purchaseError (hush eitherUser)
         case err of
           EmailInUse email ->
-            pError (Just $ ExistingAccount email) validForm.productSelection NewPurchase
+            pError (Just $ ExistingAccount { email: email, invalidPassword: false }) validForm.productSelection NewPurchase
           SubscriptionExists ->
             pError Nothing Nothing $ PurchaseFailed SubscriptionExists
-          AuthenticationError ->
-            pError Nothing Nothing $ PurchaseFailed AuthenticationError
+          AuthenticationError email -> do
+            pError (Just $ ExistingAccount {email: email, invalidPassword: true}) Nothing $ PurchaseFailed err
           InsufficientAccount -> do
             pError Nothing Nothing $ PurchaseFailed InsufficientAccount
             props.setRetryPurchase $ mkPurchase props logger window true validForm <<< pure <<< Right
@@ -187,7 +187,7 @@ loginToExistingAccount logger (Just username) (Just password) = do
   case eitherUser of
     Right u  -> pure $ Right u
     Left err
-      | User.LoginInvalidCredentials <- err -> pure $ Left AuthenticationError
+      | User.LoginInvalidCredentials <- err -> pure $ Left $ AuthenticationError username
       -- TODO: Think about this
       | User.InvalidFormFields _ <- err -> pure $ Left $ UnexpectedError "invalid form fields"
       | User.SomethingWentWrong <- err -> pure $ Left $ ServerError
