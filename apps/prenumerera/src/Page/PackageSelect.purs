@@ -152,7 +152,7 @@ render firstRender selectPaper fade activePaper packageGroups =
                         [ DOM.h2_ [ DOM.text "Företagsbeställning?" ]
                         , DOM.p_
                             [ DOM.text "Vill du prenumerera för ett företag? Ta i så fall kontakt med vår kundservice, "
-                            , DOM.strong_ [ DOM.text "via pren@ksfmedia.fi eller 09 1253 500" ]
+                            , DOM.strong_ [ DOM.text "via kundservice@hbl.fi eller 09 1253 500" ]
                             ]
                         ]
                     }
