@@ -364,6 +364,10 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                                         }
                                     ]
                         }
+                    , DOM.div
+                        { className: "subscription--update-action-addtional-text"
+                        , children: [DOM.text "(Öppnas i ett nytt fönster. Vid registreringen görs en täckningsreservation på 1 euro som inte debiteras från kortet.)"]
+                        }
                     ]
         }
 
