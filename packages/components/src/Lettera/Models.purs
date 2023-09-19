@@ -6,9 +6,10 @@ import Affjax (Error, Response, Request, printError) as AX
 import Affjax.RequestHeader (RequestHeader(..)) as AX
 import Affjax.ResponseHeader (ResponseHeader(..)) as AX
 import Affjax.StatusCode (StatusCode(..)) as AX
-import Data.Argonaut.Core (Json, caseJsonObject, jsonEmptyObject)
-import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, printJsonDecodeError, (.!=), (.:), (.:?))
-import Data.Argonaut.Encode (class EncodeJson, extend, (:=), (:=?), (~>), (~>?))
+import Data.Argonaut.Core (Json, caseJsonObject, caseJsonString, jsonEmptyObject)
+import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, getField, printJsonDecodeError, (.!=), (.:), (.:?))
+import Data.Argonaut.Decode.Decoders (decodeJObject, decodeString)
+import Data.Argonaut.Encode (class EncodeJson, encodeJson, extend, (:=), (:=?), (~>), (~>?))
 import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Argonaut.Encode.Encoders (encodeInt, encodeString)
 import Data.Array (catMaybes, mapMaybe)
@@ -25,6 +26,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, maybe, fromJust)
 import Data.MediaType (MediaType(..))
 import Data.Newtype (class Newtype, un, unwrap)
+import Data.Set (Set)
 import Data.Show.Generic (genericShow)
 import Data.String (Pattern(..), Replacement(..), replaceAll, toLower) as String
 import Data.String (toLower)
@@ -85,7 +87,7 @@ notFoundArticle =
         , aoiCropped: Nothing
       }
     , tags: []
-    , structuredTags: emptyStructuredTags
+    , structuredTags: Nothing
     , uuid: "notfound"
     , preamble: []
     , authors: []
@@ -172,7 +174,7 @@ type JSArticleStub =
   { publishingTime     :: String
   , updateTime         :: Maybe String
   , tags               :: Array String
-  , structuredTags     :: StructuredTags
+  , structuredTags     :: Maybe StructuredTags
   , articleType        :: String
   , articleTypeDetails :: Maybe ArticleTypeDetails
   | ArticleStubCommon
@@ -182,7 +184,7 @@ type ArticleStub =
   { publishingTime     :: Maybe LocalDateTime
   , updateTime         :: Maybe LocalDateTime
   , tags               :: Array Tag
-  , structuredTags     :: StructuredTags
+  , structuredTags     :: Maybe StructuredTags
   , articleType        :: ArticleType
   , articleTypeDetails :: Maybe ArticleTypeDetails
   | ArticleStubCommon
@@ -234,7 +236,7 @@ type JSArticle =
   , updateTime     :: Maybe String
   , body           :: Array Json
   , tags           :: Array String
-  , structuredTags :: StructuredTags
+  , structuredTags :: Maybe StructuredTags
   , articleType    :: String
   , paper          :: String
   | ArticleCommon
@@ -246,7 +248,7 @@ type Article =
   , updateTime     :: Maybe LocalDateTime
   , body           :: Array BodyElement
   , tags           :: Array Tag
-  , structuredTags :: StructuredTags
+  , structuredTags :: Maybe StructuredTags
   , articleType    :: ArticleType
   , paper          :: Paper.Paper
   | ArticleCommon
@@ -258,7 +260,7 @@ type JSDraftArticle =
   { publishingTime :: Maybe String
   , updateTime     :: Maybe String
   , tags           :: Array String
-  , structuredTags :: StructuredTags
+  , structuredTags :: Maybe StructuredTags
   , articleType    :: String
   , body           :: Array Json
   , paper          :: String
@@ -622,30 +624,92 @@ categoriesMap =
 
 newtype Tag = Tag String
 
-type StructuredTags =
-  { categories :: Array String
-  , topics :: Array String
-  , entities ::
-      { events :: Array String
-      , objects :: Array String
-      , organisations :: Array String
-      , people :: Array String
-      , places :: Array String
-      }
+data TagType = TagCategory | Event | Object | Organisation | Place | Person | Topic
+
+derive instance eqTagType      :: Eq TagType
+derive instance ordTagType     :: Ord TagType
+derive instance genericTagType :: Generic TagType _
+
+instance encodeJsonTagType :: EncodeJson TagType where
+  encodeJson = encodeString <<< String.toLower <<< show
+
+instance decodeJsonTagType :: DecodeJson TagType where
+  decodeJson x = decodeString x >>= \s -> case s of
+    "category"     -> Right TagCategory
+    "event"        -> Right Event
+    "object"       -> Right Object
+    "organisation" -> Right Organisation
+    "place"        -> Right Place
+    "person"       -> Right Person
+    "topic"        -> Right Topic
+    _              -> Left $ UnexpectedValue x
+
+instance showTagType :: Show TagType where
+  show t = case t of
+    TagCategory  -> "Category"
+    Event        -> "Event"
+    Object       -> "Object"
+    Organisation -> "Organisation"
+    Place        -> "Place"
+    Person       -> "Person"
+    Topic        -> "Topic"
+
+data StructuredTag = StructuredTag
+  { structuredTagName :: String
+  , structuredTagType :: TagType
   }
 
-emptyStructuredTags :: StructuredTags
-emptyStructuredTags =
-  { categories: []
-  , topics: []
-  , entities:
-    { events: []
-    , objects: []
-    , organisations: []
-    , people: []
-    , places: []
-    }
+instance encodeJsonStructuredTag :: EncodeJson StructuredTag where
+  encodeJson (StructuredTag { structuredTagName, structuredTagType }) =
+    "tagName" := structuredTagName ~>
+    "tagType" := structuredTagType ~>
+    jsonEmptyObject
+
+instance decodeJsonStructuredTag :: DecodeJson StructuredTag where
+  decodeJson =
+    let mkStructuredTag structuredTagName structuredTagType =
+          StructuredTag { structuredTagName, structuredTagType }
+        decode x = mkStructuredTag
+                   <$> getField x "tagName"
+                   <*> getField x "tagType"
+    in decodeJObject >=> decode
+
+derive instance eqStructuredTag      :: Eq StructuredTag
+derive instance ordStructuredTag     :: Ord StructuredTag
+derive instance genericStructuredTag :: Generic StructuredTag _
+
+instance showStructuredTag :: Show StructuredTag where
+  show = genericShow
+
+data StructuredTags = StructuredTags
+  { structuredTagsPrimaryTag :: StructuredTag
+  , structuredTagsOtherTags  :: Set StructuredTag
   }
+
+derive instance eqStructuredTags      :: Eq StructuredTags
+derive instance ordStructuredTags     :: Ord StructuredTags
+derive instance genericStructuredTags :: Generic StructuredTags _
+
+instance showStructuredTags :: Show StructuredTags where
+  show = genericShow
+
+instance encodeJsonStructuredTags :: EncodeJson StructuredTags where
+  encodeJson (StructuredTags { structuredTagsPrimaryTag, structuredTagsOtherTags }) =
+    "primaryTag" := structuredTagsPrimaryTag ~>
+    "otherTags"  := structuredTagsOtherTags ~>
+    jsonEmptyObject
+
+instance decodeJsonStructuredTags :: DecodeJson StructuredTags where
+  decodeJson =
+    let mkStructuredTags structuredTagsPrimaryTag structuredTagsOtherTags =
+          StructuredTags { structuredTagsPrimaryTag, structuredTagsOtherTags }
+        decode x = mkStructuredTags
+                   <$> getField x "primaryTag"
+                   <*> getField x "otherTags"
+    in decodeJObject >=> decode
+
+emptyStructuredTags :: Maybe StructuredTags
+emptyStructuredTags = Nothing
 
 uriComponentToTag :: String -> Tag
 uriComponentToTag = Tag <<< String.replaceAll (String.Pattern "_") (String.Replacement " ")

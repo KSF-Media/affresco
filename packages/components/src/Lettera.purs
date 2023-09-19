@@ -6,28 +6,23 @@ import Affjax (Error, Response, Request, defaultRequest, request, printError, ge
 import Affjax.RequestHeader (RequestHeader(..)) as AX
 import Affjax.ResponseFormat (json, string) as AX
 import Affjax.ResponseFormat as ResponseFormat
-import Affjax.ResponseHeader (ResponseHeader(..)) as AX
 import Affjax.StatusCode (StatusCode(..))
-import Data.Argonaut.Core (Json, jsonEmptyObject, stringify, toArray, toObject)
+import Data.Argonaut.Core (Json, toArray, toObject)
 import Data.Argonaut.Decode (decodeJson)
-import Data.Argonaut.Encode (encodeJson, extend, (:=), (:=?), (~>), (~>?))
-import Data.Array (foldl, foldr, partition, snoc)
+import Data.Array (foldl, partition, snoc)
 import Data.Date (Date, day, month, year)
-import Data.Either (Either(..), either, hush, isRight)
+import Data.Either (Either(..), either, isRight)
 import Data.Enum (fromEnum)
-import Data.Foldable (class Foldable, foldMap)
-import Data.Foldable as Foldable
+import Data.Foldable (foldMap)
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Newtype (un, unwrap)
+import Data.Newtype (un)
 import Data.Traversable (traverse, traverse_)
 import Data.UUID (UUID, toString)
 import Data.UUID as UUID
-import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
-import Effect.Exception as Exception
 import Foreign.Object (lookup)
 import KSF.Api (Token(..), UserAuth)
 import KSF.Auth as Auth
