@@ -56,11 +56,11 @@ component logger = do
     let invalidPassword =
           case props.accountStatus of
             ExistingAccount x  -> x.invalidPassword
-            _                   -> false
+            _                  -> false
     state /\ setState <- useState
       { emailAddress: case props.accountStatus of
            ExistingAccount x -> Just x.email
-           _                     -> Nothing
+           _                 -> Nothing
       , password: Nothing
       , serverErrors: []
       , errorMessage: mempty
@@ -69,7 +69,7 @@ component logger = do
       , productSelection: props.productSelection <|> head props.products
       , paymentMethod: props.paymentMethod
       , showProductContents: false
-      , invalidPassword: invalidPassword
+      , invalidPassword
       }
 
     useEffect invalidPassword $ do

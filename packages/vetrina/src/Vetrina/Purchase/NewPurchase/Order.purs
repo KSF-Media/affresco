@@ -131,11 +131,11 @@ mkPurchase props logger window askAccount validForm affUser = do
         let pError = props.purchaseError (hush eitherUser)
         case err of
           EmailInUse email ->
-            pError (Just $ ExistingAccount { email: email, invalidPassword: false }) validForm.productSelection NewPurchase
+            pError (Just $ ExistingAccount { email, invalidPassword: false }) validForm.productSelection NewPurchase
           SubscriptionExists ->
             pError Nothing Nothing $ PurchaseFailed SubscriptionExists
           AuthenticationError email -> do
-            pError (Just $ ExistingAccount {email: email, invalidPassword: true}) Nothing $ PurchaseFailed err
+            pError (Just $ ExistingAccount {email, invalidPassword: true}) Nothing $ PurchaseFailed err
           InsufficientAccount -> do
             pError Nothing Nothing $ PurchaseFailed InsufficientAccount
             props.setRetryPurchase $ mkPurchase props logger window true validForm <<< pure <<< Right
