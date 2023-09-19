@@ -151,7 +151,7 @@ renderPayment (Right OrderCreated) cancel _ _ (Just _) =
     { className: "payment-terminal payment-terminal-msg"
     , children:
         [ DOM.div_
-            [ DOM.text "Betalningen öppnas i ett nytt fönster. Följ anvisningarna i det nya fönstret. Du kommer vidare till bekräftelsen när betalningen genomförts. Vid problem ta kontakt med vår kundtjänst på pren@ksfmedia.fi."
+            [ DOM.text "Betalningen öppnas i ett nytt fönster. Följ anvisningarna i det nya fönstret. Du kommer vidare till bekräftelsen när betalningen genomförts. Vid problem ta kontakt med vår kundtjänst på kundservice@hbl.fi."
             ]
         , DOM.div_
             [ DOM.button

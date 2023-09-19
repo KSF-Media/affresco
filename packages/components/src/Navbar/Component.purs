@@ -148,7 +148,7 @@ needHelp =
     { className: "nav--logout-limpet"
     , children:
         [ DOM.strong_ [ DOM.text "Behöver du hjälp?" ]
-        , DOM.div_ [ formatMailtoAnchorTag "pren@ksfmedia.fi" ]
+        , DOM.div_ [ formatMailtoAnchorTag "kundservice@hbl.fi" ]
         ]
     }
     where
