@@ -8,7 +8,7 @@ import Affjax.ResponseHeader (ResponseHeader(..)) as AX
 import Affjax.StatusCode (StatusCode(..)) as AX
 import Data.Argonaut.Core (Json, caseJsonObject, jsonEmptyObject)
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, getField, printJsonDecodeError, (.!=), (.:), (.:?))
-import Data.Argonaut.Decode.Decoders (decodeJArray, decodeJObject, decodeString)
+import Data.Argonaut.Decode.Decoders (decodeJObject)
 import Data.Argonaut.Encode (class EncodeJson, extend, (:=), (:=?), (~>), (~>?))
 import Data.Argonaut.Encode.Class (encodeJson)
 import Data.Argonaut.Encode.Encoders (encodeInt, encodeString)
