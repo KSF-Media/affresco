@@ -4,10 +4,9 @@ import Prelude
 
 import Data.Argonaut.Core (Json, caseJsonObject, jsonEmptyObject)
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, getField, printJsonDecodeError, (.!=), (.:), (.:?))
-import Data.Argonaut.Decode.Decoders (decodeJObject, decodeString)
-import Data.Argonaut.Encode.Class (class EncodeJson, encodeJson)
-import Data.Argonaut.Encode.Combinators ((:=), (~>))
-import Data.Argonaut.Encode.Encoders (encodeString)
+import Data.Argonaut.Decode.Decoders (decodeJArray, decodeJObject, decodeString)
+import Data.Argonaut.Encode (class EncodeJson, encodeJson, (:=), (~>))
+import Data.Argonaut.Encode.Encoders (encodeInt, encodeString)
 import Data.Array (catMaybes, mapMaybe)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..), hush)
@@ -21,7 +20,7 @@ import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, maybe, fromJust)
 import Data.Newtype (class Newtype, un, unwrap)
-import Data.Set (Set)
+import Data.Set (Set, fromFoldable) as Set
 import Data.Show.Generic (genericShow)
 import Data.String (Pattern(..), Replacement(..), replaceAll, toLower) as String
 import Data.String (toLower)
@@ -665,8 +664,8 @@ instance decodeJsonStructuredTag :: DecodeJson StructuredTag where
     let mkStructuredTag structuredTagName structuredTagType =
           StructuredTag { structuredTagName, structuredTagType }
         decode x = mkStructuredTag
-                   <$> getField x "tagName"
-                   <*> getField x "tagType"
+                   <$> getField x "name"
+                   <*> getField x "type"
     in decodeJObject >=> decode
 
 derive instance eqStructuredTag      :: Eq StructuredTag
@@ -678,7 +677,7 @@ instance showStructuredTag :: Show StructuredTag where
 
 data StructuredTags = StructuredTags
   { structuredTagsPrimaryTag :: StructuredTag
-  , structuredTagsOtherTags  :: Set StructuredTag
+  , structuredTagsOtherTags  :: Set.Set StructuredTag
   }
 
 derive instance eqStructuredTags      :: Eq StructuredTags
@@ -698,9 +697,11 @@ instance decodeJsonStructuredTags :: DecodeJson StructuredTags where
   decodeJson =
     let mkStructuredTags structuredTagsPrimaryTag structuredTagsOtherTags =
           StructuredTags { structuredTagsPrimaryTag, structuredTagsOtherTags }
+        decodeOtherTags :: Array Json -> Either JsonDecodeError (Set.Set StructuredTag)
+        decodeOtherTags = pure <<< Set.fromFoldable <<< catMaybes <<< map (hush <<< decodeJson)
         decode x = mkStructuredTags
                    <$> getField x "primaryTag"
-                   <*> getField x "otherTags"
+                   <*> (decodeOtherTags =<< decodeJArray =<< getField x "otherTags")
     in decodeJObject >=> decode
 
 emptyStructuredTags :: Maybe StructuredTags
