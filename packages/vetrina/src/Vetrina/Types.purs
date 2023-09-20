@@ -12,7 +12,10 @@ import React.Basic (JSX)
 
 data AccountStatus
   = NewAccount
-  | ExistingAccount String
+  | ExistingAccount
+    { email :: String
+    , invalidPassword :: Boolean
+    }
   | LoggedInAccount User.User
 
 instance eqAccountStatus :: Eq AccountStatus where
@@ -79,7 +82,7 @@ data OrderFailure
   | InsufficientAccount
   | InitializationError
   | FormFieldError (Array FormInputField)
-  | AuthenticationError
+  | AuthenticationError String
   | ServerError
   | UnexpectedError String
 
