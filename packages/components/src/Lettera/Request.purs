@@ -19,9 +19,10 @@ encodeRequestHeaders :: Array AX.RequestHeader -> Maybe Json
 encodeRequestHeaders [] = Nothing
 encodeRequestHeaders hs =
   let encodeHeader h obj = flip extend obj $ case h of
-        AX.Accept (MediaType v)      -> "Accept" := v
-        AX.ContentType (MediaType v) -> "ContentType" := v
-        AX.RequestHeader k v         -> k := v
+        AX.Accept (MediaType v)              -> "Accept" := v
+        AX.ContentType (MediaType v)         -> "ContentType" := v
+        AX.RequestHeader k@"Authorization" _ -> k := "[censored]"
+        AX.RequestHeader k v                 -> k := v
   in Just $ foldr encodeHeader jsonEmptyObject hs
 
 encodeRequest :: forall a . AX.Request a -> Json
