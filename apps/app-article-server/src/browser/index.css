@@ -116,25 +116,30 @@ h6 {
   font-family: sans-serif;
 }
 
-.article .content .html,
-.article .content .headline,
-.article .content .question {
+.html, .headline, .question {
   font-family: "Publico Text", serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-size: 1.125rem;
   line-height: 1.4;
 }
 
-.article .content .html {
+.html {
   font-weight: 400;
 }
 
-.article .content .headline,
-.article .content .question,
-.article .content .html b {
+.headline, .html b {
   font-weight: 600;
+}
+
+.headline-question {
+  font-weight: 400;
+  margin-bottom: 2px;
+}
+
+.text-footnote {
+  font-family: "Roboto", sans-serif;
+  color: #999;
 }
 
 .article {
