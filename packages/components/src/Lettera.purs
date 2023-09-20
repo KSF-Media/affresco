@@ -31,7 +31,8 @@ import KSF.Driver (getDriver)
 import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import Lettera.Header as Cache
-import Lettera.Models (Category, DraftParams, FullArticle, LetteraError, LetteraResponse(..), MosaicoArticleType(..), Platform(..), Tag(..), ArticleStub, mkHttpError, mkParseError, mkResponseError, parseArticle, parseArticleStub, parseDraftArticle)
+import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Platform(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
+import Lettera.Request (LetteraError, LetteraResponse(..), mkHttpError, mkParseError, mkResponseError)
 
 foreign import letteraBaseUrl :: String
 foreign import _encodeURIComponent :: String -> String
