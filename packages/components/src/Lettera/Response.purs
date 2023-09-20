@@ -1,4 +1,4 @@
-module Lettera.Request where
+module Lettera.Response where
 
 import Prelude
 

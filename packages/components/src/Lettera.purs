@@ -32,7 +32,7 @@ import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import Lettera.Header as Cache
 import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Platform(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
-import Lettera.Request (LetteraError, LetteraResponse(..), mkHttpError, mkParseError, mkResponseError)
+import Lettera.Response (LetteraError, LetteraResponse(..), mkHttpError, mkParseError, mkResponseError)
 
 foreign import letteraBaseUrl :: String
 foreign import _encodeURIComponent :: String -> String
