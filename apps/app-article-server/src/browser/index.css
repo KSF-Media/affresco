@@ -35,6 +35,20 @@
   font-weight: 700;
 }
 
+@font-face {
+  font-family: "Publico Text";
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/PublicoText-Roman.woff2") format("woff2"),
+       url("https://cdn.ksfmedia.fi/assets/fonts/PublicoText-Roman.otf") format("opentype");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Publico Text';
+  src: url("https://cdn.ksfmedia.fi/assets/fonts/PublicoText-Semibold.woff2") format("woff2"),
+       url("https://cdn.ksfmedia.fi/assets/fonts/PublicoText-Semibold.otf") format("opentype");
+  font-weight: 600;
+}
+
 :root {
   --color-caption: #686868;
   --color-border: #dbd3d3;
@@ -100,6 +114,34 @@ h4,
 h5,
 h6 {
   font-family: sans-serif;
+}
+
+.html,
+.headline {
+  font-family: "Publico Text", serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.4;
+  font-size: 1em;
+}
+
+.headline {
+  margin-bottom: 0;
+}
+
+.headline,
+.html b {
+  font-weight: 600;
+}
+
+.headline-question {
+  font-weight: 400;
+}
+
+.text-footnote {
+  font-family: "Roboto", sans-serif;
+  color: #999;
 }
 
 .article {
@@ -854,12 +896,6 @@ h6 {
   height: 18px;
   display: inline-block;
   margin-bottom: -2px;
-}
-
-.headline-question {
-  margin-bottom: 2px;
-  font-size: 1.06em !important;
-  font-weight: bolder;
 }
 
 .text-footnote {
