@@ -14,7 +14,7 @@ import Data.Date (Date, day, month, year)
 import Data.Either (Either(..), either, hush, isRight)
 import Data.Enum (fromEnum)
 import Data.Foldable (class Foldable, foldMap)
-import Data.Foldable (foldl, foldr) as Foldable
+import Data.Foldable as Foldable
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (un, unwrap)
