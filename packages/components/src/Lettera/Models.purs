@@ -2,11 +2,13 @@ module Lettera.Models where
 
 import Prelude
 
-import Data.Argonaut.Core (Json, caseJsonObject)
+import Data.Argonaut.Core (Json, caseJsonObject, jsonEmptyObject)
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, getField, printJsonDecodeError, (.!=), (.:), (.:?))
-import Data.Argonaut.Decode.Decoders (decodeJObject)
+import Data.Argonaut.Decode.Decoders (decodeJArray, decodeJObject, decodeString)
 import Data.Argonaut.Encode (class EncodeJson)
 import Data.Argonaut.Encode.Class (encodeJson)
+import Data.Argonaut.Encode.Combinators ((:=), (~>))
+import Data.Argonaut.Encode.Encoders (encodeString)
 import Data.Array (catMaybes, mapMaybe)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..), hush)

@@ -59,62 +59,66 @@ encodeError name req err code =
   (("code" := _) <$> code) ~>?
   jsonEmptyObject
 
-instance encodeJsonLetteraError :: EncodeJson LetteraError where
+instance encodeJsonLetteraError :: EncodeJson (LetteraError req resp) where
   encodeJson e = case e of
     ResponseError { letteraErrorRequest, letteraErrorError } ->
       encodeError "ResponseError"
-                  (Just letteraErrorRequest)
+                  (Just (encodeRequest letteraErrorRequest))
                   (Just (encodeString (AX.printError letteraErrorError)))
                   Nothing
     HttpError { letteraErrorRequest, letteraErrorResponse, letteraErrorCode } ->
       encodeError "HttpError"
-                  (Just letteraErrorRequest)
-                  (Just letteraErrorResponse)
+                  (Just (encodeRequest letteraErrorRequest))
+                  (Just (encodeResponse letteraErrorResponse))
                   (Just (encodeInt letteraErrorCode))
     ParseError ->
       encodeError "ParseErrror" Nothing Nothing Nothing
 
-data LetteraError
+data LetteraError req resp
   = ResponseError
-    { letteraErrorRequest  :: Json
+    { letteraErrorRequest  :: AX.Request req
     , letteraErrorError    :: AX.Error
     }
   | HttpError
-    { letteraErrorRequest  :: Json
-    , letteraErrorResponse :: Json
+    { letteraErrorRequest  :: AX.Request req
+    , letteraErrorResponse :: AX.Response resp
     , letteraErrorCode     :: Int
     }
   | ParseError -- TODO: Include some info for better error messages
 
-mkResponseError :: forall a. AX.Request a -> AX.Error -> LetteraError
+-- | The type argument @req Is used for the original `AX.Request req` while the
+-- | type @resp is used for the original `AX.Response resp`. @a is the actual
+-- | payload type of the Lettera response. It will be the same as @resp for the
+-- | `LetteraResponse` values obtained immediately from the HTTP response.
+data LetteraResponse req resp a = LetteraResponse
+  { maxAge :: Maybe Int
+  , body :: Either (LetteraError req resp) a
+  }
+
+mkResponseError :: forall req resp. AX.Request req -> AX.Error -> LetteraError req resp
 mkResponseError req err = ResponseError
-  { letteraErrorRequest: encodeRequest req
+  { letteraErrorRequest: req
   , letteraErrorError: err
   }
 
-mkHttpError :: forall a b. AX.Request a -> AX.Response b -> Int -> LetteraError
+mkHttpError :: forall req resp. AX.Request req -> AX.Response resp -> Int -> LetteraError req resp
 mkHttpError req resp code = HttpError
-  { letteraErrorRequest: encodeRequest req
-  , letteraErrorResponse: encodeResponse resp
+  { letteraErrorRequest: req
+  , letteraErrorResponse: resp
   , letteraErrorCode: code
   }
 
-mkParseError :: LetteraError
+mkParseError :: forall req resp. LetteraError req resp
 mkParseError = ParseError
 
-data LetteraResponse a = LetteraResponse
-  { maxAge :: Maybe Int
-  , body :: Either LetteraError a
-  }
-
-responseBody :: forall a. LetteraResponse a -> Maybe a
+responseBody :: forall req resp a. LetteraResponse req resp a -> Maybe a
 responseBody (LetteraResponse a) = hush a.body
 
-instance functorLetteraResponse :: Functor LetteraResponse where
+instance functorLetteraResponse :: Functor (LetteraResponse req resp) where
   map f (LetteraResponse r@{ body }) =
     LetteraResponse $ r { body = f <$> body }
 
-instance foldableLetteraResponse :: Foldable LetteraResponse where
+instance foldableLetteraResponse :: Foldable (LetteraResponse req resp) where
   foldl f z = foldl f z <<< responseBody
   foldr f z = foldr f z <<< responseBody
   foldMap f = foldMap f <<< responseBody
