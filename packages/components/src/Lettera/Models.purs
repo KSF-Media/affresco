@@ -661,11 +661,10 @@ instance encodeJsonStructuredTag :: EncodeJson StructuredTag where
 
 instance decodeJsonStructuredTag :: DecodeJson StructuredTag where
   decodeJson =
-    let mkStructuredTag structuredTagName structuredTagType =
-          StructuredTag { structuredTagName, structuredTagType }
-        decode x = mkStructuredTag
-                   <$> getField x "name"
-                   <*> getField x "type"
+    let decode x = do
+          structuredTagName <- getField x "name"
+          structuredTagType <- getField x "type"
+          pure $ StructuredTag { structuredTagName, structuredTagType }
     in decodeJObject >=> decode
 
 derive instance eqStructuredTag      :: Eq StructuredTag
