@@ -54,8 +54,8 @@ encodeResponse x =
 encodeError :: String -> Maybe Json -> Maybe Json -> Maybe Json -> Json
 encodeError name req err code =
   "err" := name ~>
-  (("req" := _) <$> req) ~>?
-  (("msg" := _) <$> err) ~>?
+  (("req"  := _) <$> req) ~>?
+  (("msg"  := _) <$> err) ~>?
   (("code" := _) <$> code) ~>?
   jsonEmptyObject
 
