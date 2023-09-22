@@ -655,8 +655,8 @@ data StructuredTag = StructuredTag
 
 instance encodeJsonStructuredTag :: EncodeJson StructuredTag where
   encodeJson (StructuredTag { structuredTagName, structuredTagType }) =
-    "tagName" := structuredTagName ~>
-    "tagType" := structuredTagType ~>
+    "name" := structuredTagName ~>
+    "type" := structuredTagType ~>
     jsonEmptyObject
 
 instance decodeJsonStructuredTag :: DecodeJson StructuredTag where
