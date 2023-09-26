@@ -19,8 +19,8 @@ const Footer = (props) => {
       </a>
       <br />
       <strong>Hufvudstadsbladet Ab {new Date().getFullYear()}</strong>
-      <p class="company-info"><small>Hufvudstadsbladet Ab ger ut Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior.</small></p>
-      <p class="company-info"><small>Hufvudstadsbladet Ab ägs av Bonnier News och Konstsamfundet.</small></p>
+      <p className="company-info"><small>Hufvudstadsbladet Ab ger ut Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior.</small></p>
+      <p className="company-info"><small>Hufvudstadsbladet Ab ägs av Bonnier News och Konstsamfundet.</small></p>
     </div>
   );
 };
