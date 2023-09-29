@@ -10,9 +10,9 @@ import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json, toArray, toObject)
 import Data.Argonaut.Decode (decodeJson)
 import Data.Array (foldl, partition, snoc)
-import Data.Date (Date, day, month, year)
+import Data.Date (Date, Day, Month, Year, day, month, year)
 import Data.Either (Either(..), either, hush, isRight)
-import Data.Enum (fromEnum)
+import Data.Enum (class BoundedEnum, fromEnum)
 import Data.Foldable (class Foldable, foldMap)
 import Data.Foldable as Foldable
 import Data.HTTP.Method (Method(..))
@@ -75,6 +75,9 @@ letteraSearchUrl = letteraBaseUrl <> "/list/search"
 
 letteraAdvertorialUrl :: String
 letteraAdvertorialUrl = letteraBaseUrl <> "/list/active-advertorial"
+
+letteraArchiveUrl :: String
+letteraArchiveUrl = letteraBaseUrl <> "/archive"
 
 data LetteraError
   = ResponseError AX.Error
@@ -349,6 +352,32 @@ getAdvertorials paper = do
             <> "?paper="
             <> Paper.toString paper
         )
+
+data ArchiveRequest
+  = MonthSelection
+  | DateSelection Year Month
+  | ArticleSelection Date Paper
+
+getArchiveHtml :: ArchiveRequest -> Aff (LetteraResponse String)
+getArchiveHtml params = do
+  let showToken :: forall a . BoundedEnum a => Show a => a -> String
+      showToken = ("/" <> _) <<< show <<< fromEnum
+  response <- do
+    driver <- liftEffect getDriver
+    AX.get driver ResponseFormat.string $ case params of
+      MonthSelection ->
+        letteraArchiveUrl
+      DateSelection year month ->
+        letteraArchiveUrl
+        <> showToken year
+        <> showToken month
+      ArticleSelection date paper ->
+        letteraArchiveUrl
+        <> showToken (year date)
+        <> showToken (month date)
+        <> showToken (day date)
+        <> "?paper=" <> Paper.toString paper
+  useResponse (pure <<< pure) response
 
 takeRights :: forall a b. Array (Either b a) -> Array a
 takeRights =
