@@ -312,6 +312,7 @@ articleToJsonWith localTimeSerialize article =
     bodyElementToJson (Question question) = Just $ encodeSingleton "question" question
     bodyElementToJson (Quote quote)       = Just $ encodeSingleton "quote" quote
     bodyElementToJson (Related related)   = Just $ encodeSingleton "related" $ map articleStubToJson related
+    bodyElementToJson (Table table)       = Just $ encodeSingleton "table" table
     bodyElementToJson (Ad _)              = Nothing
     encodeSingleton :: forall a. EncodeJson a => String -> a -> Json
     encodeSingleton key val = encodeJson $ Object.singleton key val
@@ -445,6 +446,7 @@ fromJSBody f = map catMaybes <<< traverse fromJSBodyElement
       Tuple "footnote" footnote -> Footnote <$> hushDecode footnote
       Tuple "question" question -> Question <$> hushDecode question
       Tuple "quote" quote       -> Quote <$> hushDecode quote
+      Tuple "table" table       -> Table <$> hushDecode table
       Tuple "ad" ad             -> Ad <$> hushDecode ad
       _ -> Nothing
     hushDecode :: forall a. DecodeJson a => Json -> Maybe a
@@ -458,6 +460,7 @@ data BodyElement
   | Footnote String
   | Question String
   | Quote QuoteInfo
+  | Table TableInfo
   -- Note that Ad does NOT come from Lettera, but was added here to make smart ad placement possible
   | Ad Ad
   | Related (Array ArticleStub)
@@ -475,6 +478,19 @@ type BoxInfo =
 type QuoteInfo =
   { body :: String
   , author :: Maybe String
+  }
+
+type TableCell =
+  { colSpan :: Maybe Int
+  , rowSpan :: Maybe Int
+  , th      :: Maybe Boolean
+  , content :: String
+  }
+
+type TableInfo =
+  { cells   :: Array (Array TableCell)
+  , extra   :: Maybe String
+  , caption :: Maybe String
   }
 
 type Image =
