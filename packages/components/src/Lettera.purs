@@ -62,7 +62,7 @@ letteraLatestUrl :: String
 letteraLatestUrl = letteraBaseUrl <> "/list/latest/"
 
 letteraByDayUrl :: String
-letteraByDayUrl = letteraBaseUrl <> "/article/by-day"
+letteraByDayUrl = letteraBaseUrl <> "/list/by-day"
 
 letteraCategoryUrl :: String
 letteraCategoryUrl = letteraBaseUrl <> "/categories"
