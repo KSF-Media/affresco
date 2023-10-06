@@ -474,7 +474,7 @@ acceptTerms =
           <> [ DOM.text " och " ]
           <> mkLink "" "https://www.ksfmedia.fi/dataskydd" "personuppgiftspolicy" " text-neutral"
           <> [ DOM.text ". ", DOM.br {} ]
-          <> [ DOM.text "Du uppger kortuppgifter i nästa steg." ]
+          <> [ DOM.text "Du uppger kortuppgifter (för debet- eller kreditkort) i nästa steg." ]
     }
 
 coverReservationText :: Product -> JSX
@@ -491,7 +491,7 @@ coverReservationText product =
     DOM.div
       { className: "vetrina--cover-reservation max-w-[400px] text-center text-sm font-light font-duplexsans leading-tight mb-4"
       , children:
-        [ DOM.text "På kortet görs en täckningsreservering på en euro för att bekräfta att kortet är giltigt. Den här summan debiteras inte från kortet." ]
+        [ DOM.text "På betalkortet görs en täckningsreservering på en euro för att bekräfta att kortet är giltigt. Den här summan debiteras inte från kortet." ]
       }
 
 newAccountFormValidations :: State -> Form.ValidatedForm FormInputField NewAccountForm
