@@ -31,6 +31,8 @@ class Content extends Component {
         return this.renderImage(block, key);
       } else if (blockType === "html") {
         return this.renderHtml(block, key);
+      } else if (blockType === "table") {
+        return this.renderTable(block, key);
       } else if (blockType === "factbox") {
         const factBox = {
           box: {
