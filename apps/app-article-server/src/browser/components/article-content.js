@@ -259,6 +259,34 @@ class Content extends Component {
     );
   }
 
+  renderTable(block, key) {
+    return (
+      <div className="responsive-table-wrapper">
+        <table
+          className={`table-plugin ${this.props.darkModeEnabled ? "darkMode" : ""}`}
+          key={key}
+        >
+          <caption className="table-caption">{block.table.caption}</caption>
+          <tbody>
+            {block.table.cells.map((row) => {
+              return (
+                <tr>
+                  {row.map((cell) => {
+                    if (cell.th) {
+                      return <th>{cell.content}</th>;
+                    } else {
+                      return <td>{cell.content}</td>;
+                    }
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   renderHtml(block, key) {
     if(
       block.html.includes("hbl.fi/artikel/")
