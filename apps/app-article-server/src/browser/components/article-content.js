@@ -270,14 +270,14 @@ class Content extends Component {
         >
           <caption className="table-caption">{block.table.caption}</caption>
           <tbody>
-            {block.table.cells.map((row) => {
+            {block.table.cells.map((row, rowIndex) => {
               return (
-                <tr>
-                  {row.map((cell) => {
+                <tr key={rowIndex}>
+                  {row.map((cell, cellIndex) => {
                     if (cell.th) {
-                      return <th>{cell.content}</th>;
+                      return <th key={cellIndex}>{cell.content}</th>;
                     } else {
-                      return <td>{cell.content}</td>;
+                      return <td key={cellIndex}>{cell.content}</td>;
                     }
                   })}
                 </tr>
