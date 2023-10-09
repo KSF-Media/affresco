@@ -29,20 +29,10 @@
     <script>
       window.UC = new UC_SDK.default('GaqkhhObXq1mG3')
         UC.init().then((initialUIValues => {
-          // const settings = UC.getSettings();
-          // const categories = UC.getCategories();
-
-          // if (initialUIValues.variant === UI_VARIANT.DEFAULT) {
-          //   switch (initialUIValues.initialLayer) {
-          //     case UI_LAYER.FIRST_LAYER:
-          //       return;
-          //     case UI_LAYER.PRIVACY_BUTTON:
-          //       return;
-          //     case UI_LAYER.NONE:
-          //     default:
-          //       return;
-          //   }
-          // }
+          const catsBaseInfo = UC.getCategoriesBaseInfo();
+          const catsFunctional = catsBaseInfo.filter(service => service.slug === "functional");
+          const adConsent = catsFunctional[0].services[0].consent.status;
+          console.debug("Consent", adConsent);
       }));
     </script>
 
