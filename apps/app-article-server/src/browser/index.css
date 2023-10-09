@@ -193,6 +193,39 @@ h6 {
   overflow: hidden;
 }
 
+.responsive-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 32px;
+}
+
+/* 'table-plugin' class name used rather than 'table'
+to avoid Bootstrap styling */
+.table-plugin {
+  width: 100%;
+  border-collapse: unset;
+}
+
+.table-plugin tr:nth-child(odd) {
+  background-color: #eee;
+}
+
+.table-plugin tr:nth-child(even) {
+  background-color: #fff;
+}
+
+.table-plugin th,
+.table-plugin td {
+  padding: 2px 4px;
+}
+
+.table-caption {
+  caption-side: top;
+  color: black;
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding-top: 0;
+}
+
 .loading-wrapper {
   position: absolute;
   left: 50%;
