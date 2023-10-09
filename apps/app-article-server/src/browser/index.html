@@ -25,6 +25,26 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
+    <script src="https://app.usercentrics.eu/browser-sdk/4.28.1/bundle.js"></script>
+    <script>
+      window.UC = new UC_SDK.default('GaqkhhObXq1mG3')
+        UC.init().then((initialUIValues => {
+          // const settings = UC.getSettings();
+          // const categories = UC.getCategories();
+
+          // if (initialUIValues.variant === UI_VARIANT.DEFAULT) {
+          //   switch (initialUIValues.initialLayer) {
+          //     case UI_LAYER.FIRST_LAYER:
+          //       return;
+          //     case UI_LAYER.PRIVACY_BUTTON:
+          //       return;
+          //     case UI_LAYER.NONE:
+          //     default:
+          //       return;
+          //   }
+          // }
+      }));
+    </script>
 
     <script
       async="async"
