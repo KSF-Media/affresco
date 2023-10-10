@@ -32,7 +32,18 @@
           const catsBaseInfo = UC.getCategoriesBaseInfo();
           const catsFunctional = catsBaseInfo.filter(service => service.slug === "functional");
           const adConsent = catsFunctional[0].services[0].consent.status;
-          // console.debug("Consent", adConsent);
+          if (window.googletag ) {
+            if (adConsent) {
+              window.googletag.cmd.push(function () {
+                googletag.pubads().setPrivacySettings({limitedAds: false});
+              })
+            } else {
+              window.googletag.cmd.push(function () {
+                googletag.pubads().setPrivacySettings({limitedAds: true});
+              })
+            }
+          }
+          googletag.pubads().refresh();
       }));
     </script>
 
@@ -61,7 +72,7 @@
     </script>
     <!--End Google Tag Manager-->
     <!--Start Google Ad-->
-    <script src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script src="https://pagead2.googlesyndication.com/tag/js/gpt.js"></script>
     <script>
       var ksf = {};
       ksf.settings = {};
@@ -136,6 +147,8 @@
 
       window.googletag.cmd.push(function () {
         googletag.pubads().setTargeting("sites-or-apps", "apps-only");
+        // googletag.pubads().setPrivacySettings({limitedAds: true});
+
         const networkCode = "/21664538223/";
 
         const slots = window.adSlots;
@@ -151,6 +164,7 @@
           .map((s) => s.getSlotElementId());
 
         googletag.pubads().enableSingleRequest();
+        googletag.pubads().disableInitialLoad();
         googletag.pubads().collapseEmptyDivs();
         googletag.pubads().enableLazyLoad({
           fetchMarginPercent: 0.85, // Fetch slots within 0.5 viewports.
