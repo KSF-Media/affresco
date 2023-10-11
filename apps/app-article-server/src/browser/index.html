@@ -28,22 +28,16 @@
     <script src="https://app.usercentrics.eu/browser-sdk/4.28.1/bundle.js"></script>
     <script>
       window.UC = new UC_SDK.default('GaqkhhObXq1mG3')
-        UC.init().then((initialUIValues => {
+        UC.init().then((() => {
           const catsBaseInfo = UC.getCategoriesBaseInfo();
           const catsFunctional = catsBaseInfo.filter(service => service.slug === "functional");
-          const adConsent = catsFunctional[0].services[0].consent.status;
-          if (window.googletag ) {
-            if (adConsent) {
-              window.googletag.cmd.push(function () {
-                googletag.pubads().setPrivacySettings({limitedAds: false});
-              })
-            } else {
-              window.googletag.cmd.push(function () {
-                googletag.pubads().setPrivacySettings({limitedAds: true});
-              })
-            }
+          const adConsent = catsFunctional[0].services[0].consent.status || false;
+          if (window.googletag) {
+            window.googletag.cmd.push(() => {
+              googletag.pubads().setPrivacySettings({limitedAds: !adConsent});
+            })
+            googletag.pubads().refresh();
           }
-          googletag.pubads().refresh();
       }));
     </script>
 
