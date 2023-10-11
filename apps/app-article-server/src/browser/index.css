@@ -205,12 +205,24 @@ to avoid Bootstrap styling */
   border-collapse: unset;
 }
 
+.table-plugin.darkMode {
+  color: #fff;
+}
+
 .table-plugin tr:nth-child(odd) {
   background-color: #eee;
 }
 
 .table-plugin tr:nth-child(even) {
   background-color: #fff;
+}
+
+.table-plugin.darkMode tr:nth-child(odd) {
+  background-color: #25292b;
+}
+
+.table-plugin.darkMode tr:nth-child(even) {
+  background-color: #313639;
 }
 
 .table-plugin th,
@@ -220,10 +232,14 @@ to avoid Bootstrap styling */
 
 .table-caption {
   caption-side: top;
-  color: black;
+  color: #000;
   font-size: 1.5rem;
   font-weight: bold;
   padding-top: 0;
+}
+
+.darkMode .table-caption {
+  color: #fff;
 }
 
 .loading-wrapper {
