@@ -31,6 +31,8 @@ class Content extends Component {
         return this.renderImage(block, key);
       } else if (blockType === "html") {
         return this.renderHtml(block, key);
+      } else if (blockType === "table") {
+        return this.renderTable(block, key);
       } else if (blockType === "factbox") {
         const factBox = {
           box: {
@@ -255,6 +257,34 @@ class Content extends Component {
             </div>
           </div>
         )}
+      </div>
+    );
+  }
+
+  renderTable(block, key) {
+    return (
+      <div className="responsive-table-wrapper">
+        <table
+          className={`table-plugin ${this.props.darkModeEnabled ? "darkMode" : ""}`}
+          key={key}
+        >
+          <caption className="table-caption">{block.table.caption}</caption>
+          <tbody>
+            {block.table.cells.map((row, rowIndex) => {
+              return (
+                <tr key={rowIndex}>
+                  {row.map((cell, cellIndex) => {
+                    if (cell.th) {
+                      return <th key={cellIndex}>{cell.content}</th>;
+                    } else {
+                      return <td key={cellIndex}>{cell.content}</td>;
+                    }
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     );
   }
