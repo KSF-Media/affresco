@@ -34,7 +34,7 @@
           .then(() => {
             const catsBaseInfo = UC.getCategoriesBaseInfo();
             const catsFunctional = catsBaseInfo.filter(service => service.slug === "functional");
-            const adConsent = true;
+            const adConsent = catsFunctional[0].services[0].consent.status || false;
             if (window.googletag) {
               window.googletag.cmd.push(() => {
                 googletag.pubads().setPrivacySettings({limitedAds: !adConsent});
