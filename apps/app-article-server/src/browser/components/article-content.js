@@ -263,10 +263,9 @@ class Content extends Component {
 
   renderTable(block, key) {
     return (
-      <div className="responsive-table-wrapper">
+      <div key={key} className="responsive-table-wrapper">
         <table
           className={`table-plugin ${this.props.darkModeEnabled ? "darkMode" : ""}`}
-          key={key}
         >
           <caption className="table-caption">{block.table.caption}</caption>
           <tbody>
