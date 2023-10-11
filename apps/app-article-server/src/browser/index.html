@@ -28,17 +28,30 @@
     <script src="https://app.usercentrics.eu/browser-sdk/4.28.1/bundle.js"></script>
     <script>
       window.UC = new UC_SDK.default('GaqkhhObXq1mG3')
-        UC.init().then((() => {
-          const catsBaseInfo = UC.getCategoriesBaseInfo();
-          const catsFunctional = catsBaseInfo.filter(service => service.slug === "functional");
-          const adConsent = catsFunctional[0].services[0].consent.status || false;
-          if (window.googletag) {
+        UC.init()
+          // Promise is resolved, fetch consent info from UC sdk
+          // Set limitedAds according to consent info
+          .then(() => {
+            const catsBaseInfo = UC.getCategoriesBaseInfo();
+            const catsFunctional = catsBaseInfo.filter(service => service.slug === "functional");
+            const adConsent = true;
+            if (window.googletag) {
+              window.googletag.cmd.push(() => {
+                googletag.pubads().setPrivacySettings({limitedAds: !adConsent});
+              })
+            }
+          })
+          // Promise is rejected, limit ads
+          .catch((err) => {
+            console.warn(err);
             window.googletag.cmd.push(() => {
-              googletag.pubads().setPrivacySettings({limitedAds: !adConsent});
+              googletag.pubads().setPrivacySettings({limitedAds: true});
             })
+          })
+          // Refresh (load) ads
+          .then(() => {
             googletag.pubads().refresh();
-          }
-      }));
+          });
     </script>
 
     <script
