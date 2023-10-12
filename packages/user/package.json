@@ -1,7 +1,7 @@
 {
   "name": "@ksf-media/user",
   "version": "0.4.1",
-  "description": "User component for KSF Media apps",
+  "description": "User component for Hufvudstadsbladet Ab apps",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {

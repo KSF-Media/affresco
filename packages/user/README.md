@@ -1,9 +1,9 @@
 # ksf-media/user
  
-User related functions for KSF Media apps.
+User related functions for Hufvudstadsbladet Ab apps.
 Has two important features:
 - `User` module (PS only), which has functions for e.g. creating and editing a user
-- `Login` react component (PS/JS), which is a ready-made component for logging into KSF Media apps
+- `Login` react component (PS/JS), which is a ready-made component for logging into Hufvudstadsbladet Ab apps
 
 ## For javascript use
 
@@ -42,7 +42,7 @@ The props/callbacks for `Login` are
 
 ### Getting it up and running
 The `Login` component offers multiple ways off logging users in:
-- Persona (KSF Media's own login service)
+- Persona (Hufvudstadsbladet Ab's own login service)
 - Google
 - Facebook
 - SSO
