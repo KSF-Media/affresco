@@ -45,7 +45,7 @@ paperName HBL    = "Hufvudstadsbladet"
 paperName ON     = "Östnyland"
 paperName VN     = "Västra Nyland"
 paperName JUNIOR = "HBL Junior"
-paperName KSF    = "KSF Media"
+paperName KSF    = "Hufvudstadsbladet Ab"
 
 homepage :: Paper -> String
 homepage HBL    = "https://www.hbl.fi/"
