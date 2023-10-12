@@ -326,7 +326,7 @@ links props =
     resetPasswordLink =
       DOM.div
             { className: "vetrina--new-purchase-links font-duplexsans text-center mb-3"
-            , children: mkLink "Glömt lösenordet?" "https://konto.ksfmedia.fi/#lösenord" "Klicka här" " text-neutral"
+            , children: mkLink "Glömt lösenordet?" "https://konto.hbl.fi/#lösenord" "Klicka här" " text-neutral"
             }
 
 loginLink :: Props -> JSX
@@ -352,7 +352,7 @@ loginLink props =
 
 subscribePagesLink :: Array JSX
 subscribePagesLink =
-  mkLink "" "https://prenumerera.ksfmedia.fi/" "Övriga prenumerationer och betalningssätt" ""
+  mkLink "" "https://prenumerera.hbl.fi/" "Övriga prenumerationer och betalningssätt" ""
 
 mkLink :: String -> String -> String -> String -> Array JSX
 mkLink linkDescription href linkText linkClass = Array.singleton $

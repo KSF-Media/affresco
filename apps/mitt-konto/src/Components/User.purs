@@ -120,7 +120,7 @@ component router logger = do
       DOM.div
         { className: "mitt-konto--subscribe-image flex"
         , children:
-            [ Helpers.anchor "https://prenumerera.ksfmedia.fi/" "" [ DOM.img { src: images.subscribe } ] ]
+            [ Helpers.anchor "https://prenumerera.hbl.fi/" "" [ DOM.img { src: images.subscribe } ] ]
         }
 
     noSubscriptionsText =

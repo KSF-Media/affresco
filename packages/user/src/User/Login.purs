@@ -543,7 +543,7 @@ facebookLogin self =
       { className: "login--some-disabled-note"
       , children: [ DOM.text "Möjligheten att logga in med Facebook har tagits bort. Du kan logga in med den e-postadress som är kopplad till din Facebook, "
                   , DOM.a
-                      { href: "https://konto.ksfmedia.fi/#lösenord"
+                      { href: "https://konto.hbl.fi/#lösenord"
                       , children: [ DOM.text "bara återställ lösenordet här." ]
                       }
                   ]
@@ -595,7 +595,7 @@ buySubscription paper =
         [ DOM.text "Är du inte prenumerant? "
         , DOM.a
             { className: "login--important"
-            , href: "https://prenumerera.ksfmedia.fi/" <> foldMap (("#/" <> _) <<< String.toLower <<< Paper.toString) paper
+            , href: "https://prenumerera.hbl.fi/" <> foldMap (("#/" <> _) <<< String.toLower <<< Paper.toString) paper
             , children: [ DOM.text "Köp en prenumeration!" ]
             }
         ]
@@ -607,7 +607,7 @@ forgotPassword =
     { children:
       [ DOM.text "Glömt lösenordet? "
         , DOM.a
-            { href: "https://konto.ksfmedia.fi/#lösenord"
+            { href: "https://konto.hbl.fi/#lösenord"
             , children: [ DOM.text "Klicka här!" ]
             }
         ]
@@ -647,7 +647,7 @@ formatErrorMessage err =
                 """Inloggning med Googlekonto kräver att webbläsaren tillåter tredjepartskakor.
                    Du kan istället logga in med din epostadress. Ange lösenord """
             , DOM.a
-                { href: "https://konto.ksfmedia.fi/#lösenord"
+                { href: "https://konto.hbl.fi/#lösenord"
                 , target: "_blank"
                 , children: [ DOM.text "här" ]
                 }

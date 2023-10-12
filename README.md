@@ -8,7 +8,7 @@ Affresco (IPA: */af'fresko/*) is Hufvudstadsbladet Ab's frontend monorepo: as ma
 
 | Deploy | Lang(s) |
 | --- | --- |
-| [Mitt Konto](https://konto.ksfmedia.fi/) | PureScript |
+| [Mitt Konto](https://konto.hbl.fi/) | PureScript |
 | [KSF National Elections](https://frontends.ksfmedia.fi/elections/index.html) | JavaScript |
 | [KSF EU Elections](https://frontends.ksfmedia.fi/elections-eu/index.html) | JavaScript |
 | [Scripts](https://frontends.ksfmedia.fi/scripts) | JS |
