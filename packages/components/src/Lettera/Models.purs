@@ -5,8 +5,10 @@ import Prelude
 import Data.Argonaut.Core (Json, caseJsonObject, jsonEmptyObject)
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, getField, printJsonDecodeError, (.!=), (.:), (.:?))
 import Data.Argonaut.Decode.Decoders (decodeJArray, decodeJObject, decodeString)
-import Data.Argonaut.Encode (class EncodeJson, encodeJson, (:=), (~>))
-import Data.Argonaut.Encode.Encoders (encodeInt, encodeString)
+import Data.Argonaut.Encode (class EncodeJson)
+import Data.Argonaut.Encode.Class (encodeJson)
+import Data.Argonaut.Encode.Combinators ((:=), (~>))
+import Data.Argonaut.Encode.Encoders (encodeString)
 import Data.Array (catMaybes, mapMaybe)
 import Data.DateTime (DateTime, adjust)
 import Data.Either (Either(..), hush)
@@ -330,8 +332,12 @@ parseArticleWith parseFn articleResponse = do
     Right jsArticle -> map Right $ parseFn jsArticle
     Left err -> do
       let parsingErrors = printJsonDecodeError err
+          uuid :: Either JsonDecodeError String
+          uuid = flip getField "uuid" =<< decodeJObject articleResponse
       -- TODO: Sentry and whatnot
-      Console.warn $ "Could not parse article JSON, errors: " <> parsingErrors
+      Console.warn $ case uuid of
+        Left _  -> "Could not parse article JSON, errors: " <> parsingErrors
+        Right x -> "Could not parse article " <> x <> " JSON, errors: " <> parsingErrors
       pure $ Left $ "Parsing error: " <> parsingErrors
 
 parseArticle :: Json -> Effect (Either String Article)

@@ -2,26 +2,25 @@ module Lettera where
 
 import Prelude
 
-import Affjax (Error, Response, defaultRequest, request, printError, get) as AX
+import Affjax (Error, Response, Request, defaultRequest, request, printError, get) as AX
 import Affjax.RequestHeader (RequestHeader(..)) as AX
 import Affjax.ResponseFormat (json, string) as AX
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(..))
 import Data.Argonaut.Core (Json, toArray, toObject)
 import Data.Argonaut.Decode (decodeJson)
-import Data.Array (foldl, partition, snoc)
+import Data.Array (foldl, foldr, partition, snoc)
 import Data.Date (Date, day, month, year)
-import Data.Either (Either(..), either, hush, isRight)
+import Data.Either (Either(..), either, isRight)
 import Data.Enum (fromEnum)
-import Data.Foldable (class Foldable, foldMap)
+import Data.Foldable (foldMap)
 import Data.Foldable as Foldable
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Newtype (un, unwrap)
+import Data.Newtype (un)
 import Data.Traversable (traverse, traverse_)
 import Data.UUID (UUID, toString)
 import Data.UUID as UUID
-import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
@@ -33,6 +32,7 @@ import KSF.Paper (Paper)
 import KSF.Paper as Paper
 import Lettera.Header as Cache
 import Lettera.Models (ArticleStub, Category, DraftParams, FullArticle, MosaicoArticleType(..), Platform(..), Tag(..), parseArticle, parseArticleStub, parseDraftArticle)
+import Lettera.Response (LetteraError, LetteraResponse(..), mkHttpError, mkParseError, mkResponseError)
 
 foreign import letteraBaseUrl :: String
 foreign import _encodeURIComponent :: String -> String
@@ -75,36 +75,6 @@ letteraSearchUrl = letteraBaseUrl <> "/list/search"
 
 letteraAdvertorialUrl :: String
 letteraAdvertorialUrl = letteraBaseUrl <> "/list/active-advertorial"
-
-data LetteraError
-  = ResponseError AX.Error
-  | HttpError Int
-  | ParseError
-
-instance showLetteraError :: Show LetteraError where
-  show (ResponseError err) = "ResponseError " <> AX.printError err
-  show (HttpError code)    = "HttpError " <> show code
-  show ParseError          = "ParseError"
-
-data LetteraResponse a = LetteraResponse
-  { maxAge :: Maybe Int
-  , body :: Either LetteraError a
-  }
-
-responseBody :: forall a. LetteraResponse a -> Maybe a
-responseBody (LetteraResponse a) = hush a.body
-
-instance functorLetteraResponse :: Functor LetteraResponse where
-  map f (LetteraResponse r@{ body }) =
-    LetteraResponse $ r { body = f <$> body }
-
-instance foldableLetteraResponse :: Foldable LetteraResponse where
-  foldl f z = Foldable.foldl f z <<< responseBody
-  foldr f z = Foldable.foldr f z <<< responseBody
-  foldMap f = foldMap f <<< responseBody
-
-handleLetteraError :: LetteraError -> Effect Unit
-handleLetteraError = Console.warn <<< show
 
 getArticleAuth :: UUID -> Paper -> Aff (Either String FullArticle)
 getArticleAuth articleId paper = do
@@ -207,9 +177,17 @@ getDraftArticle aptomaId { time, publication, user, hash } = do
         Left "Unauthorized"
       | (StatusCode s) <- response.status -> Left $ "Unexpected HTTP status: " <> show s
 
-useResponse :: forall a b. (a -> Aff (Either LetteraError b)) -> Either AX.Error (AX.Response a) -> Aff (LetteraResponse b)
-useResponse _ (Left err) = pure $ LetteraResponse { maxAge: Nothing, body: Left $ ResponseError err }
-useResponse f (Right response)
+useResponse
+  :: forall a b. AX.Request a
+  -> (a -> Aff (Either (LetteraError a a) b))
+  -> Either AX.Error (AX.Response a)
+  -> Aff (LetteraResponse a a b)
+useResponse request _ (Left err) = do
+  pure $ LetteraResponse
+    { maxAge: Nothing
+    , body: Left $ mkResponseError request err
+    }
+useResponse request f (Right response)
   | (StatusCode 200) <- response.status = do
     result <- f response.body
     pure $ case result of
@@ -218,9 +196,15 @@ useResponse f (Right response)
                                     }
       Left err -> LetteraResponse { maxAge: Nothing, body: Left err }
   | otherwise =
-      pure $ LetteraResponse { maxAge: Nothing, body: Left $ HttpError $ unwrap $ response.status }
+      pure $ LetteraResponse
+        { maxAge: Nothing
+        , body: Left $ mkHttpError request response $ case response.status of StatusCode n -> n }
 
-getFrontpageHtml :: Paper -> String -> Maybe String -> Aff (LetteraResponse String)
+getFrontpageHtml
+  :: Paper
+  -> String
+  -> Maybe String
+  -> Aff (LetteraResponse String String String)
 getFrontpageHtml paper category cacheToken = do
   let request = AX.defaultRequest
         { url = letteraFrontPageHtmlUrl
@@ -231,9 +215,12 @@ getFrontpageHtml paper category cacheToken = do
         , responseFormat = AX.string
         }
   driver <- liftEffect getDriver
-  useResponse (pure <<< pure) =<< AX.request driver request
+  useResponse request (pure <<< pure) =<< AX.request driver request
 
-getBreakingNewsHtml :: Paper -> Maybe String -> Aff (LetteraResponse String)
+getBreakingNewsHtml
+  :: Paper
+  -> Maybe String
+  -> Aff (LetteraResponse String String String)
 getBreakingNewsHtml paper cacheToken = do
   let request = AX.defaultRequest
         { url = letteraBreakingNewsUrl
@@ -243,15 +230,23 @@ getBreakingNewsHtml paper cacheToken = do
         , responseFormat = AX.string
         }
   driver <- liftEffect getDriver
-  useResponse (pure <<< pure) =<< AX.request driver request
+  useResponse request (pure <<< pure) =<< AX.request driver request
 
-parseArticleStubs :: Json -> Aff (Either LetteraError (Array ArticleStub))
+parseArticleStubs
+  :: forall a b. Json
+  -> Aff (Either (LetteraError a b) (Array ArticleStub))
 parseArticleStubs response
   | Just (responseArray :: Array Json) <- toArray response =
       map (Right <<< takeRights) $ liftEffect $ traverse parseArticleStub responseArray
-  | otherwise = pure $ Left ParseError
+  | otherwise = pure $ Left mkParseError
 
-getFrontpage :: Paper -> Maybe Int -> Maybe Int -> Maybe String -> Maybe String -> Aff (LetteraResponse (Array ArticleStub))
+getFrontpage
+  :: Paper
+  -> Maybe Int
+  -> Maybe Int
+  -> Maybe String
+  -> Maybe String
+  -> Aff (LetteraResponse Json Json (Array ArticleStub))
 getFrontpage paper start limit categoryId cacheToken = do
   let request = AX.defaultRequest
         { url = letteraFrontPageUrl
@@ -264,59 +259,99 @@ getFrontpage paper start limit categoryId cacheToken = do
         , responseFormat = AX.json
         }
   driver <- liftEffect getDriver
-  useResponse parseArticleStubs =<< AX.request driver request
+  useResponse request parseArticleStubs =<< AX.request driver request
 
-getMostRead :: Int -> Int -> Maybe String -> Paper -> Boolean -> Aff (LetteraResponse (Array ArticleStub))
+getMostRead
+  :: Int
+  -> Int
+  -> Maybe String
+  -> Paper
+  -> Boolean
+  -> Aff (LetteraResponse Json Json (Array ArticleStub))
 getMostRead start limit category paper onlySubscribers = do
+  let url = letteraMostReadUrl
+            <> "?start=" <> show start
+            <> "&limit=" <> show limit
+            <> (foldMap (("&category=" <> _) <<< _encodeURIComponent) category)
+            <> "&paper=" <> Paper.toString paper
+            <> "&onlySubscribers=" <> show onlySubscribers
+      request = AX.defaultRequest
+              { url = url
+              , responseFormat = ResponseFormat.json
+              }
   driver <- liftEffect getDriver
-  useResponse parseArticleStubs =<< AX.get driver ResponseFormat.json (letteraMostReadUrl
-          <> "?start=" <> show start
-          <> "&limit=" <> show limit
-          <> (foldMap (("&category=" <> _) <<< _encodeURIComponent) category)
-          <> "&paper=" <> Paper.toString paper
-          <> "&onlySubscribers=" <> show onlySubscribers
-  )
+  useResponse request parseArticleStubs =<< AX.get driver ResponseFormat.json url
 
-getLatest :: Int -> Int -> Paper -> Aff (LetteraResponse (Array ArticleStub))
+getLatest
+  :: Int
+  -> Int
+  -> Paper
+  -> Aff (LetteraResponse Json Json (Array ArticleStub))
 getLatest start limit paper = do
+  let url = letteraLatestUrl
+            <> "?start=" <> show start
+            <> "&limit=" <> show limit
+            <> "&paper=" <> Paper.toString paper
+      request = AX.defaultRequest
+              { url = url
+              , responseFormat = ResponseFormat.json
+              }
   driver <- liftEffect getDriver
-  useResponse parseArticleStubs =<<
-    AX.get driver ResponseFormat.json (letteraLatestUrl
-                                <> "?start=" <> show start
-                                <> "&limit=" <> show limit
-                                <> "&paper=" <> Paper.toString paper
-                              )
+  useResponse request parseArticleStubs =<< AX.get driver ResponseFormat.json url
 
-getByDay :: Date -> Paper -> Aff (LetteraResponse (Array ArticleStub))
+getByDay
+  :: Date
+  -> Paper
+  -> Aff (LetteraResponse Json Json (Array ArticleStub))
 getByDay date paper = do
   let url = letteraByDayUrl
             <> "/" <> show (fromEnum (year date))
             <> "/" <> show (fromEnum (month date))
             <> "/" <> show (fromEnum (day date))
             <> "?paper=" <> Paper.toString paper
+      request = AX.defaultRequest
+              { url = url
+              , responseFormat = ResponseFormat.json
+              }
   driver <- liftEffect getDriver
-  useResponse parseArticleStubs =<<
-    AX.get driver ResponseFormat.json url
+  useResponse request parseArticleStubs =<< AX.get driver ResponseFormat.json url
 
-getByTag :: Int -> Int -> Tag -> Paper -> Aff (LetteraResponse (Array ArticleStub))
+getByTag
+  :: Int
+  -> Int
+  -> Tag
+  -> Paper
+  -> Aff (LetteraResponse Json Json (Array ArticleStub))
 getByTag start limit tag paper = do
+  let url = letteraTagUrl <> _encodeURIComponent(un Tag tag)
+            <> "?start=" <> show start
+            <> "&limit=" <> show limit
+            <> "&paper=" <> Paper.toString paper
+      request = AX.defaultRequest
+              { url = url
+              , responseFormat = ResponseFormat.json
+              }
   driver <- liftEffect getDriver
-  useResponse parseArticleStubs =<<
-    AX.get driver ResponseFormat.json (letteraTagUrl <> _encodeURIComponent(un Tag tag)
-                                <> "?start=" <> show start
-                                <> "&limit=" <> show limit
-                                <> "&paper=" <> Paper.toString paper
-                               )
+  useResponse request parseArticleStubs =<< AX.get driver ResponseFormat.json url
 
-search :: Int -> Int -> Paper -> String -> Aff (LetteraResponse (Array ArticleStub))
+search
+  :: Int
+  -> Int
+  -> Paper
+  -> String
+  -> Aff (LetteraResponse Json Json (Array ArticleStub))
 search start limit paper query = do
+  let url = letteraSearchUrl
+            <> "?start=" <> show start
+            <> "&limit=" <> show limit
+            <> "&paper=" <> Paper.toString paper
+            <> "&contentQuery=" <> _encodeURIComponent query
+      request = AX.defaultRequest
+              { url = url
+              , responseFormat = ResponseFormat.json
+              }
   driver <- liftEffect getDriver
-  useResponse parseArticleStubs =<<
-    AX.get driver ResponseFormat.json (letteraSearchUrl
-                                       <> "?start=" <> show start
-                                       <> "&limit=" <> show limit
-                                       <> "&paper=" <> Paper.toString paper
-                                       <> "&contentQuery=" <> _encodeURIComponent query)
+  useResponse request parseArticleStubs =<< AX.get driver ResponseFormat.json url
 
 getCategoryStructure :: Maybe Platform -> Paper -> Aff (Array Category)
 getCategoryStructure platform p = do
@@ -340,15 +375,19 @@ getCategoryStructure platform p = do
       Just Mobile  -> "&platform=Mobile"
       Just Desktop -> "&platform=Desktop"
 
-getAdvertorials :: Paper -> Aff (LetteraResponse (Array ArticleStub))
+getAdvertorials
+  :: Paper
+  -> Aff (LetteraResponse Json Json (Array ArticleStub))
 getAdvertorials paper = do
-  driver <- liftEffect getDriver
-  useResponse parseArticleStubs
-    =<< AX.get driver ResponseFormat.json
-        ( letteraAdvertorialUrl
+  let url = letteraAdvertorialUrl
             <> "?paper="
             <> Paper.toString paper
-        )
+      request = AX.defaultRequest
+              { url = url
+              , responseFormat = ResponseFormat.json
+              }
+  driver <- liftEffect getDriver
+  useResponse request parseArticleStubs =<< AX.get driver ResponseFormat.json url
 
 takeRights :: forall a b. Array (Either b a) -> Array a
 takeRights =
