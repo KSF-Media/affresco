@@ -46,6 +46,7 @@ import OpenApiClient (Api, callApi)
 import Record as Record
 import Simple.JSON (class ReadForeign, class WriteForeign)
 
+foreign import personaURL :: String
 foreign import accountApi :: Api
 foreign import adminApi :: Api
 foreign import entitlementsApi :: Api

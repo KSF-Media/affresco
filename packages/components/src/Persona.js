@@ -1,7 +1,9 @@
 "use strict";
 import Persona from "persona";
 
-Persona.ApiClient.instance.basePath = process.env.PERSONA_URL;
+export const personaURL = process.env.PERSONA_URL;
+
+Persona.ApiClient.instance.basePath = personaURL;
 
 // https://visionmedia.github.io/superagent/#timeouts
 Persona.ApiClient.instance.timeout = {

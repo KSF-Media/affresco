@@ -41,6 +41,7 @@ module KSF.User
   , openPaywall
   , pauseSubscription
   , payOrder
+  , userVerified
   , registerCreditCardFromExisting
   , requestPasswordReset
   , searchUsers
@@ -726,6 +727,9 @@ createOrder newOrder = callBottega \tokens -> Bottega.createOrder tokens newOrde
 payOrder :: Bottega.OrderNumber -> Bottega.PaymentMethod -> Aff (Either BottegaError (Maybe Bottega.PaymentTerminalUrl))
 payOrder orderNum paymentMethod = callBottega $ \tokens ->
   Bottega.payOrder tokens orderNum paymentMethod
+
+userVerified :: Bottega.OrderNumber -> Aff (Either BottegaError Unit)
+userVerified _ = pure $ pure unit -- TODO
 
 getOrder :: Bottega.OrderNumber -> Aff (Either BottegaError Bottega.Order)
 getOrder orderNum = callBottega $ \tokens -> Bottega.getOrder tokens orderNum

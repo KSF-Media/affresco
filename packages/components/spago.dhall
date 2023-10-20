@@ -28,6 +28,7 @@
     , "read"
     , "uuid"
     , "quickcheck"
+    , "web-socket"
     ]
 , packages =
     ../../packages.dhall
