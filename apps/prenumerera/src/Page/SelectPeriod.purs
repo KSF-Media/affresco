@@ -6,9 +6,9 @@ import Bottega.Models (PaymentMethod(..))
 import Data.Array.NonEmpty as NonEmpty
 import Data.Array.NonEmpty (NonEmptyArray, head)
 import Data.Either (Either(..))
-import Data.Foldable (find, for_)
+import Data.Foldable (find, foldMap, for_)
 import Data.List.NonEmpty (all)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Monoid (guard)
 import Data.Validation.Semigroup (toEither)
 import Effect (Effect)
@@ -48,27 +48,27 @@ component = do
     let initial = _.form $ Register.initialRegisterData false $ Just user
     offer /\ setOffer <- useState' $ head package.offers
     remind /\ setRemind <- useState' false
-    paymentMethod /\ setPaymentMethod <- useState' CreditCard
+    paymentMethod /\ setPaymentMethod <- useState' Nothing
     acceptTerms /\ setAcceptTerms <- useState' false
     form /\ setForm <- useState initial
     updateUserError /\ setUpdateUserError <- useState' false
     let setFormData f = setForm $ \s -> s { formData = f s.formData }
-        confirm o m = case paymentMethod of
-          PaperInvoice -> Register.updateUser
-                          initial.formData setFormData
-                          (setUpdateUserError true) (next o m Nothing) user $
-                          Registration.formValidations form
-          CreditCard -> do
-            w <- Window.open "" "_blank" "" window
-            for_ w clearOpener
-            next o m w user
+        confirm o m@PaperInvoice =
+          Register.updateUser
+          initial.formData setFormData
+          (setUpdateUserError true) (next o m Nothing) user $
+          Registration.formValidations form
+        confirm o m@CreditCard = do
+          w <- Window.open "" "_blank" "" window
+          for_ w clearOpener
+          next o m w user
     let remindElement = guard remind renderRemind
         paymentOfferElement = renderPaymentOffer package.offers setOffer paymentMethod setPaymentMethod
-        acceptElement = renderAccept acceptTerms setAcceptTerms
-        addressElement = guard (paymentMethod == PaperInvoice) $ renderAddress package form setForm
+        acceptElement = guard (isJust paymentMethod) renderAccept acceptTerms setAcceptTerms
+        addressElement = guard (paymentMethod == Just PaperInvoice) $ renderAddress package form setForm
     pure $ render description remindElement paymentOfferElement addressElement acceptElement
       form offer paymentMethod acceptTerms updateUserError $
-      if acceptTerms then confirm offer paymentMethod else setRemind true
+      if acceptTerms && isJust paymentMethod then foldMap (confirm offer) paymentMethod else setRemind true
 
 renderRemind :: JSX
 renderRemind =
@@ -83,7 +83,7 @@ renderRemind =
         ]
     }
 
-renderPaymentOffer :: NonEmptyArray PackageOffer -> (PackageOffer -> Effect Unit) -> PaymentMethod -> (PaymentMethod -> Effect Unit) -> JSX
+renderPaymentOffer :: NonEmptyArray PackageOffer -> (PackageOffer -> Effect Unit) -> Maybe PaymentMethod -> (Maybe PaymentMethod -> Effect Unit) -> JSX
 renderPaymentOffer offers setOffer paymentMethod setPaymentMethod =
   DOM.div
     { className: "payment accept-terms--narrow"
@@ -94,9 +94,13 @@ renderPaymentOffer offers setOffer paymentMethod setPaymentMethod =
                 { id: "payment_option"
                 , name: "payment_option"
                 , required: true
-                , onChange: handler targetValue $ setPaymentMethod <<< decodeMethod
-                , defaultValue: paymentOptionText paymentMethod
-                , children: map renderPaymentOptionOption [ CreditCard, PaperInvoice ]
+                , onChange: handler targetValue $ setPaymentMethod <<< Just <<< decodeMethod
+                , children:
+                  [ DOM.option
+                      { disabled: true
+                      , children: [ DOM.text "Välj ett alternativ" ]
+                      }
+                  ] <> map renderPaymentOptionOption [ PaperInvoice, CreditCard ]
                 }
             ]
         , DOM.label_
@@ -112,7 +116,7 @@ renderPaymentOffer offers setOffer paymentMethod setPaymentMethod =
                 , children: NonEmpty.toArray $ map renderOfferOption offers
                 }
             ]
-        , guard (paymentMethod == PaperInvoice) $
+        , guard (paymentMethod == Just PaperInvoice) $
             DOM.div
               { className: "alert alert-info"
               , children:
@@ -120,6 +124,10 @@ renderPaymentOffer offers setOffer paymentMethod setPaymentMethod =
                       [ DOM.strong_ [ DOM.text "Obs!" ]
                       , DOM.br {}
                       , DOM.span_ [ DOM.text "På pappersfakturor som levereras per post uppbär vi en tilläggsavgift på 5,00 euro per faktura (inkl. Moms). Du kan i din nätbank byta fakturan till en e-faktura som inte har ett faktureringstillägg. " ]
+                      , DOM.br {}
+                      , DOM.span_ [ DOM.text "Betalningssättet kräver stark autentisering. I nästa steg förflyttas du till en autentiseringstjänst." ]
+                      , DOM.br {}
+                      , DOM.span_ [ DOM.text "Konsumentskyddslagen kräver stark autentisering då en beställning sker med faktura." ]
                       ]
                   ]
               }
@@ -192,7 +200,7 @@ renderAddress { digitalOnly } form setForm = guard digitalOnly $
       (\val -> setForm _ { formData { country = val } }) form.formData.country
     inputField field = Registration.inputField field form setForm
 
-render :: Description -> JSX -> JSX -> JSX -> JSX -> Registration.State -> PackageOffer -> PaymentMethod -> Boolean -> Boolean -> Effect Unit -> JSX
+render :: Description -> JSX -> JSX -> JSX -> JSX -> Registration.State -> PackageOffer -> Maybe PaymentMethod -> Boolean -> Boolean -> Effect Unit -> JSX
 render description remindElement paymentOfferElement addressElement acceptElement form offer paymentMethod acceptTerms updateUserError submit =
   DOM.div
     { className: "container ksf-identify"
@@ -227,7 +235,7 @@ render description remindElement paymentOfferElement addressElement acceptElemen
                                 [ remindElement
                                 , paymentOfferElement
                                 , addressElement
-                                , renderPrice
+                                , foldMap renderPrice paymentMethod
                                 , acceptElement
                                 , renderSubmit
                                 , DOM.label {}
@@ -249,13 +257,13 @@ render description remindElement paymentOfferElement addressElement acceptElemen
       case description.descriptionShort of
         "" -> description.brandLong
         short -> (Paper.toString description.brand) <> short
-    renderPrice =
+    renderPrice pm =
       DOM.label
         { className: "price accept-terms--narrow"
         , children:
             [ DOM.span_ [ DOM.text "Ditt pris" ]
             , DOM.h3_ [ DOM.text $ formatEur offer.totalPrice <> " €"
-                      , guard (paymentMethod == PaperInvoice) $
+                      , guard (pm == PaperInvoice) $
                           DOM.span_ [ DOM.text "+ 5 € faktureringstillägg per pappersfaktura" ]
                       ]
             , DOM.p
@@ -263,7 +271,7 @@ render description remindElement paymentOfferElement addressElement acceptElemen
                 , children:
                     [ DOM.strong_ [ DOM.text $ "Totalpris: " <>
                                     formatEur (offer.totalPrice +
-                                               if paymentMethod == CreditCard then 0 else paperInvoiceCents) <>
+                                               if pm == CreditCard then 0 else paperInvoiceCents) <>
                                     " €"
                                   ]
                     ]
@@ -276,7 +284,7 @@ render description remindElement paymentOfferElement addressElement acceptElemen
         , value: "Fortsätt"
         , type: "submit"
         , className: "submit-button"
-        , disabled: not acceptTerms || (paymentMethod == PaperInvoice && isFormInvalid)
+        , disabled: not acceptTerms || isNothing paymentMethod || (paymentMethod == Just PaperInvoice && isFormInvalid)
         }
     isFormInvalid
       | Left errs <- toEither $ Registration.formValidations form
