@@ -119,7 +119,8 @@ component = do
             }
     let interactionRequired = case method of
           CreditCard -> Just (NetsTerminalUse netsUrl)
-          PaperInvoice | not paperInvoiceConfirmed -> Just (StrongIdentification identification)
+          PaperInvoice | not paperInvoiceConfirmed &&
+                         isJust orderNum -> Just (StrongIdentification identification)
           _ -> Nothing
 
     useEffect orderState do

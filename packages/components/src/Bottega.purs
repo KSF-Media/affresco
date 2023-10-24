@@ -128,6 +128,16 @@ payOrder { userId, authToken } orderNumber paymentMethod = do
       CreditCard -> "CreditCard"
       PaperInvoice -> "PaperInvoiceWithIdentification"
 
+-- Tells Bottega to call Persona.  It's not going to trust data the
+-- data a client sends on this.
+userVerified :: UserAuth -> OrderNumber -> Aff Unit
+userVerified { userId, authToken } orderNumber = do
+  callApi ordersApi "orderOrderNumberIdentifiedGet"
+    [ unsafeToForeign orderNumber ] { authorization, authUser }
+  where
+    authorization = oauthToken authToken
+    authUser = unsafeToForeign userId
+
 getPackages :: Aff (Array Package)
 getPackages = do
   map (\package -> package { campaigns = mapMaybe fromJSCampaign package.campaigns })
