@@ -134,6 +134,7 @@ component = do
                       , paymentTerminal = Nothing
                       }
           setState $ const newState
+          Tracking.orderStarted
           startOrderPoller logger setState newState order
         startOrder (Just terminalUrl) order user accountStatus = do
           let newState =
@@ -143,6 +144,7 @@ component = do
                       , paymentTerminal = Just terminalUrl.paymentTerminalUrl
                       }
           setState $ const newState
+          Tracking.orderStarted
           startOrderPoller logger setState newState order
         purchaseError maybeUser maybeAccountStatus maybeProductSelection purchaseState = do
           setState _ { user = maybeUser <|> state.user
