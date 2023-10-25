@@ -21,7 +21,7 @@ hblPremium =
       DOM.div
           { className: "vetrina--product-text font-duplexsans font-light text-lg leading-tight px-5 pb-5 border-neutral border-r-2 border-b-2 border-l-2"
           , children:
-              [ DOM.text "Du har ett gratiskonto. För att läsa fler artiklar behöver du en digital prenumeration. Den kostar 9,99€ per månad. Du kan avsluta när du vill." ]
+              [ DOM.text "Du har ett konto utan läsrätt. För att läsa fler artiklar behöver du en digital prenumeration. Den kostar 9,99€ per månad. Du kan avsluta när du vill." ]
           }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi."
   , campaign: Just
@@ -64,7 +64,7 @@ vnPremium =
       DOM.div
           { className: "vetrina--product-text font-duplexsans font-light text-lg leading-tight px-5 pb-5 border-neutral border-r-2 border-b-2 border-l-2"
           , children:
-              [ DOM.text "Du har ett gratiskonto. För att läsa fler artiklar behöver du en digital prenumeration. Den kostar 6,90€ per månad. Du kan avsluta när du vill." ]
+              [ DOM.text "Du har ett konto utan läsrätt. För att läsa fler artiklar behöver du en digital prenumeration. Den kostar 6,90€ per månad. Du kan avsluta när du vill." ]
           }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på vastranyland.fi."
   , campaign: Just
@@ -110,7 +110,7 @@ onPremium =
       DOM.div
           { className: "vetrina--product-text font-duplexsans font-light text-lg leading-tight px-5 pb-5 border-neutral border-r-2 border-b-2 border-l-2"
           , children:
-              [ DOM.text "Du har ett gratiskonto. För att läsa fler artiklar behöver du en digital prenumeration. Den kostar 6,90€ per månad. Du kan avsluta när du vill." ]
+              [ DOM.text "Du har ett konto utan läsrätt. För att läsa fler artiklar behöver du en digital prenumeration. Den kostar 6,90€ per månad. Du kan avsluta när du vill." ]
           }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på ostnyland.fi."
   , campaign: Just
