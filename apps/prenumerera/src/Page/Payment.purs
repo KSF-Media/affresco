@@ -153,7 +153,7 @@ renderPayment (Right OrderCreated) cancel _ _ (Just interaction) =
   where
     paymentMessage = case interaction of
       NetsTerminalUse _ -> "Betalningen öppnas i ett nytt fönster. Följ anvisningarna i det nya fönstret. Du kommer vidare till bekräftelsen när betalningen genomförts. Vid problem ta kontakt med vår kundtjänst på kundservice@hbl.fi."
-      StrongIdentification _ -> "Identifikation öppnas i ett nytt fönster. Följ anvisningarna i det nya fönstret. Du kommer vidare till bekräftelsen när identification genomförts. Vid problem ta kontakt med vår kundtjänst på kundservice@hbl.fi."
+      StrongIdentification _ -> "Din identitet kommer att verifieras elektroniskt. Identifieringen öppnas i ett nytt fönster. Följ anvisningarna i det nya fönstret. Du kommer vidare till bekräftelsen när identifieringen genomförts. Vid problem ta kontakt med kundtjänst på kundservice@hbl.fi."
 renderPayment (Right OrderCreated) _ _ _ _ = loading
 renderPayment (Right OrderStarted) _ _ _ _ = loading
 renderPayment (Right OrderCanceled) _ _ _ _ =
