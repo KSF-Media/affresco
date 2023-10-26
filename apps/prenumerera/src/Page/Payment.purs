@@ -169,9 +169,9 @@ renderPayment (Right (OrderFailed SubscriptionExistsError)) _ _ _ _ =
 renderPayment (Left BottegaTimeout) _ _ _ _ =
   errMsg "Timeout hände."
 renderPayment (Left (BottegaIdentificationError StrongIdentificationWindowOpenFailed)) _ _ _ _ =
-  errMsg "Popup blocked?"
+  errMsg "Ett nytt fönster kunde inte öppnas. Kontrollera att webbläsaren tillåter popup-fönster."
 renderPayment (Left (BottegaIdentificationError (StrongIdentificationFailed _))) _ _ _ _ =
-  errMsg "Identification failed"
+  errMsg "Autentiseringen misslyckades."
 renderPayment _ _ _ _ _ =
   errMsg "Något gick fel."
 
