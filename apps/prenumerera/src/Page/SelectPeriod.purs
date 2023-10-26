@@ -95,10 +95,12 @@ renderPaymentOffer offers setOffer paymentMethod setPaymentMethod =
                 , name: "payment_option"
                 , required: true
                 , onChange: handler targetValue $ setPaymentMethod <<< Just <<< decodeMethod
+                , defaultValue: "select-alternative"
                 , children:
                   [ DOM.option
                       { disabled: true
                       , children: [ DOM.text "Välj ett alternativ" ]
+                      , value: "select-alternative"
                       }
                   ] <> map renderPaymentOptionOption [ PaperInvoice, CreditCard ]
                 }
