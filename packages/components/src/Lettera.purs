@@ -109,19 +109,39 @@ handleLetteraError = Console.warn <<< show
 getArticleAuth :: UUID -> Paper -> Aff (Either String FullArticle)
 getArticleAuth articleId paper = do
   tokens <- Auth.loadToken
-  getArticle articleId paper tokens Nothing
+  getArticle articleId paper tokens Nothing Nothing
 
 -- TODO: Instead of String, use some sort of LetteraError or something
-getArticle :: UUID -> Paper -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
+getArticle
+  :: UUID
+  -> Paper
+  -> Maybe UserAuth
+  -> Maybe String
+  -> Maybe String
+  -> Aff (Either String FullArticle)
 getArticle articleId paper = getArticleWithUrl (letteraArticleUrl <> (toString articleId)) (Just paper)
 
-getArticleWithSlug :: String -> Paper -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
+getArticleWithSlug
+  :: String
+  -> Paper
+  -> Maybe UserAuth
+  -> Maybe String
+  -> Maybe String
+  -> Aff (Either String FullArticle)
 getArticleWithSlug slug = getArticleWithUrl (letteraArticleSlugUrl <> slug) <<< Just
 
-getArticleWithUrl :: String -> Maybe Paper -> Maybe UserAuth -> Maybe String -> Aff (Either String FullArticle)
-getArticleWithUrl url paper auth clientip = do
+getArticleWithUrl
+  :: String
+  -> Maybe Paper
+  -> Maybe UserAuth
+  -> Maybe String
+  -> Maybe String
+  -> Aff (Either String FullArticle)
+getArticleWithUrl url paper auth clientip freePassHash= do
   let request = AX.defaultRequest
-        { url = url <> foldMap (\p -> "?paper=" <> Paper.toString p) paper
+        { url = url <>
+                foldMap (\p -> "?paper=" <> Paper.toString p) paper <>
+                foldMap (\f -> "&freePassHash=" <> f) freePassHash
         , method = Left GET
         , responseFormat = AX.json
         , headers =
