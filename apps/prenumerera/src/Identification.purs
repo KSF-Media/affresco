@@ -2,6 +2,7 @@ module Prenumerera.Identification where
 
 import Prelude
 
+import Affjax.Web (printError)
 import Bottega (IdentificationError(..))
 import Data.Either (Either(..))
 import Data.Foldable (fold)
@@ -35,22 +36,27 @@ component window = do
     monitorStarted /\ setMonitorStarted <- useState' false
 
     useEffectOnce do
-      mon <- Identification.getMonitor user
       fiber <- Aff.launchAff do
-        mon.monitor
-        maybeWin <- liftEffect do
-          setMonitorStarted true
-          Window.open Identification.loginURL "_blank" "" window
-        case maybeWin of
-          Nothing -> liftEffect $ setError StrongIdentificationWindowOpenFailed
-          Just w -> do
-            liftEffect $ clearOpener w
-            res <- mon.result
-            liftEffect do
-              Window.close w
-              case res of
-                Right _ -> next
-                Left err -> setError $ StrongIdentificationFailed err
+        -- Set a HTTP only cookie for the monitor
+        tokenResponse <- Identification.getToken
+        case tokenResponse of
+          Left err -> liftEffect $ setError $ StrongIdentificationFailed $ printError err
+          Right _ -> do
+            mon <- liftEffect $ Identification.getMonitor user
+            mon.monitor
+            maybeWin <- liftEffect do
+              setMonitorStarted true
+              Window.open Identification.loginURL "_blank" "" window
+            case maybeWin of
+              Nothing -> liftEffect $ setError StrongIdentificationWindowOpenFailed
+              Just w -> do
+                liftEffect $ clearOpener w
+                res <- mon.result
+                liftEffect do
+                  Window.close w
+                  case res of
+                    Right _ -> next
+                    Left err -> setError $ StrongIdentificationFailed err
       pure $ Aff.launchAff_ $ cancel fiber
 
     pure $ if monitorStarted then mempty else fold

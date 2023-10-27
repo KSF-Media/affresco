@@ -2,6 +2,9 @@ module Persona.Identification where
 
 import Prelude
 
+import Affjax (Error) as AX
+import Affjax.ResponseFormat (ignore) as AX
+import Affjax.Web (defaultRequest, request) as AX
 import Control.Monad.Except.Trans (runExceptT)
 import Data.Argonaut as JSON
 import Data.Either (Either(..), hush)
@@ -34,6 +37,15 @@ type Monitor =
   -- part only cares that it succeeds.
   , result :: Aff (Either String Unit)
   }
+
+-- Set HTTP only cookie.  No visible return value other than success.
+getToken :: Aff (Either AX.Error Unit)
+getToken = do
+  (map <<< map) (const unit) $ AX.request $ AX.defaultRequest
+    { url = personaURL <> "/identification/login/monitor"
+    , responseFormat = AX.ignore
+    , withCredentials = true
+    }
 
 getMonitor :: User -> Effect Monitor
 getMonitor user = do
