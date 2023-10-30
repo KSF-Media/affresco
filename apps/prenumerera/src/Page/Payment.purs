@@ -2,7 +2,7 @@ module Prenumerera.Page.Payment where
 
 import Prelude
 
-import Bottega (BottegaError(..))
+import Bottega (BottegaError(..), IdentificationError(..))
 import Bottega.Models (FailReason(..), OrderState(..), PaymentMethod(..), PaymentTerminalUrl)
 import Bottega.Models.Order (OrderSource(..))
 import Bottega.Poller as Poller
@@ -13,14 +13,13 @@ import Data.Maybe (Maybe(..), isJust, maybe)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
-import Effect.Now as Now
 import KSF.Spinner as Spinner
 import KSF.User (User)
 import KSF.User as User
 import KSF.Window (close)
+import Prenumerera.Identification as Identification
 import Prenumerera.Package (Package, PackageOffer)
 import Prenumerera.Package.Description (Description)
-import Prenumerera.Summary as Summary
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_, preventDefault)
@@ -46,13 +45,18 @@ type State =
   , poller :: Poller.Poller
   }
 
+data InteractionRequired
+  = NetsTerminalUse (Maybe PaymentTerminalUrl)
+  | StrongIdentification JSX
+
 component :: Component Props
 component = do
   poller <- Poller.new
-  today <- Now.nowDate
   globalWindow <- Web.HTML.window
-  React.component "Payment" $ \ { user, package, description, offer, method, next, window } -> React.do
+  identificationComponent <- Identification.component globalWindow
+  React.component "Payment" $ \ { user, package, offer, method, next, window } -> React.do
     orderState /\ setOrderState <- useState' $ Right OrderUnknownState
+    orderNum /\ setOrderNum <- useState' Nothing
     netsUrl /\ setNetsUrl <- useState' Nothing
     error /\ setError <- useState' $ Right unit
     scaShown /\ setScaShown <- useState' false
@@ -69,90 +73,75 @@ component = do
         Nothing -> do
           void $ Window.open paymentUrl "_blank" "noopener" globalWindow
       pure $ pure unit
-    let startPayOrder :: Effect Unit
-        startPayOrder = do
-          Aff.launchAff_ do
-            eitherNetsUrl <- runExceptT do
-              let newOrder =
-                    { packageId: package.id
-                    , period: offer.months
-                    , payAmountCents: offer.totalPrice
-                    , campaignNo: Nothing
-                    , orderSource: Just PrenumereraSource
-                    }
-              order <- ExceptT $ User.createOrder newOrder
-              nets <- ExceptT $ User.payOrder order.number method
-              pure { nets, order }
-            case eitherNetsUrl of
-              Left err -> liftEffect do
-                for_ window close
-                setError $ Left err
-              Right { nets, order } -> do
-                Poller.startOrder poller setOrderState order.number
-                liftEffect $ setNetsUrl nets
-        startPaperInvoicePurchase :: Effect Unit
-        startPaperInvoicePurchase = do
-          setPaperInvoiceConfirmed true
-          startPayOrder
-    -- If using CreditCard, immediately create the order
+
+    -- Starts the same for card and invoice payments.
     useEffectOnce do
-      when (method == CreditCard) startPayOrder
+      Aff.launchAff_ do
+        eitherNetsUrl <- runExceptT do
+          let newOrder =
+                { packageId: package.id
+                , period: offer.months
+                , payAmountCents: offer.totalPrice
+                , campaignNo: Nothing
+                , orderSource: Just PrenumereraSource
+                }
+          order <- ExceptT $ User.createOrder newOrder
+          nets <- ExceptT $ User.payOrder order.number method
+          pure { nets, order }
+        case eitherNetsUrl of
+          Left err -> liftEffect do
+            for_ window close
+            setError $ Left err
+          Right { nets, order } -> do
+            Poller.startOrder poller setOrderState order.number
+            liftEffect do
+              setNetsUrl nets
+              setOrderNum $ Just order.number
       pure $ Aff.launchAff_ $ Poller.kill poller
+
+    -- Only for invoice payments.
+    let identification =
+          identificationComponent
+            { user
+            , setError: setError <<< Left <<< BottegaIdentificationError
+            , next: case orderNum of
+              Nothing -> do
+                setOrderState $ Left $ BottegaIdentificationError $
+                  StrongIdentificationFailed "no order number set"
+              Just num -> do
+                setPaperInvoiceConfirmed true
+                Aff.launchAff_ do
+                  ver <- User.userVerified num
+                  case ver of
+                    -- The order poller will see it succeed
+                    Right _ -> pure unit
+                    Left err -> liftEffect $ setOrderState $ Left err
+            }
+    let interactionRequired = case method of
+          CreditCard -> Just (NetsTerminalUse netsUrl)
+          PaperInvoice | not paperInvoiceConfirmed &&
+                         isJust orderNum -> Just (StrongIdentification identification)
+          _ -> Nothing
+
     useEffect orderState do
       when (orderState == Right OrderCompleted) next
       pure $ pure unit
-    let orderSummary = Summary.render today user description offer method
     let cancel = Aff.launchAff_ do
            Poller.kill poller
            liftEffect $ setOrderState $ Right OrderCanceled
-    pure $ case method of
-      PaperInvoice -> case paperInvoiceConfirmed of
-        false -> renderPaperInvoice orderSummary startPaperInvoicePurchase
-        true -> renderPayment (error *> orderState) cancel scaShown setScaShown netsUrl
-      CreditCard -> renderPayment (error *> orderState) cancel scaShown setScaShown netsUrl
+    pure $ renderPayment (error *> orderState) cancel scaShown setScaShown interactionRequired
 
-renderPaperInvoice :: JSX -> Effect Unit -> JSX
-renderPaperInvoice summary confirm =
-  DOM.div
-    { className: "container ksf-block confirm"
-    , children:
-        [ DOM.div
-            { className: "row"
-            , children:
-                [ DOM.div
-                    { className: "confirm-greeting ksf-form-container"
-                    , children:
-                        [ DOM.h2_ [ DOM.text "Din prenumeration" ]
-                        , DOM.p_ [ DOM.text "Granska uppgifterna nedan före du fortsätter" ]
-                        , DOM.form
-                            { onSubmit: handler preventDefault $ const confirm
-                            , className: "ksf-form"
-                            , children:
-                                [ DOM.input
-                                    { type: "submit"
-                                    , className: "submit-button"
-                                    , value: "Godkänn"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                    , summary
-                ]
-            }
-        ]
-    }
-
-renderPayment :: Either BottegaError OrderState -> Effect Unit -> Boolean -> (Boolean -> Effect Unit) -> Maybe PaymentTerminalUrl -> JSX
+renderPayment :: Either BottegaError OrderState -> Effect Unit -> Boolean -> (Boolean -> Effect Unit) -> Maybe InteractionRequired -> JSX
 -- This should only happen during initialization
 renderPayment (Right OrderUnknownState) _ _ _ _ = initializing
-renderPayment (Right OrderCreated) cancel _ _ (Just _) =
+renderPayment (Right OrderCreated) cancel _ _ (Just interaction) =
   DOM.div
     { className: "payment-terminal payment-terminal-msg"
     , children:
-        [ DOM.div_
-            [ DOM.text "Betalningen öppnas i ett nytt fönster. Följ anvisningarna i det nya fönstret. Du kommer vidare till bekräftelsen när betalningen genomförts. Vid problem ta kontakt med vår kundtjänst på kundservice@hbl.fi."
-            ]
+        [ DOM.div_ [ DOM.text paymentMessage ]
+        , case interaction of
+            StrongIdentification subComponent -> subComponent
+            _ -> mempty
         , DOM.div_
             [ DOM.button
                 { children: [ DOM.text "Avbryt" ]
@@ -161,13 +150,17 @@ renderPayment (Right OrderCreated) cancel _ _ (Just _) =
             ]
         ]
     }
+  where
+    paymentMessage = case interaction of
+      NetsTerminalUse _ -> "Betalningen öppnas i ett nytt fönster. Följ anvisningarna i det nya fönstret. Du kommer vidare till bekräftelsen när betalningen genomförts. Vid problem ta kontakt med vår kundtjänst på kundservice@hbl.fi."
+      StrongIdentification _ -> "Din identitet kommer att verifieras elektroniskt. Identifieringen öppnas i ett nytt fönster. Följ anvisningarna i det nya fönstret. Du kommer vidare till bekräftelsen när identifieringen genomförts. Vid problem ta kontakt med kundtjänst på kundservice@hbl.fi."
 renderPayment (Right OrderCreated) _ _ _ _ = loading
 renderPayment (Right OrderStarted) _ _ _ _ = loading
 renderPayment (Right OrderCanceled) _ _ _ _ =
   errMsg "Beställningen avbrutits."
 renderPayment (Right (OrderFailed NetsCanceled)) _ _ _ _ =
   errMsg "Beställningen avbrutits."
-renderPayment (Right OrderScaRequired) _ false setScaShown (Just url) = scaRequired url setScaShown
+renderPayment (Right OrderScaRequired) _ false setScaShown (Just (NetsTerminalUse (Just url))) = scaRequired url setScaShown
 renderPayment (Right OrderScaRequired) _ true _ _ = loading
 renderPayment (Right (OrderFailed NetsIssuerError)) _ _ _ _ =
   errMsg "Ett fel uppstod vid Nets."
@@ -175,6 +168,10 @@ renderPayment (Right (OrderFailed SubscriptionExistsError)) _ _ _ _ =
   errMsg "Du har redan en prenumeration för denna produkt."
 renderPayment (Left BottegaTimeout) _ _ _ _ =
   errMsg "Timeout hände."
+renderPayment (Left (BottegaIdentificationError StrongIdentificationWindowOpenFailed)) _ _ _ _ =
+  errMsg "Ett nytt fönster kunde inte öppnas. Kontrollera att webbläsaren tillåter popup-fönster."
+renderPayment (Left (BottegaIdentificationError (StrongIdentificationFailed _))) _ _ _ _ =
+  errMsg "Autentiseringen misslyckades."
 renderPayment _ _ _ _ _ =
   errMsg "Något gick fel."
 

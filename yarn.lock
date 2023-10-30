@@ -1857,9 +1857,9 @@ boolbase@^1.0.0, boolbase@~1.0.0:
   resolved "https://registry.yarnpkg.com/boolbase/-/boolbase-1.0.0.tgz#68dff5fbe60c51eb37725ea9e3ed310dcc1e776e"
   integrity sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==
 
-"bottega@https://github.com/KSF-Media/bottega-javascript-client.git#4b90a31e3e38eb4b547f019e6863d4fa7e0f07a3":
+"bottega@https://github.com/KSF-Media/bottega-javascript-client.git#ce2042553c63249c93dc2fa5e6e97ee363a6f2af":
   version "1.0.0"
-  resolved "https://github.com/KSF-Media/bottega-javascript-client.git#4b90a31e3e38eb4b547f019e6863d4fa7e0f07a3"
+  resolved "https://github.com/KSF-Media/bottega-javascript-client.git#ce2042553c63249c93dc2fa5e6e97ee363a6f2af"
   dependencies:
     superagent "3.7.0"
 

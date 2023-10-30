@@ -2,7 +2,7 @@ module Bottega where
 
 import Prelude
 
-import Bottega.Models (CreditCard, CreditCardId, CreditCardRegister, CreditCardRegisterNumber, NewOrder, Order, OrderNumber, PaymentMethod, PaymentMethodId, PaymentTerminalUrl, parseCreditCardRegisterState, parseOrderState)
+import Bottega.Models (CreditCard, CreditCardId, CreditCardRegister, CreditCardRegisterNumber, NewOrder, Order, OrderNumber, PaymentMethod(..), PaymentMethodId, PaymentTerminalUrl, parseCreditCardRegisterState, parseOrderState)
 import Bottega.Models.Order (fromOrderSource)
 import Data.Array (mapMaybe)
 import Data.Generic.Rep (class Generic)
@@ -61,10 +61,21 @@ type InsufficientAccount = ServerError
     { message :: String }
   )
 
+data IdentificationError
+  = StrongIdentificationWindowOpenFailed
+  | StrongIdentificationFailed String
+
+derive instance genericIdentificationError :: Generic IdentificationError _
+instance showIdentificationError :: Show IdentificationError where
+  show = genericShow
+
+derive instance eqIdentificationError :: Eq IdentificationError
+
 -- TODO: Add more errors!
 data BottegaError
   = BottegaInsufficientAccount -- ^ Cannot create order due to missing account data
   | BottegaTimeout
+  | BottegaIdentificationError IdentificationError
   | BottegaUnexpectedError String
 
 derive instance genericBottegaError :: Generic BottegaError _
@@ -105,11 +116,24 @@ type PaymentTerminalUrlApi = Nullable { paymentTerminalUrl :: Nullable String }
 
 payOrder :: UserAuth -> OrderNumber -> PaymentMethod -> Aff (Maybe PaymentTerminalUrl)
 payOrder { userId, authToken } orderNumber paymentMethod = do
-  nullableTerminalUrl :: PaymentTerminalUrlApi <- callApi ordersApi "orderOrderNumberPayPost" [ unsafeToForeign orderNumber, unsafeToForeign { paymentOption: show paymentMethod } ] { authorization, authUser }
+  nullableTerminalUrl :: PaymentTerminalUrlApi <- callApi ordersApi "orderOrderNumberPayPost" [ unsafeToForeign orderNumber, unsafeToForeign { paymentOption } ] { authorization, authUser }
   pure do
     urlObject <- toMaybe nullableTerminalUrl
     url <- toMaybe urlObject.paymentTerminalUrl
     pure { paymentTerminalUrl: url }
+  where
+    authorization = oauthToken authToken
+    authUser = unsafeToForeign userId
+    paymentOption = case paymentMethod of
+      CreditCard -> "CreditCard"
+      PaperInvoice -> "PaperInvoiceWithIdentification"
+
+-- Tells Bottega to call Persona.  It's not going to trust data the
+-- data a client sends on this.
+userVerified :: UserAuth -> OrderNumber -> Aff Unit
+userVerified { userId, authToken } orderNumber = do
+  callApi ordersApi "orderOrderNumberIdentifiedGet"
+    [ unsafeToForeign orderNumber ] { authorization, authUser }
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId

@@ -1,6 +1,7 @@
 { name = "prenumerera"
 , dependencies =
   [ "aff"
+  , "affjax-web"
   , "affresco-components"
   , "affresco-user"
   , "arrays"

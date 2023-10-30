@@ -41,6 +41,7 @@ module KSF.User
   , openPaywall
   , pauseSubscription
   , payOrder
+  , userVerified
   , registerCreditCardFromExisting
   , requestPasswordReset
   , searchUsers
@@ -59,7 +60,7 @@ where
 import Prelude
 
 import Bottega (BottegaError(..))
-import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCardFromExisting, getCreditCardRegister, InsufficientAccount) as Bottega
+import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCardFromExisting, getCreditCardRegister, userVerified, InsufficientAccount) as Bottega
 import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
 import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl, CreditCardId, CreditCard, CreditCardRegisterNumber, CreditCardRegister) as Bottega
 import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
@@ -726,6 +727,9 @@ createOrder newOrder = callBottega \tokens -> Bottega.createOrder tokens newOrde
 payOrder :: Bottega.OrderNumber -> Bottega.PaymentMethod -> Aff (Either BottegaError (Maybe Bottega.PaymentTerminalUrl))
 payOrder orderNum paymentMethod = callBottega $ \tokens ->
   Bottega.payOrder tokens orderNum paymentMethod
+
+userVerified :: Bottega.OrderNumber -> Aff (Either BottegaError Unit)
+userVerified orderNum = callBottega \tokens -> Bottega.userVerified tokens orderNum
 
 getOrder :: Bottega.OrderNumber -> Aff (Either BottegaError Bottega.Order)
 getOrder orderNum = callBottega $ \tokens -> Bottega.getOrder tokens orderNum

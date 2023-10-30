@@ -277,6 +277,7 @@ pollOrder logger setState _ (Left bottegaErr) = liftEffect do
         BottegaUnexpectedError e   -> e
         BottegaInsufficientAccount -> "InsufficientAccount"
         BottegaTimeout             -> "Timeout"
+        BottegaIdentificationError _ -> "Identification"
   scrollToVetrina
   logger.error $ Error.orderError $ "Failed to get order from server: " <> errMessage
   setState _ { purchaseState = PurchaseFailed ServerError }
