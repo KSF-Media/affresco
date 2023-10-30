@@ -124,12 +124,9 @@ renderPaymentOffer offers setOffer paymentMethod setPaymentMethod =
               , children:
                   [ DOM.p_
                       [ DOM.strong_ [ DOM.text "Obs!" ]
-                      , DOM.br {}
-                      , DOM.span_ [ DOM.text "På pappersfakturor som levereras per post uppbär vi en tilläggsavgift på 5,00 euro per faktura (inkl. Moms). Du kan i din nätbank byta fakturan till en e-faktura som inte har ett faktureringstillägg. " ]
-                      , DOM.br {}
-                      , DOM.span_ [ DOM.text "Betalningssättet kräver stark autentisering. I nästa steg förflyttas du till en autentiseringstjänst." ]
-                      , DOM.br {}
-                      , DOM.span_ [ DOM.text "Konsumentskyddslagen kräver stark autentisering då en beställning sker med faktura." ]
+                      , DOM.p_ [ DOM.text "På pappersfakturor som levereras per post uppbär vi en tilläggsavgift på 5,00 euro per faktura (inkl. Moms). Du kan i din nätbank byta fakturan till en e-faktura som inte har ett faktureringstillägg. " ]
+                      , DOM.p_ [ DOM.text "Betalningssättet kräver stark autentisering. I nästa steg förflyttas du till en autentiseringstjänst." ]
+                      , DOM.p_ [ DOM.text "Konsumentskyddslagen kräver stark autentisering då en beställning sker med faktura." ]
                       ]
                   ]
               }
