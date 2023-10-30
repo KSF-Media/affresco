@@ -99,10 +99,10 @@ renderPaymentOffer offers setOffer paymentMethod setPaymentMethod =
                 , children:
                   [ DOM.option
                       { disabled: true
-                      , children: [ DOM.text "Välj ett alternativ" ]
+                      , children: [ DOM.text "Välj betalningssätt" ]
                       , value: "select-alternative"
                       }
-                  ] <> map renderPaymentOptionOption [ PaperInvoice, CreditCard ]
+                  ] <> map renderPaymentOptionOption [ CreditCard, PaperInvoice ]
                 }
             ]
         , DOM.label_
@@ -136,7 +136,7 @@ renderPaymentOffer offers setOffer paymentMethod setPaymentMethod =
         ]
     }
   where
-    paymentOptionText CreditCard = "Kreditkort"
+    paymentOptionText CreditCard = "Betalkort"
     paymentOptionText PaperInvoice = "Faktura"
 
     renderPaymentOptionOption option =
