@@ -226,3 +226,4 @@ toOrderFailure bottegaErr =
     BottegaInsufficientAccount    -> InsufficientAccount
     BottegaTimeout                -> UnexpectedError "Timeout"
     BottegaUnexpectedError errMsg -> UnexpectedError errMsg
+    BottegaIdentificationError _  -> UnexpectedError "Identification"
