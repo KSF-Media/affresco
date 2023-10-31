@@ -62,7 +62,7 @@ render form setForm onSubmit =
     { className: "vetrina--set-pw-container self-center"
     , children:
       [ DOM.h1
-          { className: "vetrina--headline font-duplexsans font-light"
+          { className: "vetrina--headline vetrina--order-completed font-duplexsans font-light"
           , children:[ DOM.text "Tack för din beställning!" ]
           }
       , DOM.p
