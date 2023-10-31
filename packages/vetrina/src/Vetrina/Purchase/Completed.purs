@@ -24,7 +24,7 @@ completed props =
     { className: "vetrina--completed-container flex flex-col justify-center w-[90%] max-w-[500px] min-w-[250px]"
     , children:
       [ DOM.h1
-          { className: "vetrina--headline"
+          { className: "vetrina--headline vetrina--order-completed""
           , children:
               [ case props.accountStatus of
                    NewAccount      -> DOM.text "Ditt konto är klart!"
