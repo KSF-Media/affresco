@@ -2,9 +2,6 @@ module Persona.Identification where
 
 import Prelude
 
-import Affjax (Error) as AX
-import Affjax.ResponseFormat (ignore) as AX
-import Affjax.Web (defaultRequest, request) as AX
 import Control.Monad.Except.Trans (runExceptT)
 import Data.Argonaut as JSON
 import Data.Either (Either(..), hush)
@@ -21,8 +18,8 @@ import KSF.Api (Token(..))
 import KSF.Auth as Auth
 import KSF.User (User)
 import Persona (personaURL)
-import Web.Event.EventTarget (addEventListener, addEventListenerWithOptions, eventListener)
-import Web.Socket.Event.EventTypes (onClose, onError, onMessage, onOpen)
+import Web.Event.EventTarget (addEventListener, eventListener)
+import Web.Socket.Event.EventTypes (onClose, onError, onMessage)
 import Web.Socket.Event.MessageEvent (data_, fromEvent)
 import Web.Socket.WebSocket as WS
 
@@ -32,20 +29,11 @@ import Web.Socket.WebSocket as WS
 -- to them.
 type Monitor =
   -- Blocks until monitor WebSocket is up
-  { monitor :: Aff Unit
+  { monitor :: Aff String
   -- Blocks until identification process is done.  The user facing
   -- part only cares that it succeeds.
   , result :: Aff (Either String Unit)
   }
-
--- Set HTTP only cookie.  No visible return value other than success.
-getToken :: Aff (Either AX.Error Unit)
-getToken = do
-  (map <<< map) (const unit) $ AX.request $ AX.defaultRequest
-    { url = personaURL <> "/identification/login/monitor"
-    , responseFormat = AX.ignore
-    , withCredentials = true
-    }
 
 getMonitor :: User -> Effect Monitor
 getMonitor user = do
@@ -53,7 +41,7 @@ getMonitor user = do
   let url = fromMaybe "" do
         regex <- hush $ Regex.regex "^http" mempty
         pure $ Regex.replace regex "ws" $
-          personaURL <> "/identification/login/monitor/" <> UUID.toString user.uuid <>
+          personaURL <> "/identification/login/monitor/makeToken/" <> UUID.toString user.uuid <>
           -- The WebSockets API doesn't allow custom headers so it
           -- needs to be done via query.
           "?authorization=" <> token
@@ -61,17 +49,17 @@ getMonitor user = do
   monitor <- AVar.empty
   result <- AVar.empty
   let et = WS.toEventTarget ws
-      once = { capture: false, once: true, passive: false }
       getField a = JSON.toString <=< lookup a
       useMessage obj | Just "MonitorSuccess" <- getField "tag" obj
                      = do
         tryPut (Right unit) result
+      useMessage obj | Just "MonitorSendToken" <- getField "tag" obj
+                     , Just monitorToken <- getField "token" obj
+                     = do
+        tryPut monitorToken monitor
       -- TODO
       useMessage obj | Just val <- getField "error" obj = tryPut (Left val) result
       useMessage _ = pure unit
-  -- Waiting for open is enough, Persona will set cookie for the
-  -- monitor in the response headers
-  openListener <- eventListener $ const $ AVar.tryPut unit monitor
   messageListener <- eventListener $ \event -> case fromEvent event of
     Nothing -> pure unit
     Just mEvent -> do
@@ -86,13 +74,12 @@ getMonitor user = do
   -- Relies on tryPut's do nothing-semantics if messageListener already fired
   closeListener <- eventListener $ const $ AVar.tryPut (Left "connection closed") result
   errorListener <- eventListener $ const $ do
-    _ <- AVar.tryPut unit monitor
+    _ <- AVar.tryPut "" monitor
     _ <- AVar.tryPut (Left "WS error") result
     pure unit
 
   addEventListener onMessage messageListener false et
   addEventListener onClose closeListener false et
-  addEventListenerWithOptions onOpen openListener once et
   addEventListener onError errorListener false et
 
   pure $ { monitor: Aff.AVar.read monitor
@@ -105,5 +92,5 @@ getMonitor user = do
 -- Make sure that the monitor is up before using this or it'll fail.
 -- No parameters from here but the monitor has set up a HTTP only
 -- cookie for it.
-loginURL :: String
-loginURL = personaURL <> "/identification/login"
+loginURL :: String -> String
+loginURL token = personaURL <> "/identification/login?monitor=" <> token
