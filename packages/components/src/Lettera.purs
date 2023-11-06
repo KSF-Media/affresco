@@ -106,10 +106,10 @@ instance foldableLetteraResponse :: Foldable LetteraResponse where
 handleLetteraError :: LetteraError -> Effect Unit
 handleLetteraError = Console.warn <<< show
 
-getArticleAuth :: UUID -> Paper -> Aff (Either String FullArticle)
-getArticleAuth articleId paper = do
+getArticleAuth :: UUID -> Paper -> Maybe String -> Aff (Either String FullArticle)
+getArticleAuth articleId paper freePassHash = do
   tokens <- Auth.loadToken
-  getArticle articleId paper tokens Nothing Nothing
+  getArticle articleId paper tokens Nothing freePassHash
 
 -- TODO: Instead of String, use some sort of LetteraError or something
 getArticle
@@ -137,7 +137,7 @@ getArticleWithUrl
   -> Maybe String
   -> Maybe String
   -> Aff (Either String FullArticle)
-getArticleWithUrl url paper auth clientip freePassHash= do
+getArticleWithUrl url paper auth clientip freePassHash = do
   let request = AX.defaultRequest
         { url = url <>
                 foldMap (\p -> "?paper=" <> Paper.toString p) paper <>
