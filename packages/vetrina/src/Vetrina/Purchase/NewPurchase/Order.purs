@@ -84,6 +84,7 @@ mkPurchase props logger window askAccount validForm affUser = do
       product       <- except $ note (FormFieldError [ ProductSelection ]) validForm.productSelection
       paymentMethod <- except $ note (FormFieldError [ PaymentMethod ])    validForm.paymentMethod
 
+
       let existingSubscriptions = Array.filter (\s -> product.id == s.package.id) user.subs
           allCanceled = Array.all isCanceled existingSubscriptions
       when (not allCanceled)
@@ -102,7 +103,7 @@ mkPurchase props logger window askAccount validForm affUser = do
       when askAccount $
         throwError InsufficientAccount
 
-      order <- ExceptT $ createOrder user product props.orderSource
+      order <- ExceptT $ createOrder user product props.orderSource (Just "https://www.hbl.fi/artikel/test2")
       paymentUrl <- ExceptT $ payOrder order paymentMethod
       liftEffect do
         LocalStorage.setItem "productId" product.id -- for analytics
@@ -198,8 +199,8 @@ loginToExistingAccount logger (Just username) (Just password) = do
 loginToExistingAccount _ _ _ =
   pure $ Left $ FormFieldError [ EmailAddress, Password ]
 
-createOrder :: User -> Product -> OrderSource -> Aff (Either OrderFailure Order)
-createOrder _ product orderSource = do
+createOrder :: User -> Product -> OrderSource -> Maybe String -> Aff (Either OrderFailure Order)
+createOrder _ product orderSource orderSourceArticle = do
   -- TODO: fix period etc.
   let newOrder =
         { packageId: product.id
@@ -207,6 +208,7 @@ createOrder _ product orderSource = do
         , payAmountCents: product.priceCents
         , campaignNo: map _.no product.campaign
         , orderSource: Just orderSource
+        , orderSourceArticle: orderSourceArticle
         }
   eitherOrder <- User.createOrder newOrder
   pure $ case eitherOrder of

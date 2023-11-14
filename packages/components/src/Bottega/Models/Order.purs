@@ -53,11 +53,12 @@ parseOrderState state maybeFailReason =
       _             -> OrderUnknownState
 
 type NewOrder =
-  { packageId      :: String
-  , period         :: Int
-  , payAmountCents :: Int
-  , campaignNo     :: Maybe Int
-  , orderSource    :: Maybe OrderSource
+  { packageId          :: String
+  , period             :: Int
+  , payAmountCents     :: Int
+  , campaignNo         :: Maybe Int
+  , orderSource        :: Maybe OrderSource
+  , orderSourceArticle :: Maybe String
   }
 
 data OrderSource = CampaignPagesSource
