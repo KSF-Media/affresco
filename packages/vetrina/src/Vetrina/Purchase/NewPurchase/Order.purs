@@ -199,7 +199,7 @@ loginToExistingAccount logger (Just username) (Just password) = do
 loginToExistingAccount _ _ _ =
   pure $ Left $ FormFieldError [ EmailAddress, Password ]
 
-createOrder :: User -> Product -> OrderSource -> Maybe String -> Aff (Either OrderFailure Order)
+createOrder :: User -> Product -> OrderSource -> String -> Aff (Either OrderFailure Order)
 createOrder _ product orderSource orderSourceArticle = do
   -- TODO: fix period etc.
   let newOrder =

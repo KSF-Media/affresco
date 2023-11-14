@@ -90,11 +90,12 @@ bottegaErrorMessage e = show e
 
 createOrder :: UserAuth -> NewOrder -> Aff Order
 createOrder { userId, authToken } newOrder@{ campaignNo, orderSource } =
-  readOrder =<< callApi ordersApi "orderPost" [ unsafeToForeign newOrder { campaignNo = nullableCampaignNo, orderSource = nullableOrderSource } ] { authorization, authUser }
+  readOrder =<< callApi ordersApi "orderPost" [ unsafeToForeign newOrder { campaignNo = nullableCampaignNo, orderSource = nullableOrderSource, orderSourceArticle = nullableOrderSourceArticle } ] { authorization, authUser }
   where
     -- NOTE/REMINDER: We don't want send Maybes to the server,
     -- as they will be sent as objects
     nullableCampaignNo = toNullable campaignNo
+    nullableOrderSourceArticle = toNullable orderSourceArticle
     nullableOrderSource = toNullable $ map fromOrderSource orderSource
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
