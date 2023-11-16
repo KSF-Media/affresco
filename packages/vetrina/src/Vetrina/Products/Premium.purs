@@ -15,7 +15,7 @@ hblPremium =
         { id: "tb-paywall--product-text-hbl"
         , className: "vetrina--product-text font-duplexsans font-light text-center text-lg leading-tight px-5 pb-5"
         , children:
-            [ DOM.text "Läs HBL digitalt gratis i en månad, därefter 9,99€ per månad. Avslutas enkelt online." ]
+            [ DOM.text "Läs HBL digitalt gratis i två månader, därefter 9,99€ per månad. Avslutas enkelt online." ]
         }
   , descriptionLoggedInAccount:
       DOM.div
@@ -25,10 +25,10 @@ hblPremium =
           }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi."
   , campaign: Just
-      { no: 4349
-      , id: "HBL_0E1KK"
-      , name: "0 E FÖRSTA MÅNADEN"
-      , length: 1
+      { no: 4716
+      , id: "2M_MUREN23"
+      , name: "BETALMUREN GRATIS I TVÅ MÅNADER"
+      , length: 2
       , lengthUnit: Month
       , priceEur: 0.0
       }
