@@ -473,7 +473,7 @@ acceptTerms =
           <> mkLink "" "https://www.hbl.fi/sida/bruksvillkor" "prenumerationsvillkor" " text-neutral"
           <> [ DOM.text " och " ]
           <> mkLink "" "https://www.ksfmedia.fi/dataskydd" "personuppgiftspolicy" " text-neutral"
-          <> [ DOM.text ". ", DOM.br {} ]
+          <> [ DOM.text ". Säg upp prenumerationen enkelt online, senast 7 dagar innan den förnyas. ", DOM.br {} ]
           <> [ DOM.text "Du uppger kortuppgifter (för debet- eller kreditkort) i nästa steg." ]
     }
 
