@@ -89,7 +89,7 @@ bottegaErrorMessage (BottegaUnexpectedError errMsg) = errMsg
 bottegaErrorMessage e = show e
 
 createOrder :: UserAuth -> NewOrder -> Aff Order
-createOrder { userId, authToken } newOrder@{ campaignNo, orderSource } =
+createOrder { userId, authToken } newOrder@{ campaignNo, orderSource, orderSourceArticle} =
   readOrder =<< callApi ordersApi "orderPost" [ unsafeToForeign newOrder { campaignNo = nullableCampaignNo, orderSource = nullableOrderSource, orderSourceArticle = nullableOrderSourceArticle } ] { authorization, authUser }
   where
     -- NOTE/REMINDER: We don't want send Maybes to the server,

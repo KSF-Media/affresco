@@ -103,7 +103,7 @@ mkPurchase props logger window askAccount validForm affUser = do
       when askAccount $
         throwError InsufficientAccount
 
-      order <- ExceptT $ createOrder user product props.orderSource (Just "https://www.hbl.fi/artikel/test2")
+      order <- ExceptT $ createOrder user product props.orderSource "https://www.hbl.fi/artikel/test2"
       paymentUrl <- ExceptT $ payOrder order paymentMethod
       liftEffect do
         LocalStorage.setItem "productId" product.id -- for analytics
@@ -208,7 +208,7 @@ createOrder _ product orderSource orderSourceArticle = do
         , payAmountCents: product.priceCents
         , campaignNo: map _.no product.campaign
         , orderSource: Just orderSource
-        , orderSourceArticle: orderSourceArticle
+        , orderSourceArticle: Just orderSourceArticle
         }
   eitherOrder <- User.createOrder newOrder
   pure $ case eitherOrder of
