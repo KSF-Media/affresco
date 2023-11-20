@@ -38,7 +38,7 @@ function filterBeforeSend(event, hint) {
   if (
     error &&
     error.message &&
-    error.message.match(/null is not an object (evaluating 'Object.prototype.hasOwnProperty.call(o,"telephone")'))/i)
+    error.message.match(/null is not an object \(evaluating 'Object\.prototype\.hasOwnProperty\.call\(o,"telephone"\)'\)\)/i)
   ) {
     return null;
   }
