@@ -58,7 +58,7 @@ vnPremium =
         { id: "tb-paywall--product-text-vn"
         , className: "vetrina--product-text font-duplexsans font-light text-center text-lg leading-tight px-5 pb-5"
         , children:
-            [ DOM.text "Läs VN digitalt gratis i två månader, därefter 6,90€ per månad. Avslutas enkelt online." ]
+            [ DOM.text "Läs VN Digital gratis i två månader, därefter 6,90€ per månad. Avslutas enkelt online." ]
         }
   , descriptionLoggedInAccount:
       DOM.div
@@ -104,7 +104,7 @@ onPremium =
         { id: "tb-paywall--product-text-on"
         , className: "vetrina--product-text font-duplexsans font-light text-center text-lg leading-tight px-5 pb-5"
         , children:
-            [ DOM.text "Läs ÖN digitalt gratis i två månader, därefter 6,90€ per månad. Avslutas enkelt online." ]
+            [ DOM.text "Läs ÖN Digital gratis i två månader, därefter 6,90€ per månad. Avslutas enkelt online." ]
         }
   , descriptionLoggedInAccount:
       DOM.div
