@@ -58,7 +58,7 @@ vnPremium =
         { id: "tb-paywall--product-text-vn"
         , className: "vetrina--product-text font-duplexsans font-light text-center text-lg leading-tight px-5 pb-5"
         , children:
-            [ DOM.text "Läs Västra Nyland digitalt för 1€ i en månad, därefter 6,90€ per månad. Avslutas enkelt online." ]
+            [ DOM.text "Läs VN digitalt gratis i två månader, därefter 6,90€ per månad. Avslutas enkelt online." ]
         }
   , descriptionLoggedInAccount:
       DOM.div
@@ -68,12 +68,12 @@ vnPremium =
           }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på vastranyland.fi."
   , campaign: Just
-      { no: 4072
-      , id: "1MÅN1EURO"
-      , name: "FÖRSTA MÅNADEN FÖR 1 EURO"
-      , length: 1
+      { no: 4735
+      , id: "2M_MURVN23"
+      , name: "VN DIGITAL 2 MÅNADER GRATIS, ORDINARIEPRIS EFTER DET (ERBJUDANDE I BET"
+      , length: 2
       , lengthUnit: Month
-      , priceEur: 1.0
+      , priceEur: 0.0
       }
   , contents:
       [ { title: "Premium"
@@ -104,7 +104,7 @@ onPremium =
         { id: "tb-paywall--product-text-on"
         , className: "vetrina--product-text font-duplexsans font-light text-center text-lg leading-tight px-5 pb-5"
         , children:
-            [ DOM.text "Läs Östnyland digitalt för 1€ i en månad, därefter 6,90€ per månad. Avslutas enkelt online." ]
+            [ DOM.text "Läs ÖN digitalt gratis i två månader, därefter 6,90€ per månad. Avslutas enkelt online." ]
         }
   , descriptionLoggedInAccount:
       DOM.div
@@ -114,12 +114,12 @@ onPremium =
           }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på ostnyland.fi."
   , campaign: Just
-      { length: 1
-      , priceEur: 1.0
+      { length: 2
+      , priceEur: 0.0
       , lengthUnit: Month
-      , no: 4073
-      , name: "FÖRSTA MÅNADEN 1 EURO"
-      , id: "1MÅN1EURO"
+      , no: 4737
+      , name: "ÖN DIGITAL 2 MÅNADER GRATIS, ORDINARIEPRIS EFTER DET (ERBJUDANDE I BET"
+      , id: "2M_MURON23"
       }
   , contents:
       [ { title: "Premium"
