@@ -332,7 +332,7 @@ renderLoginForm self =
         loginWithSocial =
           DOM.span
             { className: "login--login-social-media-text"
-            , children: [ DOM.text "Logga in med Facebook eller Google" ]
+            , children: [ DOM.text "Logga in med Google" ]
             , onClick: handler_ $ self.setState _ { socialLoginVisibility = if self.state.socialLoginVisibility == Hidden then Visible else Hidden }
             }
         socialLoginButtons = case self.state.socialLoginVisibility of
