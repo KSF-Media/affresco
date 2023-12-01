@@ -169,7 +169,7 @@ requestPasswordReset email = do
 
 startPasswordReset :: String -> Aff Unit
 startPasswordReset token = do
-  callApi accountApi "accountPasswordResetPost" [ unsafeToForeign { token } ] {}
+  callApi accountApi "accountPasswordCheckTokenPost" [ unsafeToForeign { token } ] {}
 
 updateForgottenPassword :: String -> Password -> Password -> Aff Unit
 updateForgottenPassword token password confirmPassword = do
