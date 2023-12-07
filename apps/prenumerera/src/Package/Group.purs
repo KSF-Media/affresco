@@ -7,6 +7,7 @@ import Data.Array.NonEmpty as NonEmpty
 import Data.Array.NonEmpty (NonEmptyArray, foldr1)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..), fst)
+import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -158,7 +159,24 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                       }
             , DOM.div
                 { className: "details"
-                , children: [ description.descriptionLong ]
+                , children:
+                    [ description.descriptionLong
+                    , DOM.div
+                        { style: DOM.css { marginLeft: "1em", fontSize: "85%" }
+                        , children:
+                            [ DOM.text $
+                              case description.brand /\ description.weekdays of
+                                HBL /\ "mån – sön" ->
+                                  "Priset kommer att justeras från och med den 1 februari. Det nya priset är 47,90 eur/mån."
+                                HBL /\ "fre – sön" ->
+                                  "Priset kommer att justeras från och med den 1 februari. Det nya priset är 31,90 eur/mån."
+                                ON /\ "Papperstidningen tis & fre" ->
+                                  "Priset kommer att justeras från och med den 1 februari. Det nya priset är 23,90 eur/mån."
+                                VN /\ "Papperstidningen tis & fre" ->
+                                  "Priset kommer att justeras från och med den 1 februari. Det nya priset är 23,90 eur/mån."
+                                _ ->
+                                  mempty]}
+                    ]
                 }
             ]
         }
