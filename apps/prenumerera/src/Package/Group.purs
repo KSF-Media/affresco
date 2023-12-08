@@ -6,6 +6,7 @@ import Data.Array as Array
 import Data.Array.NonEmpty as NonEmpty
 import Data.Array.NonEmpty (NonEmptyArray, foldr1)
 import Data.Maybe (Maybe(..))
+import Data.Monoid (guard)
 import Data.Tuple (Tuple(..), fst)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
@@ -130,10 +131,7 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                                                     foldr1 min $ map _.monthlyPrice package.offers ]
                                     , DOM.br {}
                                     , DOM.text "euro/mån"
-                                    ] <>
-                                    if priceDisclaimer /= ""
-                                    then [ DOM.text "*" ]
-                                    else mempty
+                                    ] <> guard (priceDisclaimer /= mempty) [ DOM.text "*" ]
                                 }
                             ]
                         }
@@ -164,16 +162,15 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                 { className: "details"
                 , children:
                     [ description.descriptionLong ] <>
-                    if priceDisclaimer /= ""
-                    then [ DOM.div
-                      { style: DOM.css { marginLeft: "1em", fontSize: "85%", display: "flex" }
-                      , children:
-                          [ DOM.span
-                              { style: DOM.css { paddingRight: "0.25em" }
-                              , children: [ DOM.text "*" ] }
-                          , DOM.span_ [ DOM.text priceDisclaimer ] ]
-                      } ]
-                    else mempty
+                    guard (priceDisclaimer /= mempty)
+                      [ DOM.div
+                          { style: DOM.css { marginLeft: "1em", fontSize: "85%", display: "flex" }
+                          , children:
+                              [ DOM.span
+                                  { style: DOM.css { paddingRight: "0.25em" }
+                                  , children: [ DOM.text "*" ] }
+                              , DOM.span_ [ DOM.text priceDisclaimer ] ]
+                          } ]
                 }
             ]
         }
