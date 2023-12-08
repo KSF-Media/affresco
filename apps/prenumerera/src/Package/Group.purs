@@ -108,13 +108,13 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
     priceDisclaimer description =
       case description.brand /\ description.weekdays of
         HBL /\ "mån – sön" ->
-          "*Priset kommer att justeras från och med den 1 februari. Det nya priset är 47,90 eur/mån."
+          "Priset kommer att justeras från och med den 1 februari. Det nya priset är 47,90 eur/mån."
         HBL /\ "fre – sön" ->
-          "*Priset kommer att justeras från och med den 1 februari. Det nya priset är 31,90 eur/mån."
+          "Priset kommer att justeras från och med den 1 februari. Det nya priset är 31,90 eur/mån."
         ON /\ "Papperstidningen tis & fre" ->
-          "*Priset kommer att justeras från och med den 1 februari. Det nya priset är 23,90 eur/mån."
+          "Priset kommer att justeras från och med den 1 februari. Det nya priset är 23,90 eur/mån."
         VN /\ "Papperstidningen tis & fre" ->
-          "*Priset kommer att justeras från och med den 1 februari. Det nya priset är 23,90 eur/mån."
+          "Priset kommer att justeras från och med den 1 februari. Det nya priset är 23,90 eur/mån."
         _ ->
           mempty
     renderPackage (Tuple package description) =
@@ -177,8 +177,14 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                 , children:
                     [ description.descriptionLong
                     , DOM.div
-                        { style: DOM.css { marginLeft: "1em", fontSize: "85%" }
-                        , children: [ DOM.text (priceDisclaimer description) ]
+                        { style: DOM.css { marginLeft: "1em", fontSize: "85%", display: "flex" }
+                        , children:
+                            if priceDisclaimer description /= ""
+                            then [ DOM.span
+                                     { style: DOM.css { paddingRight: "0.25em" }
+                                     , children: [ DOM.text "*" ] }
+                                 , DOM.span_ [ DOM.text (priceDisclaimer description) ] ]
+                            else mempty
                         }
                     ]
                 }
