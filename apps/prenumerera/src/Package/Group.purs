@@ -105,18 +105,6 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
         ]
     }
   where
-    priceDisclaimer description =
-      case description.brand /\ description.weekdays of
-        HBL /\ "mån – sön" ->
-          "Priset kommer att justeras från och med den 1 februari. Det nya priset är 47,90 eur/mån."
-        HBL /\ "fre – sön" ->
-          "Priset kommer att justeras från och med den 1 februari. Det nya priset är 31,90 eur/mån."
-        ON /\ "Papperstidningen tis & fre" ->
-          "Priset kommer att justeras från och med den 1 februari. Det nya priset är 23,90 eur/mån."
-        VN /\ "Papperstidningen tis & fre" ->
-          "Priset kommer att justeras från och med den 1 februari. Det nya priset är 23,90 eur/mån."
-        _ ->
-          mempty
     renderPackage (Tuple package description) =
       DOM.div
         { className: "tab-pane fade"
@@ -143,7 +131,7 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                                     , DOM.br {}
                                     , DOM.text "euro/mån"
                                     ] <>
-                                    if priceDisclaimer description /= ""
+                                    if priceDisclaimer /= ""
                                     then [ DOM.text "*" ]
                                     else mempty
                                 }
@@ -175,21 +163,34 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
             , DOM.div
                 { className: "details"
                 , children:
-                    [ description.descriptionLong
-                    , DOM.div
-                        { style: DOM.css { marginLeft: "1em", fontSize: "85%", display: "flex" }
-                        , children:
-                            if priceDisclaimer description /= ""
-                            then [ DOM.span
-                                     { style: DOM.css { paddingRight: "0.25em" }
-                                     , children: [ DOM.text "*" ] }
-                                 , DOM.span_ [ DOM.text (priceDisclaimer description) ] ]
-                            else mempty
-                        }
-                    ]
+                    [ description.descriptionLong ] <>
+                    if priceDisclaimer /= ""
+                    then [ DOM.div
+                      { style: DOM.css { marginLeft: "1em", fontSize: "85%", display: "flex" }
+                      , children:
+                          [ DOM.span
+                              { style: DOM.css { paddingRight: "0.25em" }
+                              , children: [ DOM.text "*" ] }
+                          , DOM.span_ [ DOM.text priceDisclaimer ] ]
+                      } ]
+                    else mempty
                 }
             ]
         }
+      where
+        priceDisclaimerPrefix =
+          "Priset kommer att justeras från och med den 1 februari. Det nya priset är "
+        priceDisclaimer = case description.brand /\ description.weekdays of
+          HBL /\ "mån – sön" ->
+            priceDisclaimerPrefix <> "47,90 eur/mån."
+          HBL /\ "fre – sön" ->
+            priceDisclaimerPrefix <> "31,90 eur/mån."
+          ON /\ "Papperstidningen tis & fre" ->
+            priceDisclaimerPrefix <> "23,90 eur/mån."
+          VN /\ "Papperstidningen tis & fre" ->
+            priceDisclaimerPrefix <> "23,90 eur/mån."
+          _ ->
+            mempty
 
     renderAdditionalInfo description = case description.brand of
       JUNIOR -> DOM.p
