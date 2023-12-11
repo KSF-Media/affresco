@@ -32,10 +32,15 @@ import React.Basic.Events (EventHandler)
 import Vetrina.Types (AccountStatus(..), FormInputField(..), OrderFailure(..), Product, PurchaseState(..))
 import Web.HTML as Web.HTML
 import Web.HTML.Location as Web.HTML.Location
-import Web.HTML.Window as Window
 import Web.HTML.Window (Window)
+import Web.HTML.Window as Window
+
+import Debug
 
 foreign import windowClose :: Window -> Effect Unit
+
+foreign import getLocation :: Effect String
+
 
 type PurchaseInput r = { productSelection :: Maybe Product, paymentMethod :: Maybe PaymentMethod | r }
 
@@ -102,8 +107,9 @@ mkPurchase props logger window askAccount validForm affUser = do
       -- askAccount set as false and the purchase can proceed.
       when askAccount $
         throwError InsufficientAccount
-
-      order <- ExceptT $ createOrder user product props.orderSource "https://www.hbl.fi/artikel/test2"
+      location <- liftEffect getLocation
+      traceM $ "location: " <> location
+      order <- ExceptT $ createOrder user product props.orderSource location
       paymentUrl <- ExceptT $ payOrder order paymentMethod
       liftEffect do
         LocalStorage.setItem "productId" product.id -- for analytics

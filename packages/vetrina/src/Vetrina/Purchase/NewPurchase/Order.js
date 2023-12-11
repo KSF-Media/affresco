@@ -5,3 +5,9 @@ export function windowClose(w) {
     } catch (e) {}
   };
 }
+
+export function getLocation() {
+  return function () {
+    return document.location.href;
+  }
+}
