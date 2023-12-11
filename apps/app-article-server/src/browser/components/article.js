@@ -32,6 +32,21 @@ class Article extends Component {
       document.getElementsByTagName("HTML")[0].setAttribute("data-theme", "dark");
     }
     this.getMostReadArticles();
+    window.addEventListener("message", this.handleMessage);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("message", this.handleMessage);
+  }
+
+  // This listens for messages from DN interactive graphic embeds to get their height
+  handleMessage = (event) => {
+    if (event.data.location && event.data.ratio) {
+      const iframeToTarget = document.querySelector(`iframe[src="${event.data.location}"]`);
+      if (iframeToTarget) {
+        iframeToTarget.style.height = `${iframeToTarget.clientWidth * event.data.ratio}px`;
+      }
+    }
   }
 
   showHighResolutionImage = (imgSrc, caption) => {

@@ -16,16 +16,33 @@ export function initSentry_(sentryDsn, tSampleRate) {
       integrations: [new Tracing.BrowserTracing()],
       tracesSampleRate: tSampleRate,
       // Only allow errors from code hosted on our own domains
-      allowUrls: 
+      allowUrls:
         [
           /https?:\/\/([a-z\-]+\.)?([a-z\-]+\.)?(hbl|ksfmedia|ostnyland|vastranyland)\.fi/i,
         ],
+      beforeSend(event, hint) {
+        return filterBeforeSend(event, hint);
+      },
     });
     return Sentry;
   } else {
     console.warn("Could not setup Sentry, dsn is faulty. Look into your env variables.");
     return null;
   }
+}
+
+// function for filtering out "unfixable" errors
+function filterBeforeSend(event, hint) {
+  const error = hint.originalException;
+  // for some reason iOS devices want to access the nonexistent telephone field of our journalists
+  if (
+    error &&
+    error.message &&
+    error.message.match("null is not an object (evaluating 'Object.prototype.hasOwnProperty.call(o,\"telephone\")')")
+  ) {
+    return null;
+  }
+  return event;
 }
 
 export function captureMessage_(sentry, appName, message, level) {

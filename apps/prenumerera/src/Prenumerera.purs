@@ -312,7 +312,7 @@ renderMain navbar content =
                                 , separator
                                 , DOM.text "Mannerheimvägen 18"
                                 , separator
-                                , DOM.text "001000 Helsingfors"
+                                , DOM.text "00100 Helsingfors"
                                 ]
                             }
                         , DOM.img

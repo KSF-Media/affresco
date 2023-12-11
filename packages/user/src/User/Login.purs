@@ -332,7 +332,7 @@ renderLoginForm self =
         loginWithSocial =
           DOM.span
             { className: "login--login-social-media-text"
-            , children: [ DOM.text "Logga in med Facebook eller Google" ]
+            , children: [ DOM.text "Logga in med Google" ]
             , onClick: handler_ $ self.setState _ { socialLoginVisibility = if self.state.socialLoginVisibility == Hidden then Visible else Hidden }
             }
         socialLoginButtons = case self.state.socialLoginVisibility of
@@ -541,10 +541,10 @@ facebookLogin self =
   guard (not $ Set.member Facebook self.props.disableSocialLogins)
     DOM.div
       { className: "login--some-disabled-note"
-      , children: [ DOM.text "Möjligheten att logga in med Facebook har tagits bort. Du kan logga in med den e-postadress som är kopplad till din Facebook, "
+      , children: [ DOM.text "Möjligheten att logga in med Google upphör snart, vänligen "
                   , DOM.a
                       { href: "https://konto.hbl.fi/#lösenord"
-                      , children: [ DOM.text "bara återställ lösenordet här." ]
+                      , children: [ DOM.text "klicka här för att beställa ett lösenord." ]
                       }
                   ]
       }
