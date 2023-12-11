@@ -35,8 +35,6 @@ import Web.HTML.Location as Web.HTML.Location
 import Web.HTML.Window (Window)
 import Web.HTML.Window as Window
 
-import Debug
-
 foreign import windowClose :: Window -> Effect Unit
 
 foreign import getLocation :: Effect String
@@ -108,7 +106,6 @@ mkPurchase props logger window askAccount validForm affUser = do
       when askAccount $
         throwError InsufficientAccount
       location <- liftEffect getLocation
-      traceM $ "location: " <> location
       order <- ExceptT $ createOrder user product props.orderSource location
       paymentUrl <- ExceptT $ payOrder order paymentMethod
       liftEffect do

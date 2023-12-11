@@ -8,6 +8,8 @@ export function windowClose(w) {
 
 export function getLocation() {
   return function () {
+    console.log("in getLocation")
+    console.log(document.location.href)
     return document.location.href;
   }
 }
