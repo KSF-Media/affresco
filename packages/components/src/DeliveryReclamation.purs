@@ -2,7 +2,7 @@ module KSF.DeliveryReclamation where
 
 import Prelude
 
-import Data.Array (snoc)
+import Data.Array (cons, snoc)
 import Data.Date (Date)
 import Data.DateTime (DateTime, date, time)
 import Data.Either (Either(..))
@@ -29,7 +29,7 @@ import React.Basic (JSX)
 import React.Basic.Classic (make)
 import React.Basic.Classic as React
 import React.Basic.DOM as DOM
-import React.Basic.DOM.Events (preventDefault)
+import React.Basic.DOM.Events (preventDefault, targetValue)
 import React.Basic.Events (handler, handler_)
 import KSF.Tracking as Tracking
 
@@ -37,6 +37,7 @@ type State =
   { publicationDate    :: Maybe Date
   , doorCode           :: Maybe String
   , claim              :: Maybe User.DeliveryReclamationClaim
+  , reason             :: Maybe User.DeliveryReclamationReason
   , maxPublicationDate :: Maybe Date
   , deliveryTroubleEnd :: Maybe Time
   , validationError    :: Maybe String
@@ -63,6 +64,7 @@ initialState =
   { publicationDate: Nothing
   , doorCode: Just ""
   , claim: Nothing
+  , reason: Nothing
   , maxPublicationDate: Nothing
   , validationError: Nothing
   , deliveryTroubleEnd: Nothing
@@ -79,7 +81,7 @@ didMount self = do
   self.setState _ { maxPublicationDate = Just $ date now }
 
 render :: Self -> JSX
-render self@{ state: { publicationDate, doorCode, claim }} =
+render self@{ state: { publicationDate, doorCode, claim, reason }} =
   DOM.div
     { className: "delivery-reclamation--container"
     , children:
@@ -99,10 +101,11 @@ render self@{ state: { publicationDate, doorCode, claim }} =
   where
     deliveryReclamationForm =
       DOM.form
-          { onSubmit: handler preventDefault (\_ -> submitForm publicationDate doorCode claim)
+          { onSubmit: handler preventDefault (\_ -> submitForm publicationDate doorCode claim reason)
           , children:
               [ foldMap delayMessage self.state.deliveryTroubleEnd
               , publicationDayInput
+              , reasonInput
               , claimExtensionInput
               , claimNewDeliveryInput
               , guard (claim == Just User.NewDelivery) doorCodeInput
@@ -115,6 +118,37 @@ render self@{ state: { publicationDate, doorCode, claim }} =
           }
 
     publicationDayInput = dateInput self self.state.publicationDate "Utgivningsdatum"
+
+    reasonInput =
+      DOM.div
+        { className: "input-field--container"
+        , children:
+            [ InputField.inputLabel { label: "Orsak", nameFor: "reason", labelClass: "" }
+            , DOM.select
+                { children:
+                  DOM.option
+                    { children: [ DOM.text "Välj ett alternativ" ]
+                    , disabled: true
+                    , value: ""
+                    } `cons`
+                  map reasonOption
+                    [ { value: "MissingDelivery", label: "Tidningen saknades"}
+                    , { value: "WrongPaper", label: "Fel tidning"}
+                    , { value: "DamagedPaper", label: "Tidningens skick"}
+                    , { value: "OlderReclamation", label: "Reklamation av äldre tidning"}
+                    ]
+                , value: maybe "" show self.state.reason
+                , onChange: handler targetValue $ map read >>> join >>> \newReason ->
+                    self.setState _ { reason = newReason }
+                }
+            ]
+        }
+
+    reasonOption {value, label} =
+      DOM.option
+        { value
+        , children: [ DOM.text label ]
+        }
 
     eveningMessage =
       DOM.div
@@ -179,15 +213,15 @@ render self@{ state: { publicationDate, doorCode, claim }} =
           , className: "button-green"
           }
 
-    submitForm :: Maybe Date -> Maybe String -> Maybe User.DeliveryReclamationClaim -> Effect Unit
-    submitForm (Just date') (Just doorCode') (Just claim') = do
+    submitForm :: Maybe Date -> Maybe String -> Maybe User.DeliveryReclamationClaim -> Maybe User.DeliveryReclamationReason -> Effect Unit
+    submitForm (Just date') (Just doorCode') (Just claim') (Just reason') = do
       Aff.launchAff_ do
-        createDeliveryReclamation date' doorCode' claim'
+        createDeliveryReclamation date' doorCode' claim' reason'
       where
-        createDeliveryReclamation :: Date -> String -> User.DeliveryReclamationClaim -> Aff Unit
-        createDeliveryReclamation date'' doorCode'' claim'' = do
+        createDeliveryReclamation :: Date -> String -> User.DeliveryReclamationClaim -> User.DeliveryReclamationReason -> Aff Unit
+        createDeliveryReclamation date'' doorCode'' claim'' reason'' = do
           liftEffect $ self.props.onLoading
-          User.createDeliveryReclamation self.props.userUuid self.props.subsno date'' doorCode'' claim'' >>=
+          User.createDeliveryReclamation self.props.userUuid self.props.subsno date'' doorCode'' claim'' reason'' >>=
             case _ of
               Right recl -> liftEffect do
                 self.props.onSuccess recl
@@ -195,8 +229,9 @@ render self@{ state: { publicationDate, doorCode, claim }} =
               Left invalidDateInput -> liftEffect do
                 self.props.onError invalidDateInput
                 Tracking.reclamation self.props.cusno self.props.subsno date'' (show claim'') "error: invalidDateInput"
-    submitForm _ Nothing _ = self.setState _ { validationError = Just "Välj ett alternativ." }
-    submitForm _ _ _ = Console.error "The entered information is incomplete."
+    submitForm _ Nothing _ _ = self.setState _ { validationError = Just "Välj ett alternativ." }
+    submitForm _ _ _ Nothing = self.setState _ { validationError = Just "Välj ett alternativ." }
+    submitForm _ _ _ _ = Console.error "The entered information is incomplete."
 
 radioButtonOnChange :: Self ->  Maybe String -> Effect Unit
 radioButtonOnChange self newClaim = self.setState _ { claim = read =<< newClaim

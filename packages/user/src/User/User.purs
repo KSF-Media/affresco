@@ -99,7 +99,7 @@ import KSF.LocalStorage as LocalStorage
 import KSF.Paper (Paper)
 import KSF.User.Cusno (Cusno)
 import KSF.User.Cusno as Cusno
-import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim(..), NewTemporaryUser, NewCusnoUser, NewUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
+import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim(..), DeliveryReclamationReason(..), NewTemporaryUser, NewCusnoUser, NewUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
 
@@ -527,9 +527,10 @@ createDeliveryReclamation
   -> Date
   -> String
   -> PersonaReExport.DeliveryReclamationClaim
+  -> PersonaReExport.DeliveryReclamationReason
   -> Aff (Either Persona.InvalidDateInput Persona.DeliveryReclamation)
-createDeliveryReclamation uuid subsno date doorCode claim = do
-  deliveryReclamation <- try $ Persona.createDeliveryReclamation uuid subsno date doorCode claim =<< requireToken
+createDeliveryReclamation uuid subsno date doorCode claim reason = do
+  deliveryReclamation <- try $ Persona.createDeliveryReclamation uuid subsno date doorCode claim reason =<< requireToken
   case deliveryReclamation of
     Right recl -> pure $ Right recl
     Left _ -> do

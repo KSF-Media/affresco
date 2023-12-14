@@ -349,15 +349,17 @@ createDeliveryReclamation
   -> Date
   -> String
   -> DeliveryReclamationClaim
+  -> DeliveryReclamationReason
   -> UserAuth
   -> Aff DeliveryReclamation
-createDeliveryReclamation uuid (Subsno subsno) date doorCode claim auth = do
+createDeliveryReclamation uuid (Subsno subsno) date doorCode claim' reason' auth = do
   let dateISO = formatDate date
-  let claim'  = show claim
+  let claim   = show claim'
+  let reason  = show reason'
   callApi usersApi "usersUuidSubscriptionsSubsnoReclamationPost"
     [ unsafeToForeign uuid
     , unsafeToForeign subsno
-    , unsafeToForeign { publicationDate: dateISO, claim: claim', doorCode }
+    , unsafeToForeign { publicationDate: dateISO, claim, reason, doorCode }
     ]
     ( authHeaders uuid auth )
 
@@ -618,6 +620,29 @@ instance readForeignDeliveryReclamationClaim :: ReadForeign DeliveryReclamationC
 instance writeForeignDeliveryReclamationClaim :: WriteForeign DeliveryReclamationClaim where
   writeImpl = genericEncodeEnum { constructorTagTransform: \x -> x }
 instance showDeliveryReclamationClaim :: Show DeliveryReclamationClaim where
+  show = genericShow
+
+data DeliveryReclamationReason
+  = MissingDelivery
+  | WrongPaper
+  | DamagedPaper
+  | OlderReclamation
+
+instance readDeliveryReclamationReason :: Read DeliveryReclamationReason where
+  read c =
+    case c of
+      "MissingDelivery"  -> pure MissingDelivery
+      "WrongPaper"       -> pure WrongPaper
+      "DamagedPaper"     -> pure DamagedPaper
+      "OlderReclamation" -> pure OlderReclamation
+      _                  -> Nothing
+derive instance eqDeliveryReclamationReason :: Eq DeliveryReclamationReason
+derive instance genericDeliveryReclamationReason :: Generic DeliveryReclamationReason _
+instance readForeignDeliveryReclamationReason :: ReadForeign DeliveryReclamationReason where
+  readImpl = genericDecodeEnum { constructorTagTransform: \x -> x }
+instance writeForeignDeliveryReclamationReason :: WriteForeign DeliveryReclamationReason where
+  writeImpl = genericEncodeEnum { constructorTagTransform: \x -> x }
+instance showDeliveryReclamationReason :: Show DeliveryReclamationReason where
   show = genericShow
 
 data DeliveryReclamationStatus
