@@ -18,6 +18,7 @@ import Data.Nullable (toMaybe)
 import Data.String.Common as String
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.UUID (UUID, parseUUID)
+import Data.UUID as UUID
 import Data.Validation.Semigroup (invalid, isValid, validation)
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -76,6 +77,7 @@ type EmailPassword =
 
 data PersonaUserEdit
   = SetCusno (AsyncWrapper.Progress (Maybe Cusno))
+  | DeleteUser (AsyncWrapper.Progress JanrainUser)
   | ControlPassword (AsyncWrapper.Progress EmailPassword)
 
 search :: Component Props
@@ -198,6 +200,10 @@ search = do
                   Right _ -> success
                   Left err -> do
                     setPersonaUserEdit $ (map <<< map <<< mapSetCusno) $ const $ AsyncWrapper.Error $ "Något gick fel. " <> show err
+        startDeleteUser :: JanrainUser -> Effect Unit
+        startDeleteUser user = do
+          setPersonaUserEdit $ const $ Just $ Tuple user.uuid $ DeleteUser $
+            (AsyncWrapper.Editing user)
         startPasswordCtrl :: JanrainUser -> String -> Effect Unit
         startPasswordCtrl user email = do
           setPersonaUserEdit $ const $ Just $ Tuple user.uuid $ ControlPassword $
@@ -228,6 +234,26 @@ search = do
                         const $ AsyncWrapper.Error ""
               Right _ -> setPersonaUserEdit $ (map <<< map <<< mapPasswordControl) $
                          const $ AsyncWrapper.Success Nothing
+        deleteUser :: JanrainUser -> Effect Unit
+        deleteUser user = do
+          setPersonaUserEdit <<< map <<< map $ const $
+            DeleteUser $ AsyncWrapper.Loading user
+          Aff.launchAff_ do
+            result <- User.deleteUser user.uuid
+            let setError err = setPersonaUserEdit $ (map <<< map <<< mapDeleteUser) $
+                               const $ AsyncWrapper.Error err
+            liftEffect $ case result of
+              Left User.LoginTokenExpired ->
+                setError expiredTokenMsg
+              Left _ ->
+                setError "Något gick fel."
+              Right _ -> do
+                let removeThisAccount :: SearchResult Subscription -> SearchResult Subscription
+                    removeThisAccount res =
+                      if Just user.uuid == (_.uuid <$> _.janrain res)
+                      then res { janrain = Nothing }
+                      else res
+                setResults $ (map <<< map) removeThisAccount
         -- At most one Persona user has a form attached to it.
         personaUserForm :: Maybe (Tuple UUID JSX)
         personaUserForm = map renderUserForm personaUserEdit
@@ -239,6 +265,10 @@ search = do
           Tuple uuid $ renderControlPassword resetPassword (submitPassword uuid)
           resetPersonaUserEdit
           (setPersonaUserEdit <<< map <<< map <<< mapPasswordControl <<< map) wrp
+        renderUserForm (Tuple uuid (DeleteUser wrp)) =
+          Tuple uuid $ renderDeleteUser deleteUser
+          resetPersonaUserEdit
+          wrp
         tagExpired :: Subscription -> TaggedSubscription
         tagExpired sub =
           { sub
@@ -262,6 +292,7 @@ search = do
           , startCreateAccount
           , createAccountForm
           , startSetCusno
+          , startDeleteUser
           , startPasswordCtrl
           , personaUserForm
           , isEditingAccount
@@ -293,6 +324,9 @@ search = do
 
     mapPasswordControl f (ControlPassword c) = ControlPassword $ f c
     mapPasswordControl _ x = x
+
+    mapDeleteUser f (DeleteUser c) = DeleteUser $ f c
+    mapDeleteUser _ x = x
 
     updateSubs :: forall a. Cusno -> FaroUser a -> SearchResult a -> SearchResult a
     updateSubs cusno result state =
@@ -375,7 +409,7 @@ search = do
     legend = DOM.div
       { children:
           [ DOM.div { className: "search--item-identity explainer" }
-          , DOM.text " = Janrain"
+          , DOM.text " = Credentials"
           , DOM.div { className: "search--cusno explainer" }
           , DOM.text " = Kayak"
           ]
@@ -418,6 +452,7 @@ search = do
       foldMap (renderJanrain
                  actions.setActiveUser
                  actions.startSetCusno
+                 actions.startDeleteUser
                  actions.startPasswordCtrl
                  faro) janrain <>
       (Array.concatMap (\usr@{ cusno } ->
@@ -438,8 +473,8 @@ search = do
 
     interruptForm form = DOM.tr_ [ DOM.td { colSpan: 9, children: [ form ] } ]
 
-    renderJanrain :: forall a. (UUID -> Effect Unit) -> (JanrainUser -> Effect Unit) -> (JanrainUser -> String -> Effect Unit) -> Array (FaroUser a) -> JanrainUser -> Array JSX
-    renderJanrain setActiveUser startSetCusno startPasswordCtrl faroResults user = pure $
+    renderJanrain :: forall a. (UUID -> Effect Unit) -> (JanrainUser -> Effect Unit) -> (JanrainUser -> Effect Unit) -> (JanrainUser -> String -> Effect Unit) -> Array (FaroUser a) -> JanrainUser -> Array JSX
+    renderJanrain setActiveUser startSetCusno startDeleteUser startPasswordCtrl faroResults user = pure $
       DOM.tr
         { className: "search--item-identity"
         , children:
@@ -459,6 +494,10 @@ search = do
                                   { onClick: Events.handler_ $ startPasswordCtrl user email
                                   , children: [ DOM.text "Kontrollera lösenord" ]
                                   }) user.email
+                    , DOM.button
+                        { onClick: Events.handler_ $ startDeleteUser user
+                        , children: [ DOM.text "Radera Credentials konto" ]
+                        }
                     ]
                 }
             , DOM.td_
@@ -815,6 +854,42 @@ renderControlPassword resetPassword submitPassword cancel setState wrapperState 
     submit :: ValidatedForm NewUserFields EmailPassword -> Effect Unit
     submit =
       validation (\_ -> Console.error "Could not set password.") submitPassword
+
+renderDeleteUser
+  :: (JanrainUser -> Effect Unit)
+  -> Effect Unit
+  -> AsyncWrapper.Progress JanrainUser
+  -> JSX
+renderDeleteUser deleteUser cancel wrapperState =
+  AsyncWrapper.asyncWrapper
+    { wrapperState
+    , readyView: mempty
+    , editingView: render
+    , loadingView: const $ DOM.div { className: "tiny-spinner" }
+    , successView: const genericSuccess
+    , errorView: genericError <<< Just
+    }
+  where
+    render :: JanrainUser -> JSX
+    render user =
+      DOM.form
+        { className: "search--delete-user"
+        , onSubmit: Events.handler preventDefault $ const $ deleteUser user
+        , children:
+            [ Grid.row_
+                [ DOM.text $ "E-post: " <> fromMaybe "" user.email ]
+            , Grid.row_
+                [ DOM.text $ "Uuid: " <> UUID.toString user.uuid ]
+            , Grid.row_
+                [ DOM.button
+                    { type: "submit"
+                    , className: "button-green"
+                    , children: [ DOM.text "Radera konto" ]
+                    }
+                ]
+            , DOM.div { className: "close-icon", onClick: capture_ cancel }
+            ]
+        }
 
 genericError :: Maybe String -> JSX
 genericError detail =
