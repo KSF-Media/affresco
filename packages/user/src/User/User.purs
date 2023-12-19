@@ -12,6 +12,7 @@ module KSF.User
   , deleteCreditCard
   , deletePaywallOpening
   , deleteTemporaryAddressChange
+  , deleteUser
   , editSubscriptionPause
   , editTemporaryAddressChange
   , facebookSdk
@@ -692,6 +693,19 @@ searchUsers useStored query = do
       | otherwise -> do
           Console.error "Unexpected error when searching users"
           pure $ Left "unexpected"
+
+deleteUser
+  :: UUID
+  -> Aff (Either UserError Unit)
+deleteUser uuid = do
+  res <- try $ Persona.deleteUser uuid =<< requireToken
+  case res of
+    Left err
+      | KSF.Error.loginExpiredError err -> do
+          pure $ Left $ LoginTokenExpired
+      | otherwise -> do
+        pure $ Left $ UnexpectedError err
+    Right _ -> pure $ Right unit
 
 getPayments :: UUID -> Aff (Either String (Array Persona.SubscriptionPayments))
 getPayments uuid = do
