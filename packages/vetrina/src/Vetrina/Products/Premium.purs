@@ -15,7 +15,7 @@ hblPremium =
         { id: "tb-paywall--product-text-hbl"
         , className: "vetrina--product-text font-duplexsans font-light text-center text-lg leading-tight px-5 pb-5"
         , children:
-            [ DOM.text "Läs HBL digitalt gratis i två månader, därefter 9,99€ per månad. Avslutas enkelt online." ]
+            [ DOM.text "Håll dig uppdaterad med HBL! Läs nu två månader gratis, sedan 9,99 €/mån. Avslutas enkelt online." ]
         }
   , descriptionLoggedInAccount:
       DOM.div
@@ -58,7 +58,7 @@ vnPremium =
         { id: "tb-paywall--product-text-vn"
         , className: "vetrina--product-text font-duplexsans font-light text-center text-lg leading-tight px-5 pb-5"
         , children:
-            [ DOM.text "Läs VN Digital gratis i två månader, därefter 6,90€ per månad. Avslutas enkelt online." ]
+            [ DOM.text "Nu kan du läsa VN Digital för 1 € i månaden i hela 3 månader, därefter 6,90 € per månad. Avslutas enkelt online." ]
         }
   , descriptionLoggedInAccount:
       DOM.div
@@ -68,12 +68,12 @@ vnPremium =
           }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på vastranyland.fi."
   , campaign: Just
-      { no: 4735
-      , id: "2M_MURVN23"
-      , name: "VN DIGITAL 2 MÅNADER GRATIS, ORDINARIEPRIS EFTER DET (ERBJUDANDE I BET"
-      , length: 2
+      { no: 4939
+      , id: "VND_POP24"
+      , name: "VN DIGITAL 3 EURO FÖR 3 MÅNADER (ERBJUDANDE I BETALMUREN)"
+      , length: 1
       , lengthUnit: Month
-      , priceEur: 0.0
+      , priceEur: 1.0
       }
   , contents:
       [ { title: "Premium"
@@ -104,7 +104,7 @@ onPremium =
         { id: "tb-paywall--product-text-on"
         , className: "vetrina--product-text font-duplexsans font-light text-center text-lg leading-tight px-5 pb-5"
         , children:
-            [ DOM.text "Läs ÖN Digital gratis i två månader, därefter 6,90€ per månad. Avslutas enkelt online." ]
+            [ DOM.text "Nu kan du läsa ÖN Digital för 1 € i månaden i hela 3 månader, därefter 6,90 € per månad. Avslutas enkelt online." ]
         }
   , descriptionLoggedInAccount:
       DOM.div
@@ -114,12 +114,12 @@ onPremium =
           }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på ostnyland.fi."
   , campaign: Just
-      { length: 2
-      , priceEur: 0.0
+      { length: 1
+      , priceEur: 1.0
       , lengthUnit: Month
-      , no: 4737
-      , name: "ÖN DIGITAL 2 MÅNADER GRATIS, ORDINARIEPRIS EFTER DET (ERBJUDANDE I BET"
-      , id: "2M_MURON23"
+      , no: 4941
+      , name: "ÖN DIGITAL 3 EURO FÖR 3 MÅNADER (ERBJUDANDE I BETALMUREN)"
+      , id: "OND_POP24"
       }
   , contents:
       [ { title: "Premium"
