@@ -9,12 +9,10 @@ import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
 import Data.List.NonEmpty (all)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
-import Data.Monoid (guard)
 import Data.Nullable (Nullable, toNullable)
 import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
-import Data.String (Pattern(..), contains)
 import Data.String as String
 import Data.Validation.Semigroup (validation)
 import Effect (Effect)
@@ -23,20 +21,17 @@ import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Log
 import Effect.Uncurried (EffectFn1, runEffectFn1)
-import KSF.Button as Button
 import KSF.InputField as InputField
 import KSF.Paper as Paper
 import KSF.Registration.Component as Registration
 import KSF.Tracking as Tracking
 import KSF.User (User, UserError(..))
 import KSF.User as User
-import KSF.User.Login.Google as Google
 import KSF.ValidatableForm as Form
 import React.Basic (JSX)
 import React.Basic.Classic as React.Classic
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
-import React.Basic.Events (handler_)
 import React.Basic.Events as Events
 import React.Basic.Hooks (Component, UseState, component, useState, (/\))
 import React.Basic.Hooks as React
@@ -99,7 +94,7 @@ jsComponent :: Effect (React.ReactComponent JSProps)
 jsComponent = React.reactComponent "Login" jsLoginComponent
 
 jsRender :: JSSelf -> JSX
-jsRender { props, state, setState } = render { props, state, setState }
+jsRender { props, state, setState } = renderLogin { props, state, setState }
 
 fromJSProps :: JSProps -> Props
 fromJSProps jsProps =
@@ -195,19 +190,13 @@ loginComponent props = React.do
           let newCounterValue = if counter == 3 then 0 else counter + 1
           setState \oldState -> oldState { loggingIn = Just $ LoggingIn newCounterValue }
       Nothing -> pure unit
-  pure $ render { state, setState, props }
+  pure $ renderLogin { state, setState, props }
 
 jsLoginComponent :: JSProps -> LoginHook
 jsLoginComponent props = loginComponent $ fromJSProps props
 
 login :: Component Props
 login = component "Login" loginComponent
-
-render :: Self -> JSX
-render self@{ state } =
-  case state.merge of
-    Nothing        -> renderLogin self
-    Just mergeInfo -> renderMerge self mergeInfo
 
 -- | If the email doesn't match the state saved from the Merge request
 -- | (so the previous login), we fail
@@ -318,29 +307,9 @@ renderLoginForm self =
                   , buySubscription self.props.paper
                   ]
               }
-        , socialLogins
         ]
     }
   where
-    socialLogins :: JSX
-    socialLogins =
-      -- Don't show possibility of logging with social providers if they're all disabled
-      if allSocialLoginsDisabled
-      then mempty
-      else DOM.div { children: [ loginWithSocial ] <> socialLoginButtons }
-      where
-        loginWithSocial =
-          DOM.span
-            { className: "login--login-social-media-text"
-            , children: [ DOM.text "Logga in med Google" ]
-            , onClick: handler_ $ self.setState _ { socialLoginVisibility = if self.state.socialLoginVisibility == Hidden then Visible else Hidden }
-            }
-        socialLoginButtons = case self.state.socialLoginVisibility of
-          Visible -> [ facebookLogin self, googleLogin self ]
-          Hidden  -> mempty
-        allSocialLoginsDisabled =
-          all (\loginProvider -> Set.member loginProvider self.props.disableSocialLogins) [ Facebook, Google ]
-
     loginForm :: JSX
     loginForm =
       DOM.form
@@ -393,191 +362,6 @@ renderLoginForm self =
           case self.state.loggingIn of
             Just (LoggingIn counterValue) -> "Loggar in " <> (String.joinWith "" $ Array.replicate counterValue ".")
             Nothing -> "Logga in"
-
-
-renderMerge :: Self -> User.MergeInfo -> JSX
-renderMerge self@{ props } mergeInfo =
-   DOM.div
-     { className: "login-form"
-     , children:
-         [ DOM.h2
-             { className: "mitt-konto--heading"
-             , children: [ DOM.text "Har vi setts förr?"]
-             }
-         , DOM.p_ [ DOM.text topText ]
-         ]
-         <> mergeActions mergeInfo.existingProvider
-         <> [ cancelButton ]
-     }
-  where
-    topText = "Det finns redan ett konto hos oss med samma e-postadress som du har i ditt " <> show mergeInfo.newProvider <> "-konto."
-    captureText = "Om du vill, kan du aktivera " <> show mergeInfo.newProvider <> "-inloggning genom att ange lösenordet för "
-    fbText = "Om du vill, kan du aktivera Facebook-inloggning genom att logg in med ditt Google-konto."
-    googText = "Om du vill, kan du aktivera Google-inloggning genom att logga in med ditt Facebook-konto."
-
-    mergeActions User.Capture =
-      [ DOM.p_
-          [ DOM.text captureText
-          , DOM.b_ [ DOM.text $ fromMaybe "" self.state.formEmail ]
-          , DOM.text "."
-          ]
-      , mergeAccountForm
-      ]
-    -- This means user tried to login with Google
-    mergeActions User.Facebook =
-      [ DOM.p_ [ DOM.text googText ]
-      , foldMap formatErrorMessage self.state.errors.social
-      , facebookLogin self
-      ]
-    -- This means user tried to login with Facebook
-    mergeActions User.GooglePlus =
-      [ DOM.p_ [ DOM.text fbText ]
-      , foldMap formatErrorMessage self.state.errors.social
-      , googleLogin self
-      ]
-
-    cancelButton :: JSX
-    cancelButton =
-      DOM.div
-        { className: "login--cancel"
-        , key: "cancelButton" -- this is here because otherwise React mixes it up with another link
-        , children:
-          [ DOM.a
-              { href: "#"
-              , onClick: Events.handler_ onMergeCancelled
-              , children: [ DOM.text "Nej, jag vill inte aktivera" ]
-              }
-          ]
-        }
-
-    onMergeCancelled = do
-      self.setState _ { merge = Nothing, errors { social = Nothing, login = Nothing } }
-      props.onMergeCancelled
-
-    mergeAccountForm :: JSX
-    mergeAccountForm =
-      DOM.form
-        { onSubmit
-        , className: "login--merge-account"
-        , children:
-            [ foldMap formatErrorMessage self.state.errors.login
-            , InputField.inputField
-                { type_: InputField.Text
-                , placeholder: ""
-                , label: Nothing
-                , name: ""
-                , value: Nothing
-                , onChange: \email -> self.setState _ { formEmail = email }
-                , validationError:
-                   Form.inputFieldErrorMessage $
-                     Form.validateField UsernameField self.state.formEmail []
-                , labelClass: ""
-                , inputClass: ""
-                }
-            , DOM.input
-                { className: "button-green"
-                , value: "Aktivera"
-                , type: "submit"
-                }
-            ]
-        }
-      where
-        onSubmit = Events.handler preventDefault $ \_event -> onLogin self $ loginFormValidations self
-
-isSocialLoginEnabled :: Set SocialLoginProvider -> SocialLoginProvider -> Boolean
-isSocialLoginEnabled disabledProviders provider = not $ Set.member provider disabledProviders
-
-googleLogin :: Self -> JSX
-googleLogin self =
-  if not $ Set.member Google self.props.disableSocialLogins
-    then
-      someLoginButton
-        { className: "login--some-button login--some-button-google"
-        , description: "Logga in med Google"
-        , onClick: Google.loadGapi { onSuccess: onGoogleLogin, onFailure: onGoogleFailure }
-        }
-    else mempty
-  where
-    onGoogleLogin :: Google.AuthResponse -> Effect Unit
-    onGoogleLogin { accessToken, email: (Google.Email email) } = self.props.onLogin do
-      failOnEmailMismatch self email
-      -- setting the email in the state to eventually have it in the merge view
-      liftEffect $ self.setState _ { formEmail = Just email }
-      loginWithRetry (logUserIn email accessToken) handleSuccess handleError handleFinish
-
-    logUserIn email accessToken = User.someAuth Nothing self.state.merge (User.Email email) (User.Token accessToken) User.GooglePlus
-    handleSuccess user = liftEffect $ Tracking.login (Just user.cusno) "google login" "success"
-    handleError _err = liftEffect $ Tracking.login Nothing "google login" "error"
-    handleFinish user = do
-      finalizeSomeAuth self user
-      liftEffect $ self.props.onUserFetch user
-
-    -- | Handles Google login errors. The matched cases are:
-    -- | 1) Error "idpiframe_initialization_failed".
-    -- |    Google auth initialization failure (probably due to not allowing 3rd party cookies).
-    -- | 2) Error "popup_closed_by_user".
-    -- |    Ignore this, as it's not an error we want to catch.
-    -- | 3) Every other auth failure.
-    -- |    TODO: At least some of these should be displayed to the user.
-    onGoogleFailure :: Google.Error -> Effect Unit
-    onGoogleFailure { error: "idpiframe_initialization_failed", details }
-      -- In addition to failing because of third party cookies, the initialization may
-      -- fail e.g. for the reason, that the domain is not allowed to perform any google actions.
-      -- This case is just to let the developers know what's going on.
-      | not $ isGoogleDomainAllowed details
-      = do
-        Log.error $ "You need to allow this origin, dummy: " <> details
-        self.setState _ { errors { login = Just LoginGoogleAuthInitErrorOrigin } }
-      | otherwise = self.setState _ { errors { login = Just LoginGoogleAuthInitError } }
-    onGoogleFailure { error: "popup_closed_by_user" } = pure unit
-    onGoogleFailure _ = Log.error "Google login failed."
-
-    isGoogleDomainAllowed = not <<< contains (Pattern "Not a valid origin for the client")
-
--- | The Facebook login is disabled. Instead of the button, we just
---   show a text explaining it's gone
-facebookLogin :: Self -> JSX
-facebookLogin self =
-  guard (not $ Set.member Facebook self.props.disableSocialLogins)
-    DOM.div
-      { className: "login--some-disabled-note"
-      , children: [ DOM.text "Möjligheten att logga in med Google upphör snart, vänligen "
-                  , DOM.a
-                      { href: "https://konto.hbl.fi/#lösenord"
-                      , children: [ DOM.text "klicka här för att beställa ett lösenord." ]
-                      }
-                  ]
-      }
-
-finalizeSomeAuth :: Self -> Either UserError User -> Aff Unit
-finalizeSomeAuth self = case _ of
-  Right _ ->
-    -- removing merge token from state in case of success
-    liftEffect $ self.setState _ { merge = Nothing }
-  Left (MergeEmailInUse newMergeInfo) -> liftEffect do
-    self.props.onMerge
-    self.setState _ { merge = Just newMergeInfo }
-  Left SomethingWentWrong -> liftEffect $ self.setState _ { errors { login = Just SomethingWentWrong } }
-  Left ServiceUnavailable -> liftEffect $ self.setState _ { errors { login = Just ServiceUnavailable } }
-  Left _ -> throwError $ error "An unexpected error occurred during SoMe login"
-
-someLoginButton ::
-  { className :: String
-  , description :: String
-  , onClick :: Effect Unit
-  }
-  -> JSX
-someLoginButton { className, description, onClick } =
-  DOM.div
-  { className: className
-  , children:
-    [ Button.render
-        { description
-        , destination: Nothing
-        , onClick
-        }
-    ]
-  }
 
 loginButton :: String -> JSX
 loginButton text =

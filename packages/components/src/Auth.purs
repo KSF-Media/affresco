@@ -5,8 +5,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Data.Maybe (Maybe(..))
-import Data.Nullable as Nullable
-import Data.Traversable (for_, traverse_)
+import Data.Traversable (traverse_)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -14,7 +13,6 @@ import Effect.Exception (throw)
 import KSF.Api (UserAuth)
 import KSF.Api as Api
 import KSF.Cookie as Cookie
-import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import Persona as Persona
 
@@ -31,10 +29,7 @@ loadToken = liftEffect $ runMaybeT do
   pure { userId, authToken }
 
 saveToken :: forall m. MonadEffect m => Persona.LoginResponse -> m UserAuth
-saveToken { token, ssoCode, uuid, isAdmin } = liftEffect do
-  for_ (Nullable.toMaybe ssoCode) $ \code -> do
-    config <- JanrainSSO.loadConfig
-    for_ (Nullable.toMaybe config) \conf -> JanrainSSO.setSession conf code
+saveToken { token, uuid, isAdmin } = liftEffect do
   useCookies <- saveTokenInCookies
   if useCookies
     then do

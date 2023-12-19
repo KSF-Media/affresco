@@ -15,7 +15,6 @@ module KSF.User
   , deleteUser
   , editSubscriptionPause
   , editTemporaryAddressChange
-  , facebookSdk
   , fromPersonaUser
   , getCreditCard
   , getCreditCardRegister
@@ -47,7 +46,6 @@ module KSF.User
   , requestPasswordReset
   , searchUsers
   , setCusno
-  , someAuth
   , startPasswordReset
   , temporaryAddressChange
   , unpauseSubscription
@@ -66,14 +64,11 @@ import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(
 import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl, CreditCardId, CreditCard, CreditCardRegisterNumber, CreditCardRegister) as Bottega
 import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
 import Control.Monad.Error.Class (catchError, throwError, try)
-import Control.Parallel (parSequence_)
 import Data.Array as Array
 import Data.Date (Date)
 import Data.Either (Either(..), either)
-import Data.Foldable (for_)
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Nullable (toNullable)
 import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
@@ -84,14 +79,10 @@ import Data.UUID (UUID)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Aff as Aff
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Class.Console as Console
-import Effect.Class.Console as Log
 import Effect.Exception (Error, error)
 import Effect.Exception as Error
-import Effect.Uncurried (mkEffectFn1)
-import Facebook.Sdk as FB
 import Foreign.Object (Object)
 import KSF.Api (AuthScope, InvalidateCache, UserAuth)
 import KSF.Api (Token(..), Password, UserAuth, oauthToken, parseToken) as Api
@@ -104,19 +95,13 @@ import KSF.Api.Subscription (DeliveryAddress, PendingAddressChange, Subscription
 import KSF.Api.Subscription (Subsno)
 import KSF.Auth (loadToken, saveToken, deleteToken, requireToken)
 import KSF.Error as KSF.Error
-import KSF.JanrainSSO as JanrainSSO
 import KSF.LocalStorage as LocalStorage
 import KSF.Paper (Paper)
 import KSF.User.Cusno (Cusno)
 import KSF.User.Cusno as Cusno
-import KSF.User.Login.Facebook.Success as Facebook.Success
-import KSF.User.Login.Google as Google
 import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim(..), NewTemporaryUser, NewCusnoUser, NewUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
 import Persona as Persona
 import Record as Record
-import Unsafe.Coerce (unsafeCoerce)
-
-foreign import facebookAppId :: String
 
 -- Only in admin action responses
 type ConflictingUser =
@@ -385,96 +370,8 @@ magicLogin maybeInvalidateCache callback = do
       user <- finalizeLogin maybeInvalidateCache token
       liftEffect $ callback user
     Nothing -> do
-      Console.log "Couldn't load the saved token, giving SSO a try"
-      loginSso maybeInvalidateCache callback `catchError` case _ of
-        err | KSF.Error.serviceUnavailableError err -> do
-                Console.error "Service unavailable with SSO login"
-                liftEffect $ callback $ Left ServiceUnavailable
-                throwError err
-            | Just serverError <- KSF.Error.internalServerError err -> do
-                Console.error "Something went wrong with SSO login"
-                liftEffect $ callback $ Left SomethingWentWrong
-                throwError err
-            | otherwise -> do
-                Console.error "An unexpected error occurred during SSO login"
-                liftEffect $ callback $ Left $ UnexpectedError err
-                throwError err
-
-someAuth
-  :: Maybe InvalidateCache
-  -> Maybe MergeInfo
-  -> Persona.Email
-  -> Api.Token
-  -> Persona.Provider
-  -> Aff (Either UserError User)
-someAuth maybeInvalidateCache mergeInfo email token provider = do
-  loginResponse <- try $ Persona.loginSome
-      { provider: show provider
-      , someToken: token
-      , mergeToken: toNullable $ map _.token mergeInfo
-      }
-  case loginResponse of
-    Right t -> finalizeLogin maybeInvalidateCache =<< saveToken t
-    Left err
-      | Just (errData :: Persona.EmailAddressInUse) <- Api.Error.errorData err -> do
-          Console.error errData.email_address_in_use.description
-          pure $ Left $ MergeEmailInUse newMergeInfo
-          where
-            newMergeInfo =
-              { token: errData.email_address_in_use.merge_token
-              , existingProvider: errData.email_address_in_use.existing_provider
-              , newProvider: provider
-              , userEmail: email
-              }
-      | KSF.Error.serviceUnavailableError err -> do
-           Console.error "Service unavailable with SoMe login"
-           pure $ Left ServiceUnavailable
-      | Just serverError <- KSF.Error.internalServerError err -> do
-           Console.error "Something went wrong with SoMe login"
-           pure $ Left SomethingWentWrong
-      | otherwise -> do
-           Console.error "An unexpected error occurred during SoMe login"
-           pure $ Left $ UnexpectedError err
-
-loginSso :: Maybe InvalidateCache -> (Either UserError User -> Effect Unit) -> Aff Unit
-loginSso maybeInvalidateCache callback = do
-  config <- liftEffect $ JanrainSSO.loadConfig
-  case Nullable.toMaybe config of
-    Nothing -> do
-      Console.log "sso_lite.js script is not loaded, giving up"
-      --TODO revisit when SSO include has been added
-      liftEffect $ callback $ Left NoSSOScript
-    Just conf -> liftEffect $ checkSsoSession conf
-  where
-    checkSsoSession loginConfig = do
-      JanrainSSO.checkSession $ Record.merge
-        loginConfig
-        { callback_failure: mkEffectFn1 \_ -> do
-             Console.log "Janrain SSO failure"
-        , callback_success: mkEffectFn1 \_ -> do
-             Console.log "Janrain SSO success"
-             JanrainSSO.setSsoSuccess
-        , capture_error: mkEffectFn1 \_ -> do
-            Console.log "Janrain SSO capture error"
-        , capture_success: mkEffectFn1 \r@({ result: { accessToken, userData: { uuid } } }) -> do
-             JanrainSSO.setSsoSuccess
-             Console.log "Janrain SSO capture success"
-             Console.log $ unsafeCoerce r
-             Aff.launchAff_ do
-               loginResponse <-
-                 Persona.loginSso { accessToken, uuid } `catchError` case _ of
-                      err | Just serverError <- KSF.Error.internalServerError err -> do
-                              -- TODO: What is the desired action here?
-                              Console.error "Something went wrong with SSO login"
-                              liftEffect $ callback $ Left SomethingWentWrong
-                              throwError err
-                          | otherwise -> do
-                              Console.error "An unexpected error occurred during SSO login"
-                              liftEffect $ callback $ Left $ UnexpectedError err
-                              throwError err
-               user <- finalizeLogin maybeInvalidateCache =<< saveToken loginResponse
-               liftEffect $ callback user
-            }
+      liftEffect $ callback $ Left LoginTokenExpired
+      Console.log "No saved token"
 
 loginIP :: Paper -> Aff (Either UserError UserAuth)
 loginIP paper = do
@@ -505,12 +402,6 @@ logout handleLogout = do
   logoutResponse <- try logoutPersona
   -- then we wipe the local storage
   liftEffect deleteToken `catchError` Console.errorShow
-  -- then, in parallel, we run all the third-party logouts
-  parSequence_
-    [ logoutFacebook `catchError` Console.errorShow
-    , logoutGoogle   `catchError` Console.errorShow
-    , logoutJanrain  `catchError` Console.errorShow
-    ]
   liftEffect $ handleLogout logoutResponse
 
 logoutPersona :: Aff Unit
@@ -519,37 +410,6 @@ logoutPersona = do
   case token of
     Just t  -> Persona.logout t
     Nothing -> pure unit
-
-logoutFacebook :: Aff Unit
-logoutFacebook = do
-  needsFacebookLogout <- liftEffect do
-    Facebook.Success.getFacebookSuccess <* Facebook.Success.unsetFacebookSuccess
-  when needsFacebookLogout do
-    sdk <- facebookSdk
-    FB.StatusInfo { status } <- FB.loginStatus sdk
-    when (status == FB.Connected) do
-      _ <- FB.logout sdk
-      Log.info "Logged out from Facebook."
-
-logoutGoogle :: Aff Unit
-logoutGoogle = do
-  isSignedWithGoogle <- liftEffect Google.isSignedIn
-  when isSignedWithGoogle do
-    Google.signOut
-    Log.info "Logged out from Google."
-
-logoutJanrain :: Aff Unit
-logoutJanrain = do
-  needsSsoLogout <- liftEffect do
-    JanrainSSO.getSsoSuccess <* JanrainSSO.unsetSsoSuccess
-  when needsSsoLogout do
-    -- If JanrainSSO.checkSession is not called before this function,
-    -- the JanrainSSO.endSession will hang.
-    -- So call JanrainSSO.checkSession first just to be safe.
-    config <- liftEffect $ JanrainSSO.loadConfig
-    for_ (Nullable.toMaybe config) \conf -> do
-      liftEffect $ JanrainSSO.checkSession conf
-      JanrainSSO.endSession conf
 
 finalizeLogin :: Maybe InvalidateCache -> UserAuth -> Aff (Either UserError User)
 finalizeLogin maybeInvalidateCache auth = do
@@ -567,9 +427,6 @@ finalizeLogin maybeInvalidateCache auth = do
     Right user -> do
       Console.info "User fetched successfully"
       pure $ Right user
-
-facebookSdk :: Aff FB.Sdk
-facebookSdk = FB.init $ FB.defaultConfig facebookAppId
 
 hasScope :: UUID -> AuthScope -> Aff (Maybe Seconds)
 hasScope uuid scope = do
