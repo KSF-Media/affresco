@@ -127,6 +127,7 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 	});
 	const markup = ReactDOM.renderToString(articleJSX);
 	const finalHtml = generateHtml(markup, updatedArticle, user);
+	res.append('X-Robots-Tag', 'noindex');
 	res.send(finalHtml);
       })
     )
@@ -140,6 +141,7 @@ async function renderArticle(articleId, res, authHeaders, queryParams, queryStri
 	status: _.get(errors, "response.status"),
 	message: errorMessage,
       });
+      res.append('X-Robots-Tag', 'noindex');
       res.send(html);
     });
 }

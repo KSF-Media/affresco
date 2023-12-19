@@ -5,6 +5,8 @@ import KSF.Api.Package (CampaignLengthUnit(..))
 import React.Basic.DOM as DOM
 import Vetrina.Types (Product)
 
+foreign import getCurrentCampaignNo :: String -> Int
+
 hblPremium :: Product
 hblPremium =
   { id: "HBL WEBB"
@@ -25,7 +27,7 @@ hblPremium =
           }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi."
   , campaign: Just
-      { no: 4716
+      { no: getCurrentCampaignNo "HBL"
       , id: "2M_MUREN23"
       , name: "BETALMUREN GRATIS I TVÅ MÅNADER"
       , length: 2
@@ -68,7 +70,7 @@ vnPremium =
           }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på vastranyland.fi."
   , campaign: Just
-      { no: 4939
+      { no: getCurrentCampaignNo "VN"
       , id: "VND_POP24"
       , name: "VN DIGITAL 3 EURO FÖR 3 MÅNADER (ERBJUDANDE I BETALMUREN)"
       , length: 1
@@ -117,7 +119,7 @@ onPremium =
       { length: 1
       , priceEur: 1.0
       , lengthUnit: Month
-      , no: 4941
+      , no: getCurrentCampaignNo "ÖN"
       , name: "ÖN DIGITAL 3 EURO FÖR 3 MÅNADER (ERBJUDANDE I BETALMUREN)"
       , id: "OND_POP24"
       }
