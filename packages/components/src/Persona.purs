@@ -228,6 +228,13 @@ registerCusno newUser@{ cusno } auth = do
   when newUser.sendReset $ requestPasswordReset newUser.email
   pure response
 
+deleteUser :: UUID -> UserAuth -> Aff Unit
+deleteUser uuid auth = do
+  callApi adminApi "adminUserUuidDelete"
+    [ unsafeToForeign uuid
+    ] $
+    ( authHeaders uuid auth )
+
 hasScope :: UUID -> AuthScope -> UserAuth -> Aff Number
 hasScope uuid authScope auth = do
   callApi usersApi "usersUuidScopeGet"
