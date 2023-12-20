@@ -16,6 +16,7 @@ type Description =
   , brandLong :: String
   , descriptionShort :: String
   , descriptionLong :: JSX
+  , priceDisclaimer :: Maybe String
   , ribbon :: JSX
   , url :: Maybe String
   , weekdays :: String
@@ -45,6 +46,7 @@ packageDescriptions = fromFoldable
       , ordering: 3
       , image: "HBLTotal.png"
       , packageGroup: "Papperstidningen"
+      , priceDisclaimer: Just $ priceDisclaimerPrefix <> "47,90 eur/mån."
       }
   , "HBL_P+D FR" /\
       { brand: HBL
@@ -64,6 +66,7 @@ packageDescriptions = fromFoldable
       , ordering: 4
       , image: "HBLHelg.png"
       , packageGroup: "Papperstidningen"
+      , priceDisclaimer: Just $ priceDisclaimerPrefix <> "31,90 eur/mån."
       }
   , "HBL P+D SÖ" /\
       { brand: HBL
@@ -83,6 +86,7 @@ packageDescriptions = fromFoldable
       , ordering: 5
       , image: "HBLSöndag.png"
       , packageGroup: "Papperstidningen"
+      , priceDisclaimer: Nothing
       }
   , "HBL WEBB" /\
       { brand: HBL
@@ -100,6 +104,7 @@ packageDescriptions = fromFoldable
       , ordering: 1
       , image: "HBLPremium.png"
       , packageGroup: "Webb Premium"
+      , priceDisclaimer: Nothing
       }
   -- ÖSTNYLAND PACKAGES
   , "ÖNY_P+D" /\
@@ -120,6 +125,7 @@ packageDescriptions = fromFoldable
       , ordering: 2
       , image: "ON.png"
       , packageGroup: "Papperstidningen"
+      , priceDisclaimer: Just $ priceDisclaimerPrefix <> "23,90 eur/mån."
       }
   , "ÖNY+HBL" /\
       { brand: ON
@@ -139,6 +145,7 @@ packageDescriptions = fromFoldable
       , ordering: 3
       , image: "ON.png"
       , packageGroup: "2+5"
+      , priceDisclaimer: Nothing
       }
   , "ÖNY_DIGI" /\
       { brand: ON
@@ -157,6 +164,7 @@ packageDescriptions = fromFoldable
       , ordering: 1
       , image: "ONPremium.png"
       , packageGroup: "Webb Premium"
+      , priceDisclaimer: Nothing
       }
   -- VÄSTRA NYLAND PACKAGES
   , "VN_P+D" /\
@@ -177,6 +185,7 @@ packageDescriptions = fromFoldable
       , ordering: 2
       , image: "VN.png"
       , packageGroup: "Papperstidningen"
+      , priceDisclaimer: Just $ priceDisclaimerPrefix <> "23,90 eur/mån."
       }
   , "VN+HBL" /\
       { brand: VN
@@ -196,6 +205,7 @@ packageDescriptions = fromFoldable
       , ordering: 3
       , image: "VN.png"
       , packageGroup: "2+5"
+      , priceDisclaimer: Nothing
       }
   , "VN_DIGI" /\
       { brand: VN
@@ -214,6 +224,7 @@ packageDescriptions = fromFoldable
       , ordering: 1
       , image: "vn_digi_premium.png"
       , packageGroup: "Webb Premium"
+      , priceDisclaimer: Nothing
       }
   -- HBL JUNIOR PACKAGES
   , "JUNIOR PD" /\
@@ -229,6 +240,7 @@ packageDescriptions = fromFoldable
       , ordering: 1
       , image: "juniorBoll_1.png"
       , packageGroup: "JUNIOR"
+      , priceDisclaimer: Nothing
       }
   -- OTHER PACKAGES
   , "HBL 365" /\
@@ -249,6 +261,7 @@ packageDescriptions = fromFoldable
       , ordering: 2
       , image: "HBL365365.png"
       , packageGroup: "HBL 365"
+      , priceDisclaimer: Nothing
       }
   ]
   where
@@ -261,3 +274,5 @@ packageDescriptions = fromFoldable
                                   ]
                       )
     ribbon a b = React.fragment [ DOM.strong_ [ DOM.text a ], DOM.span_ [ DOM.text b ] ]
+    priceDisclaimerPrefix =
+      "Priset kommer att justeras från och med den 1 februari. Det nya priset är "
