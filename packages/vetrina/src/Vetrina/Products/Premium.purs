@@ -80,7 +80,7 @@ vnPremium =
           }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på vastranyland.fi."
   , campaign: Just
-      { no: getCurrentCampaignNo 4735 VN
+      { no: getCurrentCampaignNo 4939 VN
       , id: "VND_POP24"
       , name: "VN DIGITAL 3 EURO FÖR 3 MÅNADER (ERBJUDANDE I BETALMUREN)"
       , length: 1
@@ -129,7 +129,7 @@ onPremium =
       { length: 1
       , priceEur: 1.0
       , lengthUnit: Month
-      , no: getCurrentCampaignNo 4737 ON
+      , no: getCurrentCampaignNo 4941 ON
       , name: "ÖN DIGITAL 3 EURO FÖR 3 MÅNADER (ERBJUDANDE I BETALMUREN)"
       , id: "OND_POP24"
       }
