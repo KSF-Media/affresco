@@ -1,11 +1,21 @@
 module KSF.Vetrina.Products.Premium where
 
-import Data.Maybe (Maybe(..))
+import Prelude
+
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Nullable (Nullable, toMaybe)
 import KSF.Api.Package (CampaignLengthUnit(..))
+import KSF.Paper as Paper
+import KSF.Paper (Paper(..))
 import React.Basic.DOM as DOM
 import Vetrina.Types (Product)
 
-foreign import getCurrentCampaignNo :: String -> Int
+foreign import getCurrentCampaignNo_ :: String -> Nullable Int
+
+-- Default to the value production uses with optional override for
+-- staging/dev use
+getCurrentCampaignNo :: Int -> Paper -> Int
+getCurrentCampaignNo def = fromMaybe def <<< toMaybe <<< getCurrentCampaignNo_ <<< Paper.toString
 
 hblPremium :: Product
 hblPremium =
@@ -27,7 +37,7 @@ hblPremium =
           }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på HBL.fi."
   , campaign: Just
-      { no: getCurrentCampaignNo "HBL"
+      { no: getCurrentCampaignNo 4716 HBL
       , id: "2M_MUREN23"
       , name: "BETALMUREN GRATIS I TVÅ MÅNADER"
       , length: 2
@@ -70,7 +80,7 @@ vnPremium =
           }
   , descriptionPurchaseCompleted: DOM.text "Du kan nu läsa Premiumartiklar på vastranyland.fi."
   , campaign: Just
-      { no: getCurrentCampaignNo "VN"
+      { no: getCurrentCampaignNo 4735 VN
       , id: "2M_MURVN23"
       , name: "VN DIGITAL 2 MÅNADER GRATIS, ORDINARIEPRIS EFTER DET (ERBJUDANDE I BET"
       , length: 2
@@ -119,7 +129,7 @@ onPremium =
       { length: 2
       , priceEur: 0.0
       , lengthUnit: Month
-      , no: getCurrentCampaignNo "ÖN"
+      , no: getCurrentCampaignNo 4737 ON
       , name: "ÖN DIGITAL 2 MÅNADER GRATIS, ORDINARIEPRIS EFTER DET (ERBJUDANDE I BET"
       , id: "2M_MURON23"
       }
