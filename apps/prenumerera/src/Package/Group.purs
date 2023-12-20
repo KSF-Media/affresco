@@ -5,10 +5,10 @@ import Prelude
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmpty
 import Data.Array.NonEmpty (NonEmptyArray, foldr1)
+import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
 import Data.Monoid (guard)
 import Data.Tuple (Tuple(..), fst)
-import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -131,7 +131,7 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                                                     foldr1 min $ map _.monthlyPrice package.offers ]
                                     , DOM.br {}
                                     , DOM.text "euro/mån"
-                                    ] <> guard (priceDisclaimer /= mempty) [ DOM.text "*" ]
+                                    ] <> guard (description.priceDisclaimer /= mempty) [ DOM.text "*" ]
                                 }
                             ]
                         }
@@ -162,7 +162,8 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                 { className: "details"
                 , children:
                     [ description.descriptionLong ] <>
-                    guard (priceDisclaimer /= mempty)
+                    foldMap
+                    (\priceDisclaimer ->
                       [ DOM.div
                           { style: DOM.css { marginLeft: "1em", fontSize: "85%", display: "flex" }
                           , children:
@@ -171,23 +172,10 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                                   , children: [ DOM.text "*" ] }
                               , DOM.span_ [ DOM.text priceDisclaimer ] ]
                           } ]
+                    ) description.priceDisclaimer
                 }
             ]
         }
-      where
-        priceDisclaimerPrefix =
-          "Priset kommer att justeras från och med den 1 februari. Det nya priset är "
-        priceDisclaimer = case description.brand /\ description.weekdays of
-          HBL /\ "mån – sön" ->
-            priceDisclaimerPrefix <> "47,90 eur/mån."
-          HBL /\ "fre – sön" ->
-            priceDisclaimerPrefix <> "31,90 eur/mån."
-          ON /\ "Papperstidningen tis & fre" ->
-            priceDisclaimerPrefix <> "23,90 eur/mån."
-          VN /\ "Papperstidningen tis & fre" ->
-            priceDisclaimerPrefix <> "23,90 eur/mån."
-          _ ->
-            mempty
 
     renderAdditionalInfo description = case description.brand of
       JUNIOR -> DOM.p
