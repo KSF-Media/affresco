@@ -171,7 +171,7 @@ title props =
       DOM.div
         { className: "vetrina--headline-" <> maybe "KSF" Paper.toString props.paper <>
                      case props.accountStatus of
-                       NewAccount        -> " vetrina--new-purchase-headline font-duplexserif text-center px-3 my-3 text-3xl leading-tight font-semibold"
+                       NewAccount        -> " vetrina--new-purchase-headline font-duplexserif text-center px-3 my-3 text-[28px] leading-tight font-semibold"
                        ExistingAccount _ -> " vetrina--headline-existing-account font-duplexsans max-w-[600px] w-full font-duplexsans self-center text-center pt-2 border-neutral border-t-2 border-r-2 border-l-2"
                        LoggedInAccount _ -> " vetrina--headline-loggedin-account font-duplexsans font-light pt-5 px-5 border-neutral border-t-2 border-r-2 border-l-2"
         , _data: Object.fromFoldable $ case props.accountStatus of
