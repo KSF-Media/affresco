@@ -5,7 +5,9 @@ import Prelude
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmpty
 import Data.Array.NonEmpty (NonEmptyArray, foldr1)
+import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
+import Data.Monoid (guard)
 import Data.Tuple (Tuple(..), fst)
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -129,7 +131,7 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                                                     foldr1 min $ map _.monthlyPrice package.offers ]
                                     , DOM.br {}
                                     , DOM.text "euro/mån"
-                                    ]
+                                    ] <> guard (description.priceDisclaimer /= mempty) [ DOM.text "*" ]
                                 }
                             ]
                         }
@@ -158,7 +160,19 @@ render packageHeader activePackage packages userActivePackages fade startPurchas
                       }
             , DOM.div
                 { className: "details"
-                , children: [ description.descriptionLong ]
+                , children:
+                    [ description.descriptionLong ] <>
+                    foldMap
+                    (\priceDisclaimer ->
+                      [ DOM.div
+                          { style: DOM.css { marginLeft: "1em", fontSize: "85%", display: "flex" }
+                          , children:
+                              [ DOM.span
+                                  { style: DOM.css { paddingRight: "0.25em" }
+                                  , children: [ DOM.text "*" ] }
+                              , DOM.span_ [ DOM.text priceDisclaimer ] ]
+                          } ]
+                    ) description.priceDisclaimer
                 }
             ]
         }
