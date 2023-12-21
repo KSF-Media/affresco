@@ -41,27 +41,15 @@ The props/callbacks for `Login` are
     - `disableSocialLogins={["Facebook"]}`
 
 ### Getting it up and running
-The `Login` component offers multiple ways off logging users in:
+The `Login` component offers one way of logging users in:
 - Persona (Hufvudstadsbladet Ab's own login service)
-- Google
-- Facebook
-- SSO
 
 Depending on the production environment we're in (dev, prod), the configuration settings for these features might differ.
 
 `Login` expects the following configuration variables to be present:
-- `JANRAIN_LOGIN_CLIENT_ID`
-- `JANRAIN_SSO_SERVER`
-- `JANRAIN_FLOW_VERSION`
-- `JANRAIN_XD_RECEIVER_PATH`
 - `PERSONA_URL`
-- `GOOGLE_CLIENT_ID`
-- `FACEBOOK_APP_ID`
 
 [dotenv](https://github.com/motdotla/dotenv) is used for setting the variables in place.
-
-For getting the SSO working, an [xd_receiver](https://github.com/KSF-Media/affresco/blob/master/apps/mitt-konto/xd_receiver.html) file should be found under the same domain where the app is running.
-The `JANRAIN_XD_RECEIVER_PATH` variable is the path to this file.
 
 ### Logging out
 It's easy. The `logout` function takes two callbacks:
