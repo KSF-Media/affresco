@@ -135,7 +135,7 @@ isSubscriptionStateCanceled (SubscriptionState "Canceled") = true
 isSubscriptionStateCanceled _ = false
 
 isSubscriptionPausable :: Subscription -> Boolean
-isSubscriptionPausable s = s.package.canPause && s.paymentMethod /= CreditCard
+isSubscriptionPausable = _.canPause <<< _.package
 
 isSubscriptionTemporaryAddressChangable :: Subscription -> Boolean
 isSubscriptionTemporaryAddressChangable = _.canTempAddr <<< _.package
