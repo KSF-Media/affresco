@@ -215,6 +215,7 @@ app = do
           PasswordRecovery2 -> passwordResetView Nothing
           PasswordRecovery3 -> passwordResetView Nothing
           PasswordRecoveryCode code -> passwordResetView $ Just code
+          PasswordRecoveryCode2 code -> passwordResetView $ Just code
           CreditCardUpdate subsno -> foldMap (creditCardUpdateView subsno) state.activeUser
           Paywall -> paywallView
         content = if isNothing state.activeUser && needsLogin route
