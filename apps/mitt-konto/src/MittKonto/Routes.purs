@@ -15,6 +15,7 @@ data MittKontoRoute
   = InvoiceDetail Int
   | InvoiceList
   | PasswordRecoveryCode String
+  | PasswordRecoveryCode2 String
   | PasswordRecovery
   | PasswordRecovery2
   | PasswordRecovery3
@@ -42,6 +43,7 @@ routes = root $ G.sum
   { "InvoiceDetail": "fakturor" `prefix` int segment
   , "InvoiceList": "fakturor" `prefix` end G.noArgs
   , "PasswordRecoveryCode": hash "l%C3%B6senord" $ param "code"
+  , "PasswordRecoveryCode2": hash "losenord" $ param "code"
   , "PasswordRecovery": hash "l%C3%B6senord" G.noArgs
   , "PasswordRecovery2": hash "losenord" G.noArgs
   , "PasswordRecovery3": hash "l%F6senord" G.noArgs
@@ -56,4 +58,5 @@ needsLogin PasswordRecovery = false
 needsLogin PasswordRecovery2 = false
 needsLogin PasswordRecovery3 = false
 needsLogin (PasswordRecoveryCode _) = false
+needsLogin (PasswordRecoveryCode2 _) = false
 needsLogin _ = true
