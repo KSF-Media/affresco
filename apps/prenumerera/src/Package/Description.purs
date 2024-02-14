@@ -46,7 +46,7 @@ packageDescriptions = fromFoldable
       , ordering: 3
       , image: "HBLTotal.png"
       , packageGroup: "Papperstidningen"
-      , priceDisclaimer: Just $ priceDisclaimerPrefix <> "47,90 eur/mån."
+      , priceDisclaimer: Nothing
       }
   , "HBL_P+D FR" /\
       { brand: HBL
@@ -66,7 +66,7 @@ packageDescriptions = fromFoldable
       , ordering: 4
       , image: "HBLHelg.png"
       , packageGroup: "Papperstidningen"
-      , priceDisclaimer: Just $ priceDisclaimerPrefix <> "31,90 eur/mån."
+      , priceDisclaimer: Nothing
       }
   , "HBL P+D SÖ" /\
       { brand: HBL
@@ -125,7 +125,7 @@ packageDescriptions = fromFoldable
       , ordering: 2
       , image: "ON.png"
       , packageGroup: "Papperstidningen"
-      , priceDisclaimer: Just $ priceDisclaimerPrefix <> "23,90 eur/mån."
+      , priceDisclaimer: Nothing
       }
   , "ÖNY+HBL" /\
       { brand: ON
@@ -185,7 +185,7 @@ packageDescriptions = fromFoldable
       , ordering: 2
       , image: "VN.png"
       , packageGroup: "Papperstidningen"
-      , priceDisclaimer: Just $ priceDisclaimerPrefix <> "23,90 eur/mån."
+      , priceDisclaimer: Nothing
       }
   , "VN+HBL" /\
       { brand: VN
@@ -274,5 +274,3 @@ packageDescriptions = fromFoldable
                                   ]
                       )
     ribbon a b = React.fragment [ DOM.strong_ [ DOM.text a ], DOM.span_ [ DOM.text b ] ]
-    priceDisclaimerPrefix =
-      "Priset kommer att justeras från och med den 1 februari. Det nya priset är "
