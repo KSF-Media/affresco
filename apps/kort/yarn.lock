@@ -1,0 +1,2 @@
+# This file exists only for Netlify:
+# We want Netlify to use `yarn` instead `npm` when installing packages because of our monorepo setup
