@@ -1,0 +1,26 @@
+{
+  "name": "@affresco/kort",
+  "version": "1.0.0",
+  "description": "Credit card update interface",
+  "license": "MIT",
+  "dependencies": {
+    "create-react-class": "^15.6.3",
+    "less": "^3.8.1",
+    "react": "^16.12",
+    "react-date-picker": "^8.4.0",
+    "react-dom": "^16.12",
+    "react-router-dom": "^5.2.0",
+    "xhr2": "0.2.1"
+  },
+  "devDependencies": {
+    "puppeteer": "^8.0.0",
+    "start-server-and-test": "^2.0.0"
+  },
+  "scripts": {
+    "start": "parcel index.html -p 8000",
+    "build": "spago build && parcel build index.html --public-url ./ --no-source-maps && cp _redirects ./dist",
+    "local-tests": "start-server-and-test http://localhost:8001 'spago -x test.dhall test'",
+    "test": "echo 'No CI testsuite configured'",
+    "clean": "rm -rf .cache .spago dist node_modules output"
+  }
+}
