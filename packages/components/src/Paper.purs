@@ -42,7 +42,7 @@ cssName = String.toLower <<< toString
 
 paperName :: Paper -> String
 paperName HBL    = "Hufvudstadsbladet"
-paperName ON     = "Östnyland"
+paperName ON     = "Borgåbladet"
 paperName VN     = "Västra Nyland"
 paperName JUNIOR = "HBL Junior"
 paperName KSF    = "Hufvudstadsbladet Ab"
