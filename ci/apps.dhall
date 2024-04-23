@@ -39,6 +39,22 @@ let apps =
               ''
           }
         , App::{
+          , name = "Kort"
+          , buildDir = "kort"
+          , deployDir = "kort"
+          , env = toMap
+              { PRODUCTION_SENTRY_DSN =
+                  "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
+              , MAINTENANCE_MODE = "false"
+              }
+          , lockfile = Some "yarn.lock"
+          , caches = Some
+              ''
+              apps/kort/.spago
+              apps/kort/output
+              ''
+          }
+        , App::{
           , name = "Vetrina (for testing only)"
           , buildDir = "vetrina-test"
           , deployDir = "vetrina-test"
