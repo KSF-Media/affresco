@@ -108,7 +108,7 @@ vnPremium =
 
 onPremium :: Product
 onPremium =
-  { id: "ÖNY_DIGI"
+  { id: "BBL_DIGI"
   , name: "ÖN Digital"
   , priceCents: 690
   , description:
