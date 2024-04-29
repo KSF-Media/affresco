@@ -65,7 +65,7 @@ jobs:
             cp -R apps/scripts/dist build/scripts
         shell: bash
       - env:
-          MAINTENANCE_MODE: 'false'
+          MAINTENANCE_MODE: 'true'
           PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
         name: Build Mitt Konto
         run: |2
@@ -73,7 +73,7 @@ jobs:
             cp -R apps/mitt-konto/dist build/mitt-konto
         shell: bash
       - env:
-          MAINTENANCE_MODE: 'false'
+          MAINTENANCE_MODE: 'true'
           PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
         name: Build Kort
         run: |2
@@ -89,7 +89,7 @@ jobs:
             cp -R apps/vetrina-test/dist build/vetrina-test
         shell: bash
       - env:
-          MAINTENANCE_MODE: 'false'
+          MAINTENANCE_MODE: 'true'
         name: Build Prenumerera
         run: |2
             ruby deploy.rb prenumerera
@@ -156,6 +156,19 @@ jobs:
       - name: "Invalidate CDN cache for 'ksf-frontends-lb'"
         run: |2
             gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
+  refresh_cdn_kort:
+    needs: deploy-gs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install gcloud
+        uses: "google-github-actions/setup-gcloud@v0.6.0"
+        with:
+          export_default_credentials: 'true'
+          project_id: ksf-production
+          service_account_key: "${{ secrets.GCP_PRODUCTION_KEY }}"
+      - name: "Invalidate CDN cache for 'kort'"
+        run: |2
+            gcloud compute url-maps invalidate-cdn-cache kort --path "/*"
   refresh_cdn_mitt-konto:
     needs: deploy-gs
     runs-on: ubuntu-latest
