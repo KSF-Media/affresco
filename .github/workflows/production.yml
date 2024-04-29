@@ -65,7 +65,7 @@ jobs:
             cp -R apps/scripts/dist build/scripts
         shell: bash
       - env:
-          MAINTENANCE_MODE: 'true'
+          MAINTENANCE_MODE: 'false'
           PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
         name: Build Mitt Konto
         run: |2
@@ -73,7 +73,7 @@ jobs:
             cp -R apps/mitt-konto/dist build/mitt-konto
         shell: bash
       - env:
-          MAINTENANCE_MODE: 'true'
+          MAINTENANCE_MODE: 'false'
           PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
         name: Build Kort
         run: |2
@@ -89,7 +89,7 @@ jobs:
             cp -R apps/vetrina-test/dist build/vetrina-test
         shell: bash
       - env:
-          MAINTENANCE_MODE: 'true'
+          MAINTENANCE_MODE: 'false'
         name: Build Prenumerera
         run: |2
             ruby deploy.rb prenumerera
