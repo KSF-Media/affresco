@@ -25,6 +25,7 @@ fromString paperString =
     "ON"     -> Just ON
     "ÖN"     -> Just ON
     "ÖNY"    -> Just ON
+    "BBL"    -> Just ON
     "VN"     -> Just VN
     "KSF"    -> Just KSF
     "JUNIOR" -> Just JUNIOR
@@ -40,9 +41,16 @@ toString JUNIOR = "JUNIOR"
 cssName :: Paper -> String
 cssName = String.toLower <<< toString
 
+shortName :: Paper -> String
+shortName HBL    = "HBL"
+shortName VN     = "VN"
+shortName ON     = "BBL"
+shortName KSF    = "KSF"
+shortName JUNIOR = "JUNIOR"
+
 paperName :: Paper -> String
 paperName HBL    = "Hufvudstadsbladet"
-paperName ON     = "Östnyland"
+paperName ON     = "Borgåbladet"
 paperName VN     = "Västra Nyland"
 paperName JUNIOR = "HBL Junior"
 paperName KSF    = "Hufvudstadsbladet Ab"
