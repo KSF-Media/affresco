@@ -106,8 +106,8 @@ packageDescriptions = fromFoldable
       , packageGroup: "Webb Premium"
       , priceDisclaimer: Nothing
       }
-  -- ÖSTNYLAND PACKAGES
-  , "ÖNY_P+D" /\
+  -- BORGÅBLADET PACKAGES
+  , "BBL_P+D" /\
       { brand: ON
       , brandLong: "Östnyland"
       , descriptionShort: ""
@@ -127,7 +127,7 @@ packageDescriptions = fromFoldable
       , packageGroup: "Papperstidningen"
       , priceDisclaimer: Nothing
       }
-  , "ÖNY+HBL" /\
+  , "BBL+HBL" /\
       { brand: ON
       , brandLong: "Östnyland"
       , descriptionShort: " + HBL"
@@ -147,7 +147,7 @@ packageDescriptions = fromFoldable
       , packageGroup: "2+5"
       , priceDisclaimer: Nothing
       }
-  , "ÖNY_DIGI" /\
+  , "BBL_DIGI" /\
       { brand: ON
       , brandLong: "ÖN Digital"
       , descriptionShort: ""

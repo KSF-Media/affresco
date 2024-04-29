@@ -41,6 +41,13 @@ jobs:
           path: |
             apps/mitt-konto/.spago
             apps/mitt-konto/output
+      - name: Setup build cache for Kort
+        uses: "actions/cache@v2"
+        with:
+          key: "${{ runner.os }}-kort-${{ hashFiles('apps/kort/yarn.lock')}}"
+          path: |
+            apps/kort/.spago
+            apps/kort/output
       - name: "Setup build cache for Vetrina (for testing only)"
         uses: "actions/cache@v2"
         with:
@@ -60,6 +67,14 @@ jobs:
         run: |2
             ruby deploy.rb mitt-konto
             cp -R apps/mitt-konto/dist build/mitt-konto
+        shell: bash
+      - env:
+          MAINTENANCE_MODE: 'false'
+          PRODUCTION_SENTRY_DSN: "https://54e59357e2fd42db917041739865e2c9@sentry.io/5174203"
+        name: Build Kort
+        run: |2
+            ruby deploy.rb kort
+            cp -R apps/kort/dist build/kort
         shell: bash
       - env:
           NODE_ENV: development
@@ -90,6 +105,13 @@ jobs:
           destination: "deploy-previews/${{ github.sha }}/mitt-konto"
           parent: 'false'
           path: build/mitt-konto
+      - name: Upload Kort
+        uses: "google-github-actions/upload-cloud-storage@v0.9.0"
+        with:
+          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
+          destination: "deploy-previews/${{ github.sha }}/kort"
+          parent: 'false'
+          path: build/kort
       - name: "Upload Vetrina (for testing only)"
         uses: "google-github-actions/upload-cloud-storage@v0.9.0"
         with:
@@ -119,6 +141,7 @@ jobs:
             Deploy previews are ready :sunglasses:
             - [Scripts](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/scripts/index.html)
             - [Mitt Konto](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/mitt-konto/index.html)
+            - [Kort](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/kort/index.html)
             - [Vetrina (for testing only)](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/vetrina-test/index.html)
             - [Prenumerera](https://deploy-previews.ksfmedia.fi/${{ github.sha }}/prenumerera/index.html)
 name: previews
