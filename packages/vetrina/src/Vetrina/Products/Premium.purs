@@ -109,14 +109,14 @@ vnPremium =
 onPremium :: Product
 onPremium =
   { id: "BBL_DIGI"
-  , name: "ÖN Digital"
+  , name: "BBL Digital"
   , priceCents: 690
   , description:
       DOM.div
         { id: "tb-paywall--product-text-on"
         , className: "vetrina--product-text font-duplexsans font-light text-center text-lg leading-tight px-5 pb-5"
         , children:
-            [ DOM.text "Nu kan du läsa ÖN Digital för 1 € i månaden i hela 3 månader, därefter 6,90 € per månad. Avslutas enkelt online." ]
+            [ DOM.text "Nu kan du läsa BBL Digital för 1 € i månaden i hela 3 månader, därefter 6,90 € per månad. Avslutas enkelt online." ]
         }
   , descriptionLoggedInAccount:
       DOM.div
@@ -138,7 +138,7 @@ onPremium =
         , description: "Alla artiklar på Ostnyland.fi"
         }
       , { title: "Allt innehåll i vår nyhetsapp"
-        , description: "ÖN Nyheter (iOS & Android)"
+        , description: "BBL Nyheter (iOS & Android)"
         }
       , { title: "Nyhetsbrev"
         , description: "Exklusiva förmåner och nyheter"
@@ -147,7 +147,7 @@ onPremium =
         , description: ""
         }
       , { title: "E-tidningen"
-        , description: "Papperstidningen digitalt i appen HBL 365 och på webben (ÖN)"
+        , description: "Papperstidningen digitalt i appen HBL 365 och på webben (BBL)"
         }
       ]
   }
