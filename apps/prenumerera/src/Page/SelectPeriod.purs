@@ -255,7 +255,7 @@ render description remindElement paymentOfferElement addressElement acceptElemen
     descriptionText =
       case description.descriptionShort of
         "" -> description.brandLong
-        short -> (Paper.toString description.brand) <> short
+        short -> (Paper.shortName description.brand) <> short
     renderPrice pm =
       DOM.label
         { className: "price accept-terms--narrow"
