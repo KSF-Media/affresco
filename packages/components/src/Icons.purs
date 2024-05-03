@@ -2,7 +2,7 @@ module KSF.Icons where
 
 foreign import papers ::
   { hbl    :: String
-  , on     :: String
+  , bbl    :: String
   , vn     :: String
   , ksf    :: String
   , junior :: String

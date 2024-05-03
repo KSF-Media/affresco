@@ -34,8 +34,8 @@ initialProducts :: Products
 initialProducts =
   [ { name: "hbl-epaper", label: "HBL e-tidningen på webben", selected: false }
   , { name: "hbl-web", label: "HBL premiumartiklar", selected: false }
-  , { name: "on-epaper", label: "Östnyland e-tidningen på webben", selected: false }
-  , { name: "on-web", label: "Östnyland premiumartiklar", selected: false }
+  , { name: "on-epaper", label: "Borgåbladet e-tidningen på webben", selected: false }
+  , { name: "on-web", label: "Borgåbladet premiumartiklar", selected: false }
   , { name: "vn-epaper", label: "Västra Nyland e-tidningen på webben", selected: false }
   , { name: "vn-web", label: "Västra Nyland premiumartiklar", selected: false }
   , { name: "junior-epaper", label: "HBL Junior e-tidningen på webben", selected: false }

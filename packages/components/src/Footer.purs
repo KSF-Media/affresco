@@ -51,7 +51,7 @@ paperImages =
     , children:
         [ imageLink "https://www.hbl.fi/" papers.hbl
         , imageLink "https://www.vastranyland.fi/" papers.vn
-        , imageLink "https://www.ostnyland.fi/" papers.on
+        , imageLink "https://www.ostnyland.fi/" papers.bbl
         ]
     }
   where
