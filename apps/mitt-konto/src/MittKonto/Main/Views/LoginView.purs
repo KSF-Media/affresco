@@ -18,8 +18,8 @@ import React.Basic.DOM as DOM
 
 foreign import logos ::
   { hbl :: String
-  , on  :: String
   , vn  :: String
+  , bbl :: String
   }
 
 -- | Login page with welcoming header, description text and login form.
@@ -93,19 +93,19 @@ loginView self@{ state, setState } setUser logger =
     logosWrapper = Helpers.classy DOM.div "logos"
               [ DOM.img { src: logos.vn, className: "logo", alt: "VN Västis" }
               , DOM.img { src: logos.hbl, className: "logo", alt: "HBL Husis" }
-              , DOM.img { src: logos.on, className: "logo", alt: "ÖN" }
+              , DOM.img { src: logos.bbl, className: "logo", alt: "BBL" }
               ]
 
     title =
       Helpers.classy DOM.div "title"
         [ Helpers.classy DOM.h1 "mitt-konto--heading"
-            [ DOM.text "Mitt konto – kundservice för HBL, VN, ÖN och HBL Junior"
+            [ DOM.text "Mitt konto – kundservice för HBL, VN, BBL och HBL Junior"
             ]
         ]
 
     description =
       Helpers.classy DOM.div "description"
-        [ DOM.h2_ [ DOM.text "I Mitt konto sköter du smidigt dina prenumerationsärenden för Hufvudstadsbladet, Västra Nyland, Östnyland och HBL Junior. Du kan lätt:" ]
+        [ DOM.h2_ [ DOM.text "I Mitt konto sköter du smidigt dina prenumerationsärenden för Hufvudstadsbladet, Västra Nyland, Borgåbladet och HBL Junior. Du kan lätt:" ]
         ]
 
     descriptionList :: JSX

@@ -171,7 +171,7 @@ paperLogoUrl :: Paper -> String
 paperLogoUrl paper =
   case paper of
     HBL    -> papers.hbl
-    ON     -> papers.on
+    ON     -> papers.bbl
     VN     -> papers.vn
     KSF    -> papers.ksf
     JUNIOR -> papers.junior
