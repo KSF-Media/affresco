@@ -84,7 +84,7 @@ creditCardUpdateView = do
         case creditCards of
           []       -> liftEffect do
             logger.log "No credit cards found" Sentry.Error
-            onError self
+            onError self 1
           [ card ] -> registerCreditCard self closed card
           -- Try to match a paymentId with user's subscriptions
           _        -> maybe (liftEffect $ setState _ { asyncWrapperState = AsyncWrapper.Ready })
@@ -156,12 +156,12 @@ registerCreditCard self@{ setState, props: { logger, setWrapperState, window }, 
       liftEffect $ for_ window close
       liftEffect do
         logger.log "No terminal url received" Sentry.Error
-        onError self
+        onError self 2
     Left err -> do
       liftEffect $ for_ window close
       liftEffect do
         logger.log ("Got the following error when registering credit card: " <> bottegaErrorMessage err) Sentry.Error
-        onError self
+        onError self 3
 
 killRegisterPoller :: State -> Aff Unit
 killRegisterPoller state = Aff.killFiber (error "Canceled poller") state.poller
@@ -186,7 +186,7 @@ pollRegister self@{ props: { cusno, subsno, logger } } closed oldCreditCard (Rig
       track $ "error:" <> show reason
       case reason of
         NetsIssuerError -> self.setState _ { asyncWrapperState = AsyncWrapper.Error "Betalning nekades av kortutgivaren. Vänligen kontakta din bank." }
-        _ -> onError self
+        _ -> onError self 4
     CreditCardRegisterScaRequired -> liftEffect do
       case self.state.scaShown /\ self.state.paymentTerminal of
         false /\ Just url -> do
@@ -199,7 +199,7 @@ pollRegister self@{ props: { cusno, subsno, logger } } closed oldCreditCard (Rig
     CreditCardRegisterUnknownState -> liftEffect do
       track $ "error: unknown"
       logger.log "Server is in an unknown state" Sentry.Info
-      onError self
+      onError self 5
   where
     delayedPollRegister :: Either BottegaError CreditCardRegister -> Aff Unit
     delayedPollRegister eitherRegister = do
@@ -217,7 +217,7 @@ pollRegister self@{ props: { cusno, subsno, logger } } closed oldCreditCard (Rig
 
 pollRegister self@{ props: { logger } } _ _ (Left err) = liftEffect do
   logger.log ("Could not fetch register status: " <> bottegaErrorMessage err) Sentry.Error
-  onError self
+  onError self 6
 
 onCancel :: Self -> Effect Unit
 onCancel { props: { setWrapperState } } = setWrapperState _ { closeAutomatically = Immediate }
@@ -232,5 +232,5 @@ onSuccess { setState, props: { setWrapperState } } = do
                     , closeAutomatically = Delayed 5000.0
                     }
 
-onError :: Self -> Effect Unit
-onError { setState } = setState _ { asyncWrapperState = AsyncWrapper.Error "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst." }
+onError :: Self -> Int -> Effect Unit
+onError { setState } errCode = setState _ { asyncWrapperState = AsyncWrapper.Error $ "Något gick fel. Vänligen försök pånytt, eller ta kontakt med vår kundtjänst. Felkod: " <> show errCode }
