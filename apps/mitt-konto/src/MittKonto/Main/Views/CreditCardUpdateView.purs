@@ -3,7 +3,7 @@ module MittKonto.Main.CreditCardUpdateView where
 import Prelude
 
 import Bottega (BottegaError, bottegaErrorMessage)
-import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..), FailReason(..), PaymentMethodId)
+import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..), FailReason(..), PaymentMethodId, nullCreditCard)
 import Data.Either (Either(..))
 import Data.Foldable (find, for_)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
@@ -82,9 +82,10 @@ creditCardUpdateView = do
       setState _ { asyncWrapperState = AsyncWrapper.Loading mempty }
       Aff.launchAff_ do
         case creditCards of
-          []       -> liftEffect do
-            logger.log "No credit cards found" Sentry.Error
-            onError self 1
+          []       -> do
+            -- Weird, but let's just assume that they have one anyway
+            liftEffect $ logger.log "No credit cards found, attempt anyway" Sentry.Error
+            registerCreditCard self closed nullCreditCard
           [ card ] -> registerCreditCard self closed card
           -- Try to match a paymentId with user's subscriptions
           _        -> maybe (liftEffect $ setState _ { asyncWrapperState = AsyncWrapper.Ready })

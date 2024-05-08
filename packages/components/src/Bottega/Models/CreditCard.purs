@@ -3,10 +3,10 @@ module Bottega.Models.CreditCard where
 import Prelude
 
 import Bottega.Models.FailReason (FailReason(..), parseFailReason)
-import Bottega.Models.PaymentMethod (PaymentMethodId)
+import Bottega.Models.PaymentMethod (PaymentMethodId(..))
 import Bottega.Models.PaymentTerminalUrl (PaymentTerminalUrl)
 import Data.Maybe (Maybe, maybe)
-import Data.UUID (UUID)
+import Data.UUID (UUID, emptyUUID)
 
 newtype CreditCardId = CreditCardId Int
 
@@ -16,6 +16,15 @@ type CreditCard =
   , paymentMethodId :: PaymentMethodId
   , maskedPan       :: String
   , expiryDate      :: String
+  }
+
+nullCreditCard :: CreditCard
+nullCreditCard =
+  { id: CreditCardId 1
+  , user: emptyUUID
+  , paymentMethodId: PaymentMethodId 13
+  , maskedPan: "?"
+  , expiryDate: "?"
   }
 
 newtype CreditCardRegisterNumber = CreditCardRegisterNumber String
