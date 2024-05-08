@@ -166,9 +166,9 @@ jobs:
           export_default_credentials: 'true'
           project_id: ksf-production
           service_account_key: "${{ secrets.GCP_PRODUCTION_KEY }}"
-      - name: "Invalidate CDN cache for 'kort'"
+      - name: "Invalidate CDN cache for 'kreditkort'"
         run: |2
-            gcloud compute url-maps invalidate-cdn-cache kort --path "/*"
+            gcloud compute url-maps invalidate-cdn-cache kreditkort --path "/*"
   refresh_cdn_mitt-konto:
     needs: deploy-gs
     runs-on: ubuntu-latest

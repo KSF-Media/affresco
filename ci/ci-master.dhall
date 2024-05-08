@@ -29,7 +29,7 @@ let steps-gs =
 
 let refreshCDNJobs =
       { refresh_cdn_mitt-konto = Actions.refreshCDNJob "mitt-konto" "deploy-gs"
-      , refresh_cdn_kort = Actions.refreshCDNJob "kort" "deploy-gs"
+      , refresh_cdn_kort = Actions.refreshCDNJob "kreditkort" "deploy-gs"
       , refresh_cdn_app-article =
           Actions.refreshCDNJob "app-article" "deploy-gs"
       , refresh_cdn_frontends =
