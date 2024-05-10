@@ -2,13 +2,14 @@ module MittKonto.Main.UserView.Subscription.Elements where
 
 import Prelude
 
-import Data.Array (filter, find)
+import Bottega.Models (CreditCard)
+import Data.Array (filter)
 import Data.Array as Array
 import Data.Enum (enumFromTo)
 import Data.Foldable (foldMap, for_)
 import Data.JSDate (toDate)
 import Data.List (intercalate)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.String (length, splitAt, trim)
@@ -19,6 +20,7 @@ import KSF.Api.Subscription (toString) as Subsno
 import KSF.DescriptionList as DescriptionList
 import KSF.Grid as Grid
 import KSF.Helpers (formatDateDots)
+import KSF.Spinner (loadingSpinner)
 import KSF.User as User
 import KSF.Window (clearOpener)
 import MittKonto.Main.UserView.Subscription.Helpers as Helpers
@@ -59,24 +61,21 @@ deliveryAddress { props: { subscription: { deliveryAddress: subDeliveryAddress, 
       | otherwise = "-"
 
 paymentMethod :: Types.Self -> Array DescriptionList.Definition
-paymentMethod { props: { subscription: { paymentMethod: method, paymentMethodId }, user: { creditCards } } } = Array.singleton
+paymentMethod { props: { subscription: { paymentMethod: method }, creditCard } } = Array.singleton
   { term: "Faktureringsmetod:"
   , description: [ DOM.div_ [ DOM.text $ Helpers.translatePaymentMethod method
                             , case method of
-                                CreditCard -> subscriptionCreditCard
+                                CreditCard -> maybe loadingSpinner (foldMap subscriptionCreditCard) creditCard
                                 _ -> mempty
                             ]
                  ]
   }
   where
-    subscriptionCreditCard :: JSX
-    subscriptionCreditCard
-      | Just id <- toMaybe paymentMethodId,
-        Just card <- find (\c -> c.paymentMethodId == id) creditCards =
-          DOM.ul_ [ DOM.li_ [ DOM.text $ "Nummer: " <> card.maskedPan ]
-                  , DOM.li_ [ DOM.text $ "Utgångsdatum: " <> formatExpiryDate card.expiryDate ]
-                  ]
-      | otherwise = mempty
+    subscriptionCreditCard :: CreditCard -> JSX
+    subscriptionCreditCard card =
+      DOM.ul_ [ DOM.li_ [ DOM.text $ "Nummer: " <> card.maskedPan ]
+              , DOM.li_ [ DOM.text $ "Utgångsdatum: " <> formatExpiryDate card.expiryDate ]
+              ]
 
     formatExpiryDate :: String -> String
     formatExpiryDate expiryDate
@@ -118,15 +117,18 @@ billingDateTerm { props: { subscription: { dates: { end } } } } = foldMap
   ) $ trim <<< formatDateDots <$> (toDate =<< toMaybe end)
 
 subscriptionUpdates :: Types.Self -> JSX
-subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno } } } =
+subscriptionUpdates self@{ props: props@{ subscription: sub } } =
   Grid.row_ extraActions
   where
     extraActions =
       if sub.paymentMethod == CreditCard && sub.paycusno == props.user.cusno
-        then [ creditCardUpdateIcon ]
+        then case props.creditCard of
+        Nothing -> [ loadingSpinner ]
+        Just Nothing -> []
+        Just (Just card) -> [ creditCardUpdateIcon card ]
         else mempty
 
-    creditCardUpdateIcon =
+    creditCardUpdateIcon card =
       DOM.div
         { className: "subscription--action-item"
         , children: [ DOM.a
@@ -135,8 +137,8 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno } } } =
                                     w <- Window.open "" "_blank" "" window
                                     for_ w clearOpener
                                     self.props.updateWindow $ Just w
-                                    props.router.pushState (unsafeToForeign {}) $ "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
-                        , href: "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
+                                    props.router.pushState (unsafeToForeign {}) href
+                        , href
                         , children: [ DOM.div
                                         { className: "subscription--action-link"
                                         , children: [ DOM.div
@@ -157,6 +159,9 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno } } } =
                         }
                     ]
         }
+      where
+        href = "/betalkort/" <> (show $ unwrap card.id) <> "/uppdatera"
+
 
 subscriptionEndTerm :: Types.Self -> Array DescriptionList.Definition
 subscriptionEndTerm { props: { subscription: { dates: { suspend } } } } = foldMap

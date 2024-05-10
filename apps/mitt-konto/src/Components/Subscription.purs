@@ -18,7 +18,7 @@ import MittKonto.Main.UserView.Subscription.Helpers as Helpers
 import MittKonto.Main.UserView.Subscription.Types as Types
 import React.Basic (JSX)
 import React.Basic.Hooks as React
-import React.Basic.Hooks (Component, useEffectOnce, useMemo, useState, (/\))
+import React.Basic.Hooks (Component, useEffectOnce, useState, (/\))
 import React.Basic.DOM as DOM
 
 component :: Component Types.Props
@@ -35,9 +35,7 @@ component = do
           }
     state /\ setState <- useState initialState
     let self = { props, state, setState }
-    informationColumn <- useMemo (state.pausedSubscriptions /\ state.pendingAddressChanges) $ const $
-                         renderInformationColumn self
-    pure $ render self informationColumn
+    pure $ render self $ renderInformationColumn self
 
 renderInformationColumn :: Types.Self -> JSX
 renderInformationColumn self@{ props: { now, subscription: sub@{ package, state } } } =

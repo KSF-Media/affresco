@@ -3,7 +3,8 @@ module MittKonto.Components.User where
 import Prelude
 
 import Data.Array (all, snoc, sortBy, (:))
-import Data.Foldable (fold)
+import Data.Either (hush)
+import Data.Foldable (find, fold)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable as Nullable
 import Data.String (contains)
@@ -15,7 +16,7 @@ import MittKonto.Main.UserView.IconAction as IconAction
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
-import KSF.Api.Subscription (isSubscriptionCanceled, isSubscriptionExpired) as Subscription
+import KSF.Api.Subscription (SubscriptionPaymentMethod(..), isSubscriptionCanceled, isSubscriptionExpired) as Subscription
 import KSF.Profile.Component as Profile
 import KSF.Sentry as Sentry
 import KSF.User.Cusno as Cusno
@@ -34,7 +35,7 @@ component router logger = do
   subscriptionComponent <- Subscription.component
   profile <- Profile.component
   mailinglists <- Mailinglists.component
-  React.component "UserView" \{ state: { news, now }, setState, user } -> React.do
+  React.component "UserView" \{ state: { news, now, creditCards }, setState, user } -> React.do
     let profileView =
           Helpers.componentBlock
           "Mina uppgifter:"
@@ -59,7 +60,21 @@ component router logger = do
               }
 
         subscriptionView subscription =
-          subscriptionComponent { subscription, user, logger, now, router, updateWindow: \w -> setState _ {window = w} }
+          subscriptionComponent
+            { subscription
+            , creditCard:
+              map (case subscription.paymentMethod of
+                      Subscription.CreditCard ->
+                        find (\x -> (Nullable.toMaybe subscription.paymentMethodId == Just x.paymentMethodId))
+                      _ -> const Nothing
+                  )
+              (join $ map hush creditCards)
+            , user
+            , logger
+            , now
+            , router
+            , updateWindow: \w -> setState _ {window = w}
+            }
         subscriptionsView =
           Helpers.componentBlock "Mina prenumerationer:" $ subscriptions <> [ Elements.break, subscribeImage ]
           where
