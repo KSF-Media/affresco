@@ -2,7 +2,10 @@ module MittKonto.Main.Types where
 
 import Prelude
 
+import Bottega (BottegaError)
+import Bottega.Models (CreditCard)
 import Data.Date (Date)
+import Data.Either (Either)
 import Data.Maybe (Maybe)
 import Effect (Effect)
 import KSF.Alert (Alert)
@@ -16,6 +19,7 @@ import Web.HTML.Window (Window)
 type State =
   { paper :: Paper
   , adminMode :: Boolean
+  , creditCards :: Maybe (Either BottegaError (Array CreditCard))
   , activeUser :: Maybe User
   , loading :: Maybe Spinner.Loading
   , showWelcome :: Boolean

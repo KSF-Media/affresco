@@ -2,7 +2,7 @@ module MittKonto.Main where
 
 import Prelude
 
-import Data.Either (either, hush, isLeft)
+import Data.Either (Either(..), either, hush, isLeft)
 import Data.Foldable (find, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
@@ -12,6 +12,7 @@ import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Console
+import Effect.Exception (error)
 import Effect.Now as Now
 import Effect.Unsafe (unsafePerformEffect)
 import KSF.Api (AuthScope(..))
@@ -35,7 +36,7 @@ import MittKonto.Routes (MittKontoRoute(..), routes)
 import MittKonto.Wrappers as Wrappers
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import React.Basic.Hooks (Component, component, useEffectOnce, useState, useState', (/\))
+import React.Basic.Hooks (Component, component, useEffect, useEffectOnce, useState, useState', (/\))
 import React.Basic.Hooks as React
 import Routing.PushState (matchesWith, makeInterface)
 import Routing.Duplex as Duplex
@@ -63,6 +64,7 @@ app = do
         { paper: KSF
         , adminMode: false
         , activeUser: Nothing
+        , creditCards: Nothing
         -- Let's show the spinner while we try to magically login the user
         , loading: Just Spinner.Loading
         , showWelcome: true
@@ -76,8 +78,21 @@ app = do
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState
     route /\ setRoute <- useState' initialRoute
+    cardsChanged /\ setCardsChanged <- useState 0
     useEffectOnce $ pure do
       Aff.launchAff_ $ Timeout.stopTimer timeout
+    -- Load on need
+    useEffect { user: map _.uuid state.activeUser
+              , cardsChanged } do
+      setState _ { creditCards = Nothing }
+      case state.activeUser of
+        Nothing -> pure mempty
+        Just _ -> do
+          fiber <- Aff.launchAff do
+            cards <- User.getCreditCards
+            liftEffect $ setState _ { creditCards = Just cards }
+          pure $ Aff.launchAff_ $ Aff.killFiber (error "cancel") fiber
+
     let logout = do
           router.pushState (unsafeToForeign {}) "/"
           Aff.launchAff_ $ Spinner.withSpinner (setState <<< Types.setLoading) do
@@ -112,24 +127,34 @@ app = do
                 $ Spinner.withSpinner (setState <<< Types.setLoading) attemptMagicLogin
       matchesWith routeParse (const setRoute) router
 
-    let creditCardUpdateInputs window subscription user =
-          { creditCards: fromMaybe mempty $ state.activeUser <#> _.creditCards
+    let creditCardUpdateInputs window creditCard user =
+          { creditCard: creditCard
           , cusno: user.cusno
           , logger: logger
-          , subsno: subscription.subsno
-          , paymentMethodId: Nullable.toMaybe subscription.paymentMethodId
           , window: window
+          , cardsChanged: setCardsChanged \s -> s + 1
           }
-        creditCardUpdateView subsno user = fromMaybe mempty do
-          subs <- find ((_ == subsno) <<< _.subsno) user.subs
-          w <- state.window
-          guard (subs.paymentMethod == CreditCard) $ pure $
-            creditCardUpdate
-              { contentProps: creditCardUpdateInputs w subs user
+        creditCardUpdateView creditCardId user = case state.creditCards of
+          Nothing -> Spinner.loadingSpinner
+          Just (Left err) -> fromMaybe mempty do
+            w <- state.window
+            pure $ creditCardUpdate
+              { contentProps: creditCardUpdateInputs w (Left err) user
               , closeType: Wrappers.XButton
-              , route: "/kreditkort/uppdatera"
+              , route: "/betalkort/uppdatera"
               , routeFrom: "/"
               }
+          Just (Right cards) -> fromMaybe mempty do
+            card <- find ((_ == creditCardId) <<< _.id) cards
+            subs <- find ((_ == Just card.paymentMethodId) <<< Nullable.toMaybe <<< _.paymentMethodId) user.subs
+            w <- state.window
+            guard (subs.paymentMethod == CreditCard) $ pure $
+              creditCardUpdate
+                { contentProps: creditCardUpdateInputs w (Right card) user
+                , closeType: Wrappers.XButton
+                , route: "/betalkort/uppdatera"
+                , routeFrom: "/"
+                }
         userView user =
           userComponent
             { user
@@ -138,7 +163,7 @@ app = do
             }
         userContent = case route of
           MittKonto -> foldMap userView state.activeUser
-          CreditCardUpdate subsno -> foldMap (creditCardUpdateView subsno) state.activeUser
+          CreditCardUpdate creditCardId -> foldMap (creditCardUpdateView creditCardId) state.activeUser
         content = if isNothing state.activeUser
                   then Views.loginView { state, setState } (setUser (Nothing :: Maybe Days)) logger
                   else userContent

@@ -2,7 +2,8 @@ module MittKonto.Main.UserView.Subscription.Elements where
 
 import Prelude
 
-import Data.Array (filter, find, mapMaybe)
+import Bottega.Models (CreditCard)
+import Data.Array (filter, mapMaybe)
 import Data.Array as Array
 import Data.Date (Date)
 import Data.Either (Either(..))
@@ -29,6 +30,7 @@ import KSF.Helpers (formatDateDots)
 import KSF.JSError as Error
 import KSF.PauseSubscription.Component as PauseSubscription
 import KSF.Sentry as Sentry
+import KSF.Spinner (loadingSpinner)
 import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
 import KSF.Tracking as Tracking
 import KSF.User (InvalidDateInput(..))
@@ -74,24 +76,21 @@ deliveryAddress { props: { subscription: { deliveryAddress: subDeliveryAddress, 
       | otherwise = "-"
 
 paymentMethod :: Types.Self -> Array DescriptionList.Definition
-paymentMethod { props: { subscription: { paymentMethod: method, paymentMethodId }, user: { creditCards } } } = Array.singleton
+paymentMethod { props: { subscription: { paymentMethod: method }, creditCard } } = Array.singleton
   { term: "Faktureringsmetod:"
   , description: [ DOM.div_ [ DOM.text $ Helpers.translatePaymentMethod method
                             , case method of
-                                CreditCard -> subscriptionCreditCard
+                                CreditCard -> maybe loadingSpinner (foldMap subscriptionCreditCard) creditCard
                                 _ -> mempty
                             ]
                  ]
   }
   where
-    subscriptionCreditCard :: JSX
-    subscriptionCreditCard
-      | Just id <- toMaybe paymentMethodId,
-        Just card <- find (\c -> c.paymentMethodId == id) creditCards =
-          DOM.ul_ [ DOM.li_ [ DOM.text $ "Nummer: " <> card.maskedPan ]
-                  , DOM.li_ [ DOM.text $ "Utgångsdatum: " <> formatExpiryDate card.expiryDate ]
-                  ]
-      | otherwise = mempty
+    subscriptionCreditCard :: CreditCard -> JSX
+    subscriptionCreditCard card =
+      DOM.ul_ [ DOM.li_ [ DOM.text $ "Nummer: " <> card.maskedPan ]
+              , DOM.li_ [ DOM.text $ "Utgångsdatum: " <> formatExpiryDate card.expiryDate ]
+              ]
 
     formatExpiryDate :: String -> String
     formatExpiryDate expiryDate
@@ -174,7 +173,10 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
 
     extraActions =
       if sub.paymentMethod == CreditCard && sub.paycusno == props.user.cusno
-        then [ creditCardUpdateIcon ]
+        then case props.creditCard of
+        Nothing -> [ loadingSpinner ]
+        Just Nothing -> []
+        Just (Just card) -> [ creditCardUpdateIcon card ]
         else mempty
 
     updateProgress =
@@ -339,7 +341,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
             , wrapperProgress = AsyncWrapper.Editing deliveryReclamationComponent
             }
 
-    creditCardUpdateIcon =
+    creditCardUpdateIcon card =
       DOM.div
         { className: "subscription--action-item"
         , children: [ DOM.a
@@ -348,8 +350,8 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                                     w <- Window.open "" "_blank" "" window
                                     for_ w clearOpener
                                     self.props.updateWindow $ Just w
-                                    props.router.pushState (unsafeToForeign {}) $ "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
-                        , href: "/prenumerationer/" <> Subsno.toString subsno <> "/kreditkort/uppdatera"
+                                    props.router.pushState (unsafeToForeign {}) href
+                        , href
                         , children: [ DOM.div
                                         { className: "subscription--action-link"
                                         , children: [ DOM.div
@@ -370,6 +372,8 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                         }
                     ]
         }
+      where
+        href = "/betalkort/" <> (show $ unwrap card.id) <> "/uppdatera"
 
 pauseSubscriptionComponent :: Types.Self -> Maybe User.PausedSubscription -> JSX
 pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } } } editing =

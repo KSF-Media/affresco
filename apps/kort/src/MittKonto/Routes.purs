@@ -2,25 +2,25 @@ module MittKonto.Routes where
 
 import Prelude hiding ((/))
 
-import Data.Either (note)
+import Bottega.Models.CreditCard (CreditCardId)
 import Data.Generic.Rep (class Generic)
-import KSF.Api.Subscription (Subsno)
-import KSF.Api.Subscription (fromString, toString) as Subsno
-import Routing.Duplex (RouteDuplex', as, end, prefix, root, segment, suffix)
+import Data.Newtype (unwrap, wrap)
+import Data.Profunctor (dimap)
+import Routing.Duplex (RouteDuplex', end, int, prefix, root, segment, suffix)
 import Routing.Duplex.Generic as G
 
 data MittKontoRoute
-  = CreditCardUpdate Subsno
+  = CreditCardUpdate CreditCardId
   | MittKonto
 
 derive instance genericRoute :: Generic MittKontoRoute _
 
--- Refines a codec of Strings to Subsnos
-subsno :: RouteDuplex' String -> RouteDuplex' Subsno
-subsno = as Subsno.toString (note "no parse as Subsno" <<< Subsno.fromString)
+-- Refines a codec of Strings to CreditCardId
+creditCardId :: RouteDuplex' String -> RouteDuplex' CreditCardId
+creditCardId = dimap unwrap wrap <<< int
 
 routes :: RouteDuplex' MittKontoRoute
 routes = root $ G.sum
-  { "CreditCardUpdate": "prenumerationer" `prefix` subsno segment `suffix` "kreditkort" `suffix` "uppdatera"
+  { "CreditCardUpdate": "betalkort" `prefix` creditCardId segment `suffix` "uppdatera"
   , "MittKonto": end G.noArgs
   }

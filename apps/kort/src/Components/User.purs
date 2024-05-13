@@ -3,11 +3,14 @@ module MittKonto.Components.User where
 import Prelude
 
 import Data.Array (sortBy)
-import Data.Foldable (fold)
+import Data.Either (hush)
+import Data.Foldable (find, fold)
+import Data.Maybe (Maybe(..))
+import Data.Nullable as Nullable
 import MittKonto.Components.Subscription (component) as Subscription
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
-import KSF.Api.Subscription (isSubscriptionCanceled, isSubscriptionExpired) as Subscription
+import KSF.Api.Subscription (SubscriptionPaymentMethod(..), isSubscriptionCanceled, isSubscriptionExpired) as Subscription
 import KSF.Sentry as Sentry
 import React.Basic.DOM as DOM
 import React.Basic.Hooks as React
@@ -18,9 +21,23 @@ import Routing.PushState (PushStateInterface)
 component :: PushStateInterface -> Sentry.Logger ->  Component Types.UserView
 component router logger = do
   subscriptionComponent <- Subscription.component
-  React.component "UserView" \{ state: { now }, setState, user } -> React.do
+  React.component "UserView" \{ state: { now, creditCards }, setState, user } -> React.do
     let subscriptionView subscription =
-          subscriptionComponent { subscription, user, logger, now, router, updateWindow: \w -> setState _ {window = w} }
+          subscriptionComponent
+            { subscription
+            , creditCard:
+              map (case subscription.paymentMethod of
+                      Subscription.CreditCard ->
+                        find (\x -> (Nullable.toMaybe subscription.paymentMethodId == Just x.paymentMethodId))
+                      _ -> const Nothing
+                  )
+              (join $ map hush creditCards)
+            , user
+            , logger
+            , now
+            , router
+            , updateWindow: \w -> setState _ {window = w}
+            }
         subscriptionsView =
           Helpers.componentBlock "Mina prenumerationer:" $ subscriptions
           where

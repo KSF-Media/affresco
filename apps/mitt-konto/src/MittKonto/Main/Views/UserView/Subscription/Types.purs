@@ -2,6 +2,7 @@ module MittKonto.Main.UserView.Subscription.Types where
 
 import Prelude
 
+import Bottega.Models (CreditCard)
 import Data.Date (Date)
 import Data.Maybe (Maybe)
 import Effect (Effect)
@@ -22,6 +23,7 @@ type Self =
 type Props =
   { subscription :: User.Subscription
   , user :: User
+  , creditCard :: Maybe (Maybe CreditCard)
   , logger :: Sentry.Logger
   , now :: Date
   , router :: PushStateInterface

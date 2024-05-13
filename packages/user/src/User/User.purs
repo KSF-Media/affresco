@@ -15,7 +15,6 @@ module KSF.User
   , deleteUser
   , editSubscriptionPause
   , editTemporaryAddressChange
-  , fromPersonaUser
   , getCreditCard
   , getCreditCardRegister
   , getCreditCards
@@ -66,7 +65,7 @@ import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Data.Array as Array
 import Data.Date (Date)
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable as Nullable
@@ -101,7 +100,6 @@ import KSF.User.Cusno (Cusno)
 import KSF.User.Cusno as Cusno
 import Persona (MergeToken, Provider(..), Email(..), InvalidPauseDateError(..), InvalidDateInput(..), UserUpdate(..), DeliveryReclamation, DeliveryReclamationClaim(..), DeliveryReclamationReason(..), NewTemporaryUser, NewCusnoUser, NewUser, SubscriptionPayments, Payment, PaymentType(..), PaymentState(..)) as PersonaReExport
 import Persona as Persona
-import Record as Record
 
 -- Only in admin action responses
 type ConflictingUser =
@@ -152,16 +150,7 @@ type MergeInfo =
   , userEmail :: Persona.Email
   }
 
-type User = { creditCards :: Array Bottega.CreditCard | Persona.BaseUser }
-
-fromPersonaUser :: Persona.User -> User
-fromPersonaUser personaUser = Record.merge personaUser { creditCards: [] }
-
-fromPersonaUserWithCards :: Persona.User -> Aff User
-fromPersonaUserWithCards personaUser = do
-  creditCards <- either (const []) identity <$> getCreditCards
-  let user = fromPersonaUser personaUser
-  pure user { creditCards = creditCards }
+type User = Persona.User
 
 createUser :: Persona.NewUser -> Aff (Either UserError User)
 createUser newUser = do
@@ -245,7 +234,7 @@ getUser maybeInvalidateCache uuid = do
     Right user -> do
       -- TODO: No need to fetch cards always! E.g. in Mosaico
       Console.info "User fetched successfully"
-      fromPersonaUserWithCards user
+      pure user
 
 isAdminUser :: Effect Boolean
 isAdminUser = (_ == Just "1") <$> LocalStorage.getItem "isAdmin"
@@ -273,7 +262,7 @@ updateUser :: UUID -> Persona.UserUpdate -> Aff (Either UserError User)
 updateUser uuid update = do
   newUser <- try $ Persona.updateUser uuid update =<< requireToken
   case newUser of
-    Right user -> Right <$> fromPersonaUserWithCards user
+    Right user -> pure $ Right user
     Left err
       | KSF.Error.resourceConflictError err -> do
           pure $ Left UniqueViolation
@@ -283,7 +272,7 @@ setCusno :: UUID -> Cusno -> Aff (Either UserError User)
 setCusno uuid cusno = do
   newUser <- try $ Persona.setUserCusno uuid cusno =<< requireToken
   case newUser of
-    Right user -> pure $ Right $ fromPersonaUser user
+    Right user -> pure $ Right user
     Left err
       | Just (errData :: Persona.CusnoInUseRegistration) <- Api.Error.errorData err -> do
           pure $ Left $ RegistrationCusnoInUse $ conflictingUserFromApiResponse errData.unique_cusno_violation
@@ -301,7 +290,7 @@ updatePassword uuid password confirmPassword = do
       | KSF.Error.loginExpiredError err -> do
           pure $ Left $ LoginTokenExpired
       | otherwise -> pure $ Left $ UnexpectedError err
-    Right user -> Right <$> fromPersonaUserWithCards user
+    Right user -> pure $ Right user
 
 requestPasswordReset :: String -> Aff (Either String Unit)
 requestPasswordReset email = do

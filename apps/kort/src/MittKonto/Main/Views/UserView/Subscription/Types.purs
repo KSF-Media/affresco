@@ -2,14 +2,13 @@ module MittKonto.Main.UserView.Subscription.Types where
 
 import Prelude
 
+import Bottega.Models (CreditCard)
 import Data.Date (Date)
 import Data.Maybe (Maybe)
 import Effect (Effect)
-import KSF.AsyncWrapper as AsyncWrapper
 import KSF.Sentry as Sentry
 import KSF.User as User
 import KSF.User (User)
-import React.Basic (JSX)
 import Routing.PushState (PushStateInterface)
 import Web.HTML.Window (Window)
 
@@ -22,6 +21,7 @@ type Self =
 type Props =
   { subscription :: User.Subscription
   , user :: User
+  , creditCard :: Maybe (Maybe CreditCard)
   , logger :: Sentry.Logger
   , now :: Date
   , router :: PushStateInterface
