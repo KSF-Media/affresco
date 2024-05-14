@@ -117,7 +117,7 @@ billingDateTerm { props: { subscription: { dates: { end } } } } = foldMap
   ) $ trim <<< formatDateDots <$> (toDate =<< toMaybe end)
 
 subscriptionUpdates :: Types.Self -> JSX
-subscriptionUpdates self@{ props: props@{ subscription: sub } } =
+subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno } } } =
   Grid.row_ extraActions
   where
     extraActions =
@@ -160,8 +160,7 @@ subscriptionUpdates self@{ props: props@{ subscription: sub } } =
                     ]
         }
       where
-        href = "/betalkort/" <> (show $ unwrap card.id) <> "/uppdatera"
-
+        href = "/betalkort/" <> Subsno.toString subsno <> "/" <> (show $ unwrap card.id) <> "/uppdatera"
 
 subscriptionEndTerm :: Types.Self -> Array DescriptionList.Definition
 subscriptionEndTerm { props: { subscription: { dates: { suspend } } } } = foldMap

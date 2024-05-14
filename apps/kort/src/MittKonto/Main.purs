@@ -6,7 +6,6 @@ import Data.Either (Either(..), either, hush, isLeft)
 import Data.Foldable (find, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
-import Data.Nullable as Nullable
 import Data.Time.Duration (class Duration, Days(..), convertDuration)
 import Effect (Effect)
 import Effect.Aff as Aff
@@ -134,7 +133,7 @@ app = do
           , window: window
           , cardsChanged: setCardsChanged \s -> s + 1
           }
-        creditCardUpdateView creditCardId user = case state.creditCards of
+        creditCardUpdateView subsno creditCardId user = case state.creditCards of
           Nothing -> Spinner.loadingSpinner
           Just (Left err) -> fromMaybe mempty do
             w <- state.window
@@ -146,7 +145,7 @@ app = do
               }
           Just (Right cards) -> fromMaybe mempty do
             card <- find ((_ == creditCardId) <<< _.id) cards
-            subs <- find ((_ == Just card.paymentMethodId) <<< Nullable.toMaybe <<< _.paymentMethodId) user.subs
+            subs <- find ((_ == subsno) <<< _.subsno) user.subs
             w <- state.window
             guard (subs.paymentMethod == CreditCard) $ pure $
               creditCardUpdate
@@ -163,7 +162,7 @@ app = do
             }
         userContent = case route of
           MittKonto -> foldMap userView state.activeUser
-          CreditCardUpdate creditCardId -> foldMap (creditCardUpdateView creditCardId) state.activeUser
+          CreditCardUpdate subsno creditCardId -> foldMap (creditCardUpdateView subsno creditCardId) state.activeUser
         content = if isNothing state.activeUser
                   then Views.loginView { state, setState } (setUser (Nothing :: Maybe Days)) logger
                   else userContent
