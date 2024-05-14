@@ -2,7 +2,7 @@ module MittKonto.Components.User where
 
 import Prelude
 
-import Data.Array (all, snoc, sortBy, (:))
+import Data.Array (all, head, snoc, sortBy, (:))
 import Data.Either (hush)
 import Data.Foldable (find, fold)
 import Data.Maybe (Maybe(..), maybe)
@@ -63,9 +63,12 @@ component router logger = do
           subscriptionComponent
             { subscription
             , creditCard:
-              map (case subscription.paymentMethod of
-                      Subscription.CreditCard ->
-                        find (\x -> (Nullable.toMaybe subscription.paymentMethodId == Just x.paymentMethodId))
+              map (case {method: subscription.paymentMethod, id: Nullable.toMaybe subscription.paymentMethodId} of
+                      {method: Subscription.CreditCard, id: Just id} ->
+                        find (\x -> (id == x.paymentMethodId))
+-- Old(?) subscriptions may be without extramode
+                      {method: Subscription.CreditCard} -> -- TODO offer selection if multiple
+                        head
                       _ -> const Nothing
                   )
               (join $ map hush creditCards)

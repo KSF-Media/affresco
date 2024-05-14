@@ -373,7 +373,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                     ]
         }
       where
-        href = "/betalkort/" <> (show $ unwrap card.id) <> "/uppdatera"
+        href = "/betalkort/" <> Subsno.toString subsno <> "/" <> (show $ unwrap card.id) <> "/uppdatera"
 
 pauseSubscriptionComponent :: Types.Self -> Maybe User.PausedSubscription -> JSX
 pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } } } editing =
