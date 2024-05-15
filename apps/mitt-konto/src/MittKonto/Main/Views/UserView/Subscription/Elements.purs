@@ -2,6 +2,7 @@ module MittKonto.Main.UserView.Subscription.Elements where
 
 import Prelude
 
+import Bottega (BottegaError, bottegaErrorMessage)
 import Bottega.Models (CreditCard)
 import Data.Array (filter, mapMaybe)
 import Data.Array as Array
@@ -86,11 +87,13 @@ paymentMethod { props: { subscription: { paymentMethod: method }, creditCard } }
                  ]
   }
   where
-    subscriptionCreditCard :: CreditCard -> JSX
-    subscriptionCreditCard card =
+    subscriptionCreditCard :: Either BottegaError CreditCard -> JSX
+    subscriptionCreditCard (Right card) =
       DOM.ul_ [ DOM.li_ [ DOM.text $ "Nummer: " <> card.maskedPan ]
               , DOM.li_ [ DOM.text $ "Utgångsdatum: " <> formatExpiryDate card.expiryDate ]
               ]
+    -- The card change action has the error message
+    subscriptionCreditCard (Left _) = DOM.text "?"
 
     formatExpiryDate :: String -> String
     formatExpiryDate expiryDate
@@ -174,9 +177,10 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
     extraActions =
       if sub.paymentMethod == CreditCard && sub.paycusno == props.user.cusno
         then case props.creditCard of
-        Nothing -> [ loadingSpinner ]
-        Just Nothing -> []
-        Just (Just card) -> [ creditCardUpdateIcon card ]
+        Nothing -> []
+        Just Nothing -> [ loadingSpinner ]
+        Just (Just (Right card)) -> [ creditCardUpdateIcon card ]
+        Just (Just (Left err)) -> [ creditCardUpdateError err ]
         else mempty
 
     updateProgress =
@@ -374,6 +378,13 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
         }
       where
         href = "/betalkort/" <> Subsno.toString subsno <> "/" <> (show $ unwrap card.id) <> "/uppdatera"
+
+    creditCardUpdateError err =
+      DOM.div
+        { className: "error-text"
+        , children:
+            [ DOM.text $ "Något gick fel vid laddning av betalkort. Fel: " <> bottegaErrorMessage err]
+        }
 
 pauseSubscriptionComponent :: Types.Self -> Maybe User.PausedSubscription -> JSX
 pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } } } editing =

@@ -51,7 +51,7 @@ foreign import sentryDsn_ :: Effect String
 
 app :: Component {}
 app = do
-  foldMap (const $ pure "Just testing if deploy worked" *> pure unit) Nothing
+  foldMap (const $ pure "Just testing if deploy worked+1" *> pure unit) Nothing
   router <- makeInterface
   locationState <- router.locationState
   let fullPath = locationState.pathname <> locationState.search <> locationState.hash

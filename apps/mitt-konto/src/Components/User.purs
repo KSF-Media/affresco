@@ -2,8 +2,9 @@ module MittKonto.Components.User where
 
 import Prelude
 
+import Bottega (BottegaError(..))
 import Data.Array (all, head, snoc, sortBy, (:))
-import Data.Either (hush)
+import Data.Either (Either(..))
 import Data.Foldable (find, fold)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable as Nullable
@@ -63,15 +64,18 @@ component router logger = do
           subscriptionComponent
             { subscription
             , creditCard:
-              map (case {method: subscription.paymentMethod, id: Nullable.toMaybe subscription.paymentMethodId} of
-                      {method: Subscription.CreditCard, id: Just id} ->
-                        find (\x -> (id == x.paymentMethodId))
--- Old(?) subscriptions may be without extramode
-                      {method: Subscription.CreditCard} -> -- TODO offer selection if multiple
-                        head
-                      _ -> const Nothing
-                  )
-              (join $ map hush creditCards)
+              case subscription.paymentMethod of
+                Subscription.CreditCard -> Just $
+                  let findCard cards =
+                        -- Give up
+                        maybe (Left $ BottegaUnexpectedError "Inga kort hittades") Right $
+                        -- Just try the first one
+                        maybe (head cards) Just $
+                        -- Try to match with paymentMethodId
+                        maybe Nothing (\id -> find (\x -> id == x.paymentMethodId) cards) $
+                        Nullable.toMaybe subscription.paymentMethodId
+                  in map (_ >>= findCard) creditCards
+                _ -> Nothing
             , user
             , logger
             , now
