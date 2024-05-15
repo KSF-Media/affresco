@@ -2,8 +2,10 @@ module MittKonto.Main.UserView.Subscription.Types where
 
 import Prelude
 
+import Bottega (BottegaError)
 import Bottega.Models (CreditCard)
 import Data.Date (Date)
+import Data.Either (Either)
 import Data.Maybe (Maybe)
 import Effect (Effect)
 import KSF.AsyncWrapper as AsyncWrapper
@@ -23,7 +25,9 @@ type Self =
 type Props =
   { subscription :: User.Subscription
   , user :: User
-  , creditCard :: Maybe (Maybe CreditCard)
+  -- Outer Maybe is Nothing if payment method is not CreditCard.
+  -- Inner Maybe is for loading state.
+  , creditCard :: Maybe (Maybe (Either BottegaError CreditCard))
   , logger :: Sentry.Logger
   , now :: Date
   , router :: PushStateInterface
