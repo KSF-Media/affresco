@@ -28,8 +28,8 @@ jobs:
       - name: Auth Cloud SDK
         uses: "google-github-actions/auth@v2"
         with:
+          create_credentials_file: 'true'
           credentials_json: "${{ secrets.GCP_PREVIEW_KEY }}"
-          export_default_credentials: 'true'
           project_id: ksf-staging
       - name: Setup Cloud SDK
         uses: "google-github-actions/setup-gcloud@v2"

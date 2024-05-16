@@ -57,7 +57,7 @@ let setupSteps =
                     , Production = "\${{ secrets.GCP_PRODUCTION_KEY }}"
                     }
                     env
-              , export_default_credentials = "true"
+              , create_credentials_file = "true"
               }
           }
         , Step::{
