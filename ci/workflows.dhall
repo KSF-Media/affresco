@@ -44,14 +44,14 @@ let setupSteps =
           , uses = Some "actions/checkout@v4"
           }
         , Step::{
-          , name = Some "Setup Cloud SDK"
-          , uses = Some "google-github-actions/setup-gcloud@v2"
+          , name = Some "Auth Cloud SDK"
+          , uses = Some "google-github-actions/auth@v2"
           , `with` = toMap
-              { project_id =
+              { project_id = 
                   merge
                     { Staging = "ksf-staging", Production = "ksf-production" }
                     env
-              , service_account_key =
+              , credentials_json = 
                   merge
                     { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
                     , Production = "\${{ secrets.GCP_PRODUCTION_AE_KEY }}"
@@ -59,6 +59,10 @@ let setupSteps =
                     env
               , export_default_credentials = "true"
               }
+          }
+        , Step::{
+          , name = Some "Setup Cloud SDK"
+          , uses = Some "google-github-actions/setup-gcloud@v2"
           }
         , Step::{
           , run = Some

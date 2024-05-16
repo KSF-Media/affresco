@@ -29,12 +29,14 @@ jobs:
     steps:
       - name: Checkout repo
         uses: "actions/checkout@v4"
-      - name: Setup Cloud SDK
-        uses: "google-github-actions/setup-gcloud@v2"
+      - name: Auth Cloud SDK
+        uses: "google-github-actions/auth@v2"
         with:
+          credentials_json: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
           export_default_credentials: 'true'
           project_id: ksf-production
-          service_account_key: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+      - name: Setup Cloud SDK
+        uses: "google-github-actions/setup-gcloud@v2"
       - run: |2
             yarn install --pure-lockfile
             mkdir -p build
