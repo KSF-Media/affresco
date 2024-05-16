@@ -28,7 +28,7 @@ jobs:
       - name: Auth Cloud SDK
         uses: "google-github-actions/auth@v2"
         with:
-          credentials_json: "${{ secrets.GCP_STAGING_AE_KEY }}"
+          credentials_json: "${{ secrets.GCP_PREVIEW_KEY }}"
           export_default_credentials: 'true'
           project_id: ksf-staging
       - name: Setup Cloud SDK
@@ -96,35 +96,30 @@ jobs:
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@v2"
         with:
-          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}/scripts"
           parent: 'false'
           path: build/scripts
       - name: Upload Mitt Konto
         uses: "google-github-actions/upload-cloud-storage@v2"
         with:
-          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}/mitt-konto"
           parent: 'false'
           path: build/mitt-konto
       - name: Upload Kort
         uses: "google-github-actions/upload-cloud-storage@v2"
         with:
-          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}/kort"
           parent: 'false'
           path: build/kort
       - name: "Upload Vetrina (for testing only)"
         uses: "google-github-actions/upload-cloud-storage@v2"
         with:
-          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}/vetrina-test"
           parent: 'false'
           path: build/vetrina-test
       - name: Upload Prenumerera
         uses: "google-github-actions/upload-cloud-storage@v2"
         with:
-          credentials: "${{ secrets.GCP_PREVIEW_KEY }}"
           destination: "deploy-previews/${{ github.sha }}/prenumerera"
           parent: 'false'
           path: build/prenumerera

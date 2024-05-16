@@ -32,7 +32,7 @@ jobs:
       - name: Auth Cloud SDK
         uses: "google-github-actions/auth@v2"
         with:
-          credentials_json: "${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+          credentials_json: "${{ secrets.GCP_PRODUCTION_KEY }}"
           export_default_credentials: 'true'
           project_id: ksf-production
       - name: Setup Cloud SDK
@@ -100,35 +100,30 @@ jobs:
       - name: Upload Scripts
         uses: "google-github-actions/upload-cloud-storage@v2"
         with:
-          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/scripts
           parent: 'false'
           path: build/scripts
       - name: Upload Mitt Konto
         uses: "google-github-actions/upload-cloud-storage@v2"
         with:
-          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/mitt-konto
           parent: 'false'
           path: build/mitt-konto
       - name: Upload Kort
         uses: "google-github-actions/upload-cloud-storage@v2"
         with:
-          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/kort
           parent: 'false'
           path: build/kort
       - name: "Upload Vetrina (for testing only)"
         uses: "google-github-actions/upload-cloud-storage@v2"
         with:
-          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/vetrina-test
           parent: 'false'
           path: build/vetrina-test
       - name: Upload Prenumerera
         uses: "google-github-actions/upload-cloud-storage@v2"
         with:
-          credentials: "${{ secrets.GCP_PRODUCTION_KEY }}"
           destination: ksf-frontends/prenumerera
           parent: 'false'
           path: build/prenumerera
@@ -138,10 +133,6 @@ jobs:
     steps:
       - name: Install gcloud
         uses: "google-github-actions/setup-gcloud@v2"
-        with:
-          export_default_credentials: 'true'
-          project_id: ksf-production
-          service_account_key: "${{ secrets.GCP_PRODUCTION_KEY }}"
       - name: "Invalidate CDN cache for 'app-article'"
         run: |2
             gcloud compute url-maps invalidate-cdn-cache app-article --path "/*"
@@ -151,10 +142,6 @@ jobs:
     steps:
       - name: Install gcloud
         uses: "google-github-actions/setup-gcloud@v2"
-        with:
-          export_default_credentials: 'true'
-          project_id: ksf-production
-          service_account_key: "${{ secrets.GCP_PRODUCTION_KEY }}"
       - name: "Invalidate CDN cache for 'ksf-frontends-lb'"
         run: |2
             gcloud compute url-maps invalidate-cdn-cache ksf-frontends-lb --path "/*"
@@ -164,10 +151,6 @@ jobs:
     steps:
       - name: Install gcloud
         uses: "google-github-actions/setup-gcloud@v2"
-        with:
-          export_default_credentials: 'true'
-          project_id: ksf-production
-          service_account_key: "${{ secrets.GCP_PRODUCTION_KEY }}"
       - name: "Invalidate CDN cache for 'kreditkort'"
         run: |2
             gcloud compute url-maps invalidate-cdn-cache kreditkort --path "/*"
@@ -177,10 +160,6 @@ jobs:
     steps:
       - name: Install gcloud
         uses: "google-github-actions/setup-gcloud@v2"
-        with:
-          export_default_credentials: 'true'
-          project_id: ksf-production
-          service_account_key: "${{ secrets.GCP_PRODUCTION_KEY }}"
       - name: "Invalidate CDN cache for 'mitt-konto'"
         run: |2
             gcloud compute url-maps invalidate-cdn-cache mitt-konto --path "/*"

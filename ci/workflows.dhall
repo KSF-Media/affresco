@@ -53,8 +53,8 @@ let setupSteps =
                     env
               , credentials_json = 
                   merge
-                    { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
-                    , Production = "\${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+                    { Staging = "\${{ secrets.GCP_PREVIEW_KEY }}"
+                    , Production = "\${{ secrets.GCP_PRODUCTION_KEY }}"
                     }
                     env
               , export_default_credentials = "true"
@@ -118,12 +118,6 @@ let mkUploadStep =
                   }
                   env
             , parent = "false"
-            , credentials =
-                merge
-                  { Staging = "\${{ secrets.GCP_PREVIEW_KEY }}"
-                  , Production = "\${{ secrets.GCP_PRODUCTION_KEY }}"
-                  }
-                  env
             }
         }
 
@@ -173,11 +167,6 @@ let refreshCDNSteps =
         [ Step::{
           , name = Some "Install gcloud"
           , uses = Some "google-github-actions/setup-gcloud@v2"
-          , `with` = toMap
-              { project_id = "ksf-production"
-              , service_account_key = "\${{ secrets.GCP_PRODUCTION_KEY }}"
-              , export_default_credentials = "true"
-              }
           }
         , Step::{
           , name = Some "Invalidate CDN cache for '${cdnName}'"
