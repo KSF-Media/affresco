@@ -180,6 +180,13 @@ registerCreditCardFromExisting { userId, authToken } creditCardId =
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
+registerCreditCardForSubscription :: UserAuth -> Int -> Aff CreditCardRegister
+registerCreditCardForSubscription { userId, authToken } subsno =
+  readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardSubscriptionSubsnoRegisterPost" [ unsafeToForeign subsno ] { authorization, authUser }
+  where
+    authorization = oauthToken authToken
+    authUser = unsafeToForeign userId
+
 getCreditCardRegister :: UserAuth -> CreditCardId -> CreditCardRegisterNumber -> Aff CreditCardRegister
 getCreditCardRegister { userId, authToken } creditCardId creditCardRegisterNumber = do
   readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardIdRegisterNumberGet" [ unsafeToForeign creditCardId, unsafeToForeign creditCardRegisterNumber ] { authorization, authUser }

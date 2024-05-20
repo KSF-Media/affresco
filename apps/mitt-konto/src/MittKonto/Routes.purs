@@ -2,11 +2,8 @@ module MittKonto.Routes where
 
 import Prelude hiding ((/))
 
-import Bottega.Models.CreditCard (CreditCardId)
 import Data.Either (note)
 import Data.Generic.Rep (class Generic, NoArguments(..))
-import Data.Newtype (wrap, unwrap)
-import Data.Profunctor (dimap)
 import KSF.Api.Subscription (Subsno)
 import KSF.Api.Subscription (fromString, toString) as Subsno
 import Routing.Duplex (RouteDuplex(..), RouteDuplex', as, end, int, param, prefix, root, segment, suffix)
@@ -22,7 +19,7 @@ data MittKontoRoute
   | PasswordRecovery
   | PasswordRecovery2
   | PasswordRecovery3
-  | CreditCardUpdate Subsno CreditCardId
+  | CreditCardUpdate Subsno
   | Search
   | Paywall
   | MittKonto
@@ -37,10 +34,6 @@ hash t (RouteDuplex enc dec) =
                              then Success (state { hash = "" }) NoArguments
                              else Fail (Expected t state.hash)))
 
--- Refines a codec of Strings to CreditCardId
-creditCardId :: RouteDuplex' String -> RouteDuplex' CreditCardId
-creditCardId = dimap unwrap wrap <<< int
-
 -- Refines a codec of Strings to Subsnos
 subsno :: RouteDuplex' String -> RouteDuplex' Subsno
 subsno = as Subsno.toString (note "no parse as Subsno" <<< Subsno.fromString)
@@ -54,8 +47,7 @@ routes = root $ G.sum
   , "PasswordRecovery": hash "l%C3%B6senord" G.noArgs
   , "PasswordRecovery2": hash "losenord" G.noArgs
   , "PasswordRecovery3": hash "l%F6senord" G.noArgs
-  , "CreditCardUpdate": "betalkort" `prefix`
-      (G.product (subsno segment) (creditCardId segment)) `suffix` "uppdatera"
+  , "CreditCardUpdate": "betalkort" `prefix` subsno segment `suffix` "uppdatera"
   , "Search": "sök" `prefix` end G.noArgs
   , "Paywall": "betalvägg" `prefix` end G.noArgs
   , "MittKonto": end G.noArgs
