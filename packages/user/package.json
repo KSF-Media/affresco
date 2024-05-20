@@ -7,7 +7,7 @@
   "dependencies": {
     "persona": "https://github.com/KSF-Media/persona-javascript-client.git#d1ced3503858ba6db18752324a4871eca40cb28f",
     "react": "^16.12",
-    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#ce2042553c63249c93dc2fa5e6e97ee363a6f2af",
+    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#4f180ed4ba982d4eeba23bf751b44481d2117164",
     "react-dom": "^16.12"
   },
   "scripts": {

@@ -23,6 +23,7 @@ newtype Subsno = Subsno Int
 
 instance eqSubsno :: Eq Subsno where
   eq (Subsno s1) (Subsno s2) = s1 == s2
+derive instance newtypeSubsno :: Newtype Subsno _
 
 toString :: Subsno -> String
 toString (Subsno s) = show s
