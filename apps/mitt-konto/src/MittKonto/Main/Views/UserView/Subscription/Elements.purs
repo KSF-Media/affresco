@@ -2,7 +2,7 @@ module MittKonto.Main.UserView.Subscription.Elements where
 
 import Prelude
 
-import Bottega (BottegaError, bottegaErrorMessage)
+import Bottega (BottegaError)
 import Bottega.Models (CreditCard)
 import Data.Array (filter, mapMaybe)
 import Data.Array as Array
@@ -92,8 +92,8 @@ paymentMethod { props: { subscription: { paymentMethod: method }, creditCard } }
       DOM.ul_ [ DOM.li_ [ DOM.text $ "Nummer: " <> card.maskedPan ]
               , DOM.li_ [ DOM.text $ "Utgångsdatum: " <> formatExpiryDate card.expiryDate ]
               ]
-    -- The card change action has the error message
-    subscriptionCreditCard (Left _) = DOM.text "?"
+    -- Odd but just ignore, the card update is done with subsno only
+    subscriptionCreditCard (Left _) = mempty
 
     formatExpiryDate :: String -> String
     formatExpiryDate expiryDate
@@ -179,8 +179,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
         then case props.creditCard of
         Nothing -> []
         Just Nothing -> [ loadingSpinner ]
-        Just (Just (Right card)) -> [ creditCardUpdateIcon card ]
-        Just (Just (Left err)) -> [ creditCardUpdateError err ]
+        Just (Just _) -> [ creditCardUpdateIcon ]
         else mempty
 
     updateProgress =
@@ -345,7 +344,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
             , wrapperProgress = AsyncWrapper.Editing deliveryReclamationComponent
             }
 
-    creditCardUpdateIcon card =
+    creditCardUpdateIcon =
       DOM.div
         { className: "subscription--action-item"
         , children: [ DOM.a
@@ -377,14 +376,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                     ]
         }
       where
-        href = "/betalkort/" <> Subsno.toString subsno <> "/" <> (show $ unwrap card.id) <> "/uppdatera"
-
-    creditCardUpdateError err =
-      DOM.div
-        { className: "error-text"
-        , children:
-            [ DOM.text $ "Något gick fel vid laddning av betalkort. Fel: " <> bottegaErrorMessage err]
-        }
+        href = "/betalkort/" <> Subsno.toString subsno <> "/uppdatera"
 
 pauseSubscriptionComponent :: Types.Self -> Maybe User.PausedSubscription -> JSX
 pauseSubscriptionComponent self@{ props: props@{ subscription: sub@{ package } } } editing =

@@ -3,7 +3,7 @@ module MittKonto.Main.CreditCardUpdateView where
 import Prelude
 
 import Bottega (BottegaError, bottegaErrorMessage)
-import Bottega.Models (CreditCard, CreditCardRegister, CreditCardRegisterNumber(..), CreditCardRegisterState(..), FailReason(..))
+import Bottega.Models (CreditCardRegister, CreditCardRegisterState(..), FailReason(..))
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
@@ -15,13 +15,12 @@ import Effect.AVar (AVar)
 import Effect.AVar (empty, tryPut, tryTake) as AVar
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
-import KSF.Api.Subscription (Subsno(..))
+import KSF.Api.Subscription (Subsno)
 import KSF.AsyncWrapper as AsyncWrapper
 import KSF.CreditCard.Register (render, scaRequired) as Register
 import KSF.Sentry as Sentry
-import KSF.User (getCreditCardRegister, registerCreditCardFromExisting) as User
+import KSF.User (getCreditCardRegister, registerCreditCardForSubscription) as User
 import KSF.User.Cusno (Cusno)
-import KSF.Tracking as Tracking
 import KSF.Window (close)
 import MittKonto.Wrappers (AutoClose(..), SetRouteWrapperState)
 import MittKonto.Wrappers.Elements as WrapperElements
@@ -38,7 +37,7 @@ type BaseProps =
   ( cusno       :: Cusno
   , logger      :: Sentry.Logger
   , window      :: Maybe Window
-  , creditCard  :: Either BottegaError CreditCard
+  , subsno      :: Subsno
   , cardsChanged :: Effect Unit
   )
 
@@ -71,22 +70,17 @@ data UpdateState
 creditCardUpdateView :: Component Props
 creditCardUpdateView = do
   closed <- AVar.empty
-  component "CreditCardUpdateView" \props@{ creditCard } -> React.do
+  component "CreditCardUpdateView" \props -> React.do
     state /\ setState <- useState initialState
 
     let self = { state, setState, props}
     useEffectOnce do
       props.setWrapperState \s -> s { titleText = "Uppdatera ditt kredit- eller bankkort" }
-      case creditCard of
-        Left err -> do
-          onError self $ "1, " <> bottegaErrorMessage err
-          pure mempty
-        Right card -> do
-          _ <- AVar.tryTake closed
-          Aff.launchAff_ $ registerCreditCard self closed card
-          pure do
-            _ <- AVar.tryPut unit closed
-            pure unit
+      _ <- AVar.tryTake closed
+      Aff.launchAff_ $ registerCreditCard self closed
+      pure do
+        _ <- AVar.tryPut unit closed
+        pure unit
     pure $ render self
 
 initialState :: State
@@ -123,10 +117,10 @@ render { setState, state: { asyncWrapperState, updateState } } =
     onTryAgain :: Effect Unit
     onTryAgain = setState \s -> s { asyncWrapperState = AsyncWrapper.Ready }
 
-registerCreditCard :: Self -> AVar Unit -> CreditCard -> Aff Unit
-registerCreditCard self@{ setState, props: { logger, setWrapperState, window }, state } closed oldCreditCard@{ id } = do
+registerCreditCard :: Self -> AVar Unit -> Aff Unit
+registerCreditCard self@{ setState, props: { logger, setWrapperState, subsno, window }, state } closed = do
   globalWindow <- liftEffect Web.HTML.window
-  creditCardRegister <- User.registerCreditCardFromExisting id
+  creditCardRegister <- User.registerCreditCardForSubscription subsno
   case creditCardRegister of
     Right register@{ terminalUrl: Just url } -> do
       let newState = state { updateState = RegisterCreditCard, paymentTerminal = Just url.paymentTerminalUrl }
@@ -139,7 +133,7 @@ registerCreditCard self@{ setState, props: { logger, setWrapperState, window }, 
             void $ Window.open url.paymentTerminalUrl "_blank" "noopener" globalWindow
         setState \_ -> newState
         setWrapperState _ { closeable = true }
-      void $ Aff.forkAff $ startRegisterPoller self { state = newState } closed oldCreditCard register
+      void $ Aff.forkAff $ startRegisterPoller self { state = newState } closed register
     Right { terminalUrl: Nothing } -> do
       liftEffect $ for_ window close
       liftEffect do
@@ -156,24 +150,22 @@ registerCreditCard self@{ setState, props: { logger, setWrapperState, window }, 
 killRegisterPoller :: State -> Aff Unit
 killRegisterPoller state = Aff.killFiber (error "Canceled poller") state.poller
 
-startRegisterPoller :: Self -> AVar Unit -> CreditCard -> CreditCardRegister -> Aff Unit
-startRegisterPoller self@{ setState, state } closed oldCreditCard creditCardRegister = do
+startRegisterPoller :: Self -> AVar Unit -> CreditCardRegister -> Aff Unit
+startRegisterPoller self@{ setState, state } closed creditCardRegister = do
   newPoller <- Aff.forkAff do
     killRegisterPoller state
-    newPoller <- Aff.forkAff $ pollRegister self closed oldCreditCard (Right creditCardRegister)
+    newPoller <- Aff.forkAff $ pollRegister self closed (Right creditCardRegister)
     Aff.joinFiber newPoller
   liftEffect $ setState _ { poller = newPoller }
 
-pollRegister :: Self -> AVar Unit -> CreditCard -> Either BottegaError CreditCardRegister -> Aff Unit
-pollRegister self@{ props: { cusno, logger } } closed oldCreditCard (Right register) = do
+pollRegister :: Self -> AVar Unit -> Either BottegaError CreditCardRegister -> Aff Unit
+pollRegister self@{ props: { logger } } closed (Right register) = do
   case register.status.state of
     CreditCardRegisterStarted ->
       delayedPollRegister =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterCompleted -> liftEffect do
-      track "success"
       onSuccess self
     CreditCardRegisterFailed reason -> liftEffect do
-      track $ "error:" <> show reason
       case reason of
         NetsIssuerError -> self.setState _ { asyncWrapperState = AsyncWrapper.Error "Betalning nekades av kortutgivaren. Vänligen kontakta din bank." }
         _ -> onError self "4"
@@ -183,11 +175,9 @@ pollRegister self@{ props: { cusno, logger } } closed oldCreditCard (Right regis
           self.setState _ { updateState = ScaRequired url, scaShown = true }
         _ -> pure unit
     CreditCardRegisterCanceled -> liftEffect do
-      track "cancel"
       onCancel self
     CreditCardRegisterCreated -> delayedPollRegister =<< User.getCreditCardRegister register.creditCardId register.number
     CreditCardRegisterUnknownState -> liftEffect do
-      track $ "error: unknown"
       logger.log "Server is in an unknown state" Sentry.Info
       onError self "5"
   where
@@ -196,17 +186,9 @@ pollRegister self@{ props: { cusno, logger } } closed oldCreditCard (Right regis
       componentOpen <- isNothing <$> AVar.tryRead closed
       when componentOpen do
         Aff.delay $ Aff.Milliseconds 1000.0
-        pollRegister self closed oldCreditCard eitherRegister
+        pollRegister self closed eitherRegister
 
-    track :: String -> Effect Unit
-    track result = do
-      -- Do we even have this anymore?
-      Tracking.updateCreditCard cusno (Subsno 0) (Tracking.readBottegaCreditCard oldCreditCard) (unRegisterNumber register.number) result
-
-    unRegisterNumber :: CreditCardRegisterNumber -> String
-    unRegisterNumber (CreditCardRegisterNumber number) = number
-
-pollRegister self@{ props: { logger } } _ _ (Left err) = liftEffect do
+pollRegister self@{ props: { logger } } _ (Left err) = liftEffect do
   let msg = bottegaErrorMessage err
   logger.log ("Could not fetch register status: " <> msg) Sentry.Error
   onError self $ "6, " <> msg

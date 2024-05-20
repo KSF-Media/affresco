@@ -51,7 +51,6 @@ foreign import sentryDsn_ :: Effect String
 
 app :: Component {}
 app = do
-  foldMap (const $ pure "Just testing if deploy worked+1" *> pure unit) Nothing
   router <- makeInterface
   locationState <- router.locationState
   let fullPath = locationState.pathname <> locationState.search <> locationState.hash
@@ -191,30 +190,21 @@ app = do
             , route: "/fakturor/:invno"
             , routeFrom: "/fakturor"
             }
-        creditCardUpdateInputs window creditCard user =
-          { creditCard: creditCard
+        creditCardUpdateInputs window subsno user =
+          { subsno
           , cusno: user.cusno
           , logger: logger
           , window: window
           , cardsChanged: setCardsChanged \s -> s + 1
           }
-        creditCardUpdateView subsno creditCardId user = case state.creditCards of
+        creditCardUpdateView subsno user = case state.creditCards of
           Nothing -> Spinner.loadingSpinner
-          Just (Left err) -> fromMaybe mempty do
+          Just _ -> fromMaybe mempty do
+            let subs = find ((_ == subsno) <<< _.subsno) user.subs
             w <- state.window
-            pure $ creditCardUpdate
-              { contentProps: creditCardUpdateInputs w (Left err) user
-              , closeType: Wrappers.XButton
-              , route: "/betalkort/uppdatera"
-              , routeFrom: "/"
-              }
-          Just (Right cards) -> fromMaybe mempty do
-            card <- find ((_ == creditCardId) <<< _.id) cards
-            subs <- find ((_ == subsno) <<< _.subsno) user.subs
-            w <- state.window
-            guard (subs.paymentMethod == CreditCard) $ pure $
+            guard ((_.paymentMethod <$> subs) == Just CreditCard) $ pure $
               creditCardUpdate
-                { contentProps: creditCardUpdateInputs w (Right card) user
+                { contentProps: creditCardUpdateInputs w subsno user
                 , closeType: Wrappers.XButton
                 , route: "/betalkort/uppdatera"
                 , routeFrom: "/"
@@ -242,7 +232,7 @@ app = do
           PasswordRecovery3 -> passwordResetView Nothing
           PasswordRecoveryCode code -> passwordResetView $ Just code
           PasswordRecoveryCode2 code -> passwordResetView $ Just code
-          CreditCardUpdate subsno creditCardId -> foldMap (creditCardUpdateView subsno creditCardId) state.activeUser
+          CreditCardUpdate subsno -> foldMap (creditCardUpdateView subsno) state.activeUser
           Paywall -> paywallView
         content = if isNothing state.activeUser && needsLogin route
                   then Views.loginView { state, setState } (setUser (Nothing :: Maybe Days)) logger
