@@ -131,6 +131,12 @@ jobs:
     needs: deploy-gs
     runs-on: ubuntu-latest
     steps:
+      - name: Auth Cloud SDK
+        uses: "google-github-actions/auth@v2"
+        with:
+          create_credentials_file: 'true'
+          credentials_json: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          project_id: ksf-staging
       - name: Install gcloud
         uses: "google-github-actions/setup-gcloud@v2"
       - name: "Invalidate CDN cache for 'app-article'"
@@ -140,6 +146,12 @@ jobs:
     needs: deploy-gs
     runs-on: ubuntu-latest
     steps:
+      - name: Auth Cloud SDK
+        uses: "google-github-actions/auth@v2"
+        with:
+          create_credentials_file: 'true'
+          credentials_json: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          project_id: ksf-staging
       - name: Install gcloud
         uses: "google-github-actions/setup-gcloud@v2"
       - name: "Invalidate CDN cache for 'ksf-frontends-lb'"
@@ -149,6 +161,12 @@ jobs:
     needs: deploy-gs
     runs-on: ubuntu-latest
     steps:
+      - name: Auth Cloud SDK
+        uses: "google-github-actions/auth@v2"
+        with:
+          create_credentials_file: 'true'
+          credentials_json: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          project_id: ksf-staging
       - name: Install gcloud
         uses: "google-github-actions/setup-gcloud@v2"
       - name: "Invalidate CDN cache for 'kreditkort'"
@@ -158,6 +176,12 @@ jobs:
     needs: deploy-gs
     runs-on: ubuntu-latest
     steps:
+      - name: Auth Cloud SDK
+        uses: "google-github-actions/auth@v2"
+        with:
+          create_credentials_file: 'true'
+          credentials_json: "${{ secrets.GCP_PRODUCTION_KEY }}"
+          project_id: ksf-staging
       - name: Install gcloud
         uses: "google-github-actions/setup-gcloud@v2"
       - name: "Invalidate CDN cache for 'mitt-konto'"
