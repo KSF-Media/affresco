@@ -41,24 +41,28 @@ let setupSteps =
       \(env : Env) ->
         [ Step::{
           , name = Some "Checkout repo"
-          , uses = Some "actions/checkout@v2"
+          , uses = Some "actions/checkout@v4"
           }
         , Step::{
-          , name = Some "Setup Cloud SDK"
-          , uses = Some "google-github-actions/setup-gcloud@v0.6.0"
+          , name = Some "Auth Cloud SDK"
+          , uses = Some "google-github-actions/auth@v2"
           , `with` = toMap
-              { project_id =
+              { project_id = 
                   merge
                     { Staging = "ksf-staging", Production = "ksf-production" }
                     env
-              , service_account_key =
+              , credentials_json = 
                   merge
-                    { Staging = "\${{ secrets.GCP_STAGING_AE_KEY }}"
-                    , Production = "\${{ secrets.GCP_PRODUCTION_AE_KEY }}"
+                    { Staging = "\${{ secrets.GCP_PREVIEW_KEY }}"
+                    , Production = "\${{ secrets.GCP_PRODUCTION_KEY }}"
                     }
                     env
-              , export_default_credentials = "true"
+              , create_credentials_file = "true"
               }
+          }
+        , Step::{
+          , name = Some "Setup Cloud SDK"
+          , uses = Some "google-github-actions/setup-gcloud@v2"
           }
         , Step::{
           , run = Some
@@ -77,7 +81,7 @@ let mkCacheAppStep =
 
         in  Step::{
             , name = Some "Setup build cache for ${app.name}"
-            , uses = Some "actions/cache@v2"
+            , uses = Some "actions/cache@v4"
             , `with` = toMap
                 { path = caches
                 , key =
@@ -103,7 +107,7 @@ let mkUploadStep =
       \(app : App.Type) ->
         Step::{
         , name = Some "Upload ${app.name}"
-        , uses = Some "google-github-actions/upload-cloud-storage@v0.9.0"
+        , uses = Some "google-github-actions/upload-cloud-storage@v2"
         , `with` = toMap
             { path = "build/${app.deployDir}"
             , destination =
@@ -114,17 +118,11 @@ let mkUploadStep =
                   }
                   env
             , parent = "false"
-            , credentials =
-                merge
-                  { Staging = "\${{ secrets.GCP_PREVIEW_KEY }}"
-                  , Production = "\${{ secrets.GCP_PRODUCTION_KEY }}"
-                  }
-                  env
             }
         }
 
 let checkCISteps =
-      [ Step::{ name = Some "Checkout repo", uses = Some "actions/checkout@v2" }
+      [ Step::{ name = Some "Checkout repo", uses = Some "actions/checkout@v4" }
       , Step::{
         , name = Some "Check CI script has been generated from Dhall"
         , run = Some
@@ -168,12 +166,7 @@ let refreshCDNSteps =
       \(cdnName : Text) ->
         [ Step::{
           , name = Some "Install gcloud"
-          , uses = Some "google-github-actions/setup-gcloud@v0.6.0"
-          , `with` = toMap
-              { project_id = "ksf-production"
-              , service_account_key = "\${{ secrets.GCP_PRODUCTION_KEY }}"
-              , export_default_credentials = "true"
-              }
+          , uses = Some "google-github-actions/setup-gcloud@v2"
           }
         , Step::{
           , name = Some "Invalidate CDN cache for '${cdnName}'"
