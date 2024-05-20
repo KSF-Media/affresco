@@ -168,7 +168,7 @@ let refreshCDNSteps =
           , name = Some "Auth Cloud SDK"
           , uses = Some "google-github-actions/auth@v2"
           , `with` = toMap
-              { project_id = "ksf-staging"
+              { project_id = "ksf-production"
               , credentials_json = "\${{ secrets.GCP_PRODUCTION_KEY }}"
               , create_credentials_file = "true"
               }

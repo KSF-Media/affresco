@@ -136,7 +136,7 @@ jobs:
         with:
           create_credentials_file: 'true'
           credentials_json: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          project_id: ksf-staging
+          project_id: ksf-production
       - name: Install gcloud
         uses: "google-github-actions/setup-gcloud@v2"
       - name: "Invalidate CDN cache for 'app-article'"
@@ -151,7 +151,7 @@ jobs:
         with:
           create_credentials_file: 'true'
           credentials_json: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          project_id: ksf-staging
+          project_id: ksf-production
       - name: Install gcloud
         uses: "google-github-actions/setup-gcloud@v2"
       - name: "Invalidate CDN cache for 'ksf-frontends-lb'"
@@ -166,7 +166,7 @@ jobs:
         with:
           create_credentials_file: 'true'
           credentials_json: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          project_id: ksf-staging
+          project_id: ksf-production
       - name: Install gcloud
         uses: "google-github-actions/setup-gcloud@v2"
       - name: "Invalidate CDN cache for 'kreditkort'"
@@ -181,7 +181,7 @@ jobs:
         with:
           create_credentials_file: 'true'
           credentials_json: "${{ secrets.GCP_PRODUCTION_KEY }}"
-          project_id: ksf-staging
+          project_id: ksf-production
       - name: Install gcloud
         uses: "google-github-actions/setup-gcloud@v2"
       - name: "Invalidate CDN cache for 'mitt-konto'"
