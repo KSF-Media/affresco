@@ -47,11 +47,11 @@ let setupSteps =
           , name = Some "Auth Cloud SDK"
           , uses = Some "google-github-actions/auth@v2"
           , `with` = toMap
-              { project_id = 
+              { project_id =
                   merge
                     { Staging = "ksf-staging", Production = "ksf-production" }
                     env
-              , credentials_json = 
+              , credentials_json =
                   merge
                     { Staging = "\${{ secrets.GCP_PREVIEW_KEY }}"
                     , Production = "\${{ secrets.GCP_PRODUCTION_KEY }}"
@@ -165,6 +165,15 @@ let linkPreviewsStep =
 let refreshCDNSteps =
       \(cdnName : Text) ->
         [ Step::{
+          , name = Some "Auth Cloud SDK"
+          , uses = Some "google-github-actions/auth@v2"
+          , `with` = toMap
+              { project_id = "ksf-staging"
+              , credentials_json = "\${{ secrets.GCP_PRODUCTION_KEY }}"
+              , create_credentials_file = "true"
+              }
+          }
+        , Step::{
           , name = Some "Install gcloud"
           , uses = Some "google-github-actions/setup-gcloud@v2"
           }
