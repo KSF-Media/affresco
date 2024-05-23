@@ -11,7 +11,7 @@
   "dependencies": {
     "@sentry/browser": "^6.19.7",
     "@sentry/tracing": "^6.19.7",
-    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#4f180ed4ba982d4eeba23bf751b44481d2117164",
+    "bottega": "https://github.com/KSF-Media/bottega-javascript-client.git#db1b14fdae466ff8087f229f2b40014a49d8a4cc",
     "create-react-class": "^15.6.3",
     "persona": "https://github.com/KSF-Media/persona-javascript-client.git#d1ced3503858ba6db18752324a4871eca40cb28f",
     "react": "^16.12.0",

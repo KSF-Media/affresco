@@ -41,6 +41,7 @@ module KSF.User
   , pauseSubscription
   , payOrder
   , userVerified
+  , registerCreditCardProcess
   , registerCreditCardForSubscription
   , registerCreditCardFromExisting
   , requestPasswordReset
@@ -59,9 +60,9 @@ where
 import Prelude
 
 import Bottega (BottegaError(..))
-import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCardForSubscription, registerCreditCardFromExisting, getCreditCardRegister, userVerified, InsufficientAccount) as Bottega
+import Bottega (createOrder, getOrder, getPackages, payOrder, getCreditCards, getCreditCard, deleteCreditCard, registerCreditCardProcess, registerCreditCardForSubscription, registerCreditCardFromExisting, getCreditCardRegister, userVerified, InsufficientAccount) as Bottega
 import Bottega.Models (NewOrder, Order, OrderNumber, OrderState(..), FailReason(..), PaymentMethod(..), PaymentTerminalUrl) as BottegaReExport
-import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl, CreditCardId, CreditCard, CreditCardRegisterNumber, CreditCardRegister) as Bottega
+import Bottega.Models (NewOrder, Order, OrderNumber, PaymentTerminalUrl, CreditCardId, CreditCard, CreditCardRegisterNumber, CreditCardRegister, RegisterCallback) as Bottega
 import Bottega.Models.PaymentMethod (PaymentMethod) as Bottega
 import Control.Monad.Error.Class (catchError, throwError, try)
 import Data.Array as Array
@@ -606,8 +607,11 @@ getCreditCard creditCardId = callBottega $ \tokens -> Bottega.getCreditCard toke
 deleteCreditCard :: Bottega.CreditCardId -> Aff (Either BottegaError Unit)
 deleteCreditCard creditCardId = callBottega $ \tokens -> Bottega.deleteCreditCard tokens creditCardId
 
-registerCreditCardForSubscription :: Subsno -> Aff (Either BottegaError Bottega.CreditCardRegister)
-registerCreditCardForSubscription subsno = callBottega $ \tokens -> Bottega.registerCreditCardForSubscription tokens $ unwrap subsno
+registerCreditCardProcess :: String -> Aff (Either BottegaError Unit)
+registerCreditCardProcess transactionId = callBottega $ const $ Bottega.registerCreditCardProcess transactionId
+
+registerCreditCardForSubscription :: Maybe Bottega.RegisterCallback -> Subsno -> Aff (Either BottegaError Bottega.CreditCardRegister)
+registerCreditCardForSubscription callback subsno = callBottega $ \tokens -> Bottega.registerCreditCardForSubscription tokens callback $ unwrap subsno
 
 registerCreditCardFromExisting :: Bottega.CreditCardId -> Aff (Either BottegaError Bottega.CreditCardRegister)
 registerCreditCardFromExisting creditCardId = callBottega $ \tokens -> Bottega.registerCreditCardFromExisting tokens creditCardId

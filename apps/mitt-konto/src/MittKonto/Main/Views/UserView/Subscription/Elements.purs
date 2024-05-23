@@ -36,7 +36,6 @@ import KSF.TemporaryAddressChange.Component as TemporaryAddressChange
 import KSF.Tracking as Tracking
 import KSF.User (InvalidDateInput(..))
 import KSF.User as User
-import KSF.Window (clearOpener)
 import MittKonto.Main.UserView.Subscription.Helpers as Helpers
 import MittKonto.Main.UserView.Subscription.Types as Types
 import MittKonto.Wrappers.ActionsWrapper as ActionsWrapper
@@ -45,8 +44,6 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (capture_, preventDefault)
 import React.Basic.Events (handler, handler_)
-import Web.HTML as Web.HTML
-import Web.HTML.Window as Window
 
 receiverName :: Types.Self -> Array DescriptionList.Definition
 receiverName { props: { subscription: { receiver } } } =
@@ -348,11 +345,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
       DOM.div
         { className: "subscription--action-item"
         , children: [ DOM.a
-                        { onClick: handler preventDefault $ \_ -> do
-                                    window <- Web.HTML.window
-                                    w <- Window.open "" "_blank" "" window
-                                    for_ w clearOpener
-                                    self.props.updateWindow $ Just w
+                        { onClick: handler preventDefault $ \_ ->
                                     props.router.pushState (unsafeToForeign {}) href
                         , href
                         , children: [ DOM.div
@@ -371,7 +364,7 @@ subscriptionUpdates self@{ props: props@{ now, subscription: sub@{ subsno, packa
                         }
                     , DOM.div
                         { className: "subscription--update-action-addtional-text"
-                        , children: [DOM.text "(Öppnas i ett nytt fönster. Vid registreringen görs en täckningsreservation på 1 euro som inte debiteras från kortet.)"]
+                        , children: [DOM.text "(Vid registreringen görs en täckningsreservation på 1 euro som inte debiteras från kortet.)"]
                         }
                     ]
         }

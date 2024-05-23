@@ -2,14 +2,26 @@ module MittKonto.Routes where
 
 import Prelude hiding ((/))
 
+import Bottega.Models (CreditCardId, CreditCardRegisterNumber)
 import Data.Either (note)
 import Data.Generic.Rep (class Generic, NoArguments(..))
+import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap, wrap)
+import Data.Profunctor (dimap)
 import KSF.Api.Subscription (Subsno)
 import KSF.Api.Subscription (fromString, toString) as Subsno
-import Routing.Duplex (RouteDuplex(..), RouteDuplex', as, end, int, param, prefix, root, segment, suffix)
+import Routing.Duplex (RouteDuplex(..), RouteDuplex', as, end, int, param, prefix, prop, record, root, segment, suffix)
 import Routing.Duplex.Generic as G
 import Routing.Duplex.Parser (RouteParser(..), RouteError(..), RouteResult(..))
 import Routing.Duplex.Printer as R
+import Type.Proxy (Proxy(..))
+
+type CreditCardCallbackParams =
+  { registerNumber :: CreditCardRegisterNumber
+  , registerCardId :: CreditCardId
+  , transactionId :: String
+  , responseCode :: String
+  }
 
 data MittKontoRoute
   = InvoiceDetail Int
@@ -20,6 +32,7 @@ data MittKontoRoute
   | PasswordRecovery2
   | PasswordRecovery3
   | CreditCardUpdate Subsno
+  | CreditCardCallback Subsno CreditCardCallbackParams
   | Search
   | Paywall
   | MittKonto
@@ -38,6 +51,12 @@ hash t (RouteDuplex enc dec) =
 subsno :: RouteDuplex' String -> RouteDuplex' Subsno
 subsno = as Subsno.toString (note "no parse as Subsno" <<< Subsno.fromString)
 
+registerNumber :: RouteDuplex' String -> RouteDuplex' CreditCardRegisterNumber
+registerNumber = dimap unwrap wrap
+
+registerCardId :: RouteDuplex' String -> RouteDuplex' CreditCardId
+registerCardId = dimap unwrap wrap <<< int
+
 routes :: RouteDuplex' MittKontoRoute
 routes = root $ G.sum
   { "InvoiceDetail": "fakturor" `prefix` int segment
@@ -48,6 +67,14 @@ routes = root $ G.sum
   , "PasswordRecovery2": hash "losenord" G.noArgs
   , "PasswordRecovery3": hash "l%F6senord" G.noArgs
   , "CreditCardUpdate": "betalkort" `prefix` subsno segment `suffix` "uppdatera"
+  , "CreditCardCallback": "betalkort" `prefix`
+      (G.product
+       (subsno segment `suffix` "callback")
+       (record
+        # prop (Proxy :: _ "registerNumber") (registerNumber segment)
+        # prop (Proxy :: _ "registerCardId") (registerCardId segment)
+        # prop (Proxy :: _ "transactionId") (param "transactionId")
+        # prop (Proxy :: _ "responseCode") (param "responseCode")))
   , "Search": "sök" `prefix` end G.noArgs
   , "Paywall": "betalvägg" `prefix` end G.noArgs
   , "MittKonto": end G.noArgs
@@ -59,4 +86,9 @@ needsLogin PasswordRecovery2 = false
 needsLogin PasswordRecovery3 = false
 needsLogin (PasswordRecoveryCode _) = false
 needsLogin (PasswordRecoveryCode2 _) = false
+needsLogin (CreditCardCallback _ _) = false
 needsLogin _ = true
+
+creditCardCallbackParams :: MittKontoRoute -> Maybe CreditCardCallbackParams
+creditCardCallbackParams (CreditCardCallback _ x) = Just x
+creditCardCallbackParams _ = Nothing
