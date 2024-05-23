@@ -24,6 +24,8 @@ type CreditCard =
 
 newtype CreditCardRegisterNumber = CreditCardRegisterNumber String
 
+derive instance newtypeCreditCardRegisterNumber :: Newtype CreditCardRegisterNumber _
+
 type CreditCardRegister =
   { number       :: CreditCardRegisterNumber
   , user         :: UUID
@@ -56,3 +58,5 @@ parseCreditCardRegisterState state maybeFailReason =
       "scaRequired" -> CreditCardRegisterScaRequired
       "canceled"    -> CreditCardRegisterCanceled
       _             -> CreditCardRegisterUnknownState
+
+data RegisterCallback = MittKonto | Kort

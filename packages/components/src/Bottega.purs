@@ -2,11 +2,11 @@ module Bottega where
 
 import Prelude
 
-import Bottega.Models (CreditCard, CreditCardId, CreditCardRegister, CreditCardRegisterNumber, NewOrder, Order, OrderNumber, PaymentMethod(..), PaymentMethodId, PaymentTerminalUrl, parseCreditCardRegisterState, parseOrderState)
+import Bottega.Models (CreditCard, CreditCardId, CreditCardRegister, CreditCardRegisterNumber, NewOrder, Order, OrderNumber, PaymentMethod(..), PaymentMethodId, PaymentTerminalUrl, RegisterCallback(..), parseCreditCardRegisterState, parseOrderState)
 import Bottega.Models.Order (fromOrderSource)
 import Data.Array (mapMaybe)
 import Data.Generic.Rep (class Generic)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe, toNullable)
 import Data.Show.Generic (genericShow)
 import Data.Traversable (traverse)
@@ -17,6 +17,7 @@ import KSF.Api (UserAuth, oauthToken)
 import KSF.Api.Error (ServerError)
 import KSF.Api.Package (Package, fromJSCampaign)
 import OpenApiClient (Api, callApi)
+import Unsafe.Coerce (unsafeCoerce)
 
 foreign import ordersApi :: Api
 foreign import packagesApi :: Api
@@ -173,6 +174,11 @@ deleteCreditCard { userId, authToken } creditCardId = do
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
+registerCreditCardProcess :: String -> Aff Unit
+registerCreditCardProcess transactionId = do
+--  callApi paymentMethodsApi "paymentMethodCreditCardRegisterProcessGet" [ unsafeToForeign transactionID, unsafeToForeign "OK" ] {}
+  callApi paymentMethodsApi "paymentMethodCreditCardRegisterProcessGet" [] {transactionId, responseCode: "OK"}
+
 registerCreditCardFromExisting :: UserAuth -> CreditCardId -> Aff CreditCardRegister
 registerCreditCardFromExisting { userId, authToken } creditCardId =
   readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardIdRegisterPost" [ unsafeToForeign creditCardId ] { authorization, authUser }
@@ -180,12 +186,21 @@ registerCreditCardFromExisting { userId, authToken } creditCardId =
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
 
-registerCreditCardForSubscription :: UserAuth -> Int -> Aff CreditCardRegister
-registerCreditCardForSubscription { userId, authToken } subsno =
-  readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardSubscriptionSubsnoRegisterPost" [ unsafeToForeign subsno ] { authorization, authUser }
+registerCreditCardForSubscription :: UserAuth -> Maybe RegisterCallback -> Int -> Aff CreditCardRegister
+registerCreditCardForSubscription { userId, authToken } registerCallback subsno =
+  readCreditCardRegister =<< callApi paymentMethodsApi "paymentMethodCreditCardSubscriptionSubsnoRegisterPost" [ unsafeToForeign subsno ] opts
   where
     authorization = oauthToken authToken
     authUser = unsafeToForeign userId
+    opts = case registerCallback of
+      Nothing -> unsafeCoerce { authorization, authUser }
+      Just x ->
+        { authorization
+        , authUser
+        , callback: case x of
+          MittKonto -> "MittKonto"
+          Kort -> "Kort"
+        }
 
 getCreditCardRegister :: UserAuth -> CreditCardId -> CreditCardRegisterNumber -> Aff CreditCardRegister
 getCreditCardRegister { userId, authToken } creditCardId creditCardRegisterNumber = do

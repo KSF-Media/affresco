@@ -51,7 +51,9 @@ routeWrapper router wrappedComponent = do
         _ <- AVar.tryPut unit closed
         pure unit
     useEffect state.closeAutomatically do
-      let close = router.pushState (unsafeToForeign {}) props.routeFrom
+      let close = do
+            state.onClose
+            router.pushState (unsafeToForeign {}) props.routeFrom
       case state.closeAutomatically of
         Immediate -> close
         Delayed ms -> launchAff_ do

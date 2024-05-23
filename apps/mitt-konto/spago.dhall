@@ -28,6 +28,7 @@ You can edit this file as you like.
   , "nullable"
   , "ordered-collections"
   , "prelude"
+  , "profunctor"
   , "react-basic"
   , "react-basic-dom"
   , "react-basic-hooks"
