@@ -2,7 +2,7 @@ module MittKonto.Main where
 
 import Prelude
 
-import Data.Either (Either(..), either, hush, isLeft)
+import Data.Either (either, hush, isLeft)
 import Data.Foldable (find, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing, maybe)
 import Data.Monoid (guard)
@@ -26,12 +26,12 @@ import KSF.User as User
 import KSF.User.Login as Login
 import Foreign (unsafeToForeign)
 import MittKonto.Components.User as Components.User
-import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as CreditCardUpdateView
+import MittKonto.Components.CreditCard as Components.CreditCard
 import MittKonto.Main.Elements as Elements
 import MittKonto.Main.Helpers as Helpers
 import MittKonto.Main.Types as Types
-import MittKonto.Main.Views (alertView, footerView, loginView, navbarWrapper) as Views
-import MittKonto.Routes (MittKontoRoute(..), routes)
+import MittKonto.Main.Views (alertView, creditCardCallbackView, footerView, loginView, navbarWrapper) as Views
+import MittKonto.Routes (MittKontoRoute(..), creditCardCallbackParams, needsLogin, routes)
 import MittKonto.Wrappers as Wrappers
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
@@ -52,7 +52,8 @@ app = do
                   hush $ routeParse fullPath
   sentryDsn <- sentryDsn_
   logger <- Sentry.mkLogger sentryDsn Nothing "mitt-konto"
-  creditCardUpdate <- Wrappers.routeWrapper router CreditCardUpdateView.creditCardUpdateView
+  creditCardUpdate <- Wrappers.routeWrapper router $ Components.CreditCard.component $
+                      creditCardCallbackParams initialRoute
   now <- Now.nowDate
   loginComponent <- Login.login
   timeout <- Timeout.newTimer
@@ -76,6 +77,7 @@ app = do
         }
   component "MittKonto" \_ -> React.do
     state /\ setState <- useState initialState
+    loggingIn /\ setLoggingIn <- useState' true
     route /\ setRoute <- useState' initialRoute
     cardsChanged /\ setCardsChanged <- useState 0
     useEffectOnce $ pure do
@@ -98,6 +100,7 @@ app = do
             User.logout \logoutResponse -> when (isLeft logoutResponse) $ Console.error "Logout failed"
             liftEffect do
               logger.setUser Nothing
+              setLoggingIn false
               setState $ Types.setActiveUser Nothing
         setUser :: forall a. Duration a => Maybe a -> User.User -> Effect Unit
         setUser maybeDuration user = do
@@ -120,40 +123,31 @@ app = do
                     Tracking.login (Just user.cusno) "magic login" "success"
                     setUser validScope user
                   Nothing -> do
-                    pure unit
-              Nothing -> pure unit
+                    setLoggingIn false
+              Nothing -> setLoggingIn false
       Aff.runAff_ (setState <<< Types.setAlert <<< either Helpers.errorAlert (const Nothing))
                 $ Spinner.withSpinner (setState <<< Types.setLoading) attemptMagicLogin
       matchesWith routeParse (const setRoute) router
 
-    let creditCardUpdateInputs window creditCard user =
-          { creditCard: creditCard
+    let creditCardUpdateInputs subsno callback user =
+          { subsno
+          , callback
           , cusno: user.cusno
           , logger: logger
-          , window: window
           , cardsChanged: setCardsChanged \s -> s + 1
           }
-        creditCardUpdateView subsno creditCardId user = case state.creditCards of
+        creditCardUpdateView subsno callback user = case state.creditCards of
           Nothing -> Spinner.loadingSpinner
-          Just (Left err) -> fromMaybe mempty do
-            w <- state.window
-            pure $ creditCardUpdate
-              { contentProps: creditCardUpdateInputs w (Left err) user
-              , closeType: Wrappers.XButton
-              , route: "/betalkort/uppdatera"
-              , routeFrom: "/"
-              }
-          Just (Right cards) -> fromMaybe mempty do
-            card <- find ((_ == creditCardId) <<< _.id) cards
-            subs <- find ((_ == subsno) <<< _.subsno) user.subs
-            w <- state.window
-            guard (subs.paymentMethod == CreditCard) $ pure $
+          Just _ -> fromMaybe mempty do
+            let subs = find ((_ == subsno) <<< _.subsno) user.subs
+            guard ((_.paymentMethod <$> subs) == Just CreditCard) $ pure $
               creditCardUpdate
-                { contentProps: creditCardUpdateInputs w (Right card) user
+                { contentProps: creditCardUpdateInputs subsno callback user
                 , closeType: Wrappers.XButton
                 , route: "/betalkort/uppdatera"
                 , routeFrom: "/"
                 }
+        navToMain = router.pushState (unsafeToForeign {}) "/"
         userView user =
           userComponent
             { user
@@ -162,8 +156,12 @@ app = do
             }
         userContent = case route of
           MittKonto -> foldMap userView state.activeUser
-          CreditCardUpdate subsno creditCardId -> foldMap (creditCardUpdateView subsno creditCardId) state.activeUser
-        content = if isNothing state.activeUser
+          CreditCardUpdate subsno -> foldMap (creditCardUpdateView subsno Nothing) state.activeUser
+          CreditCardCallback subsno response ->
+            maybe
+            (Views.creditCardCallbackView loggingIn navToMain)
+            (creditCardUpdateView subsno (Just response)) state.activeUser
+        content = if isNothing state.activeUser && needsLogin route
                   then Views.loginView { state, setState } (setUser (Nothing :: Maybe Days)) logger
                   else userContent
         navbarView = navbarComponent { state, logout, isPersonating: false }
