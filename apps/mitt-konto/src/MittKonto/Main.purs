@@ -55,6 +55,7 @@ app = do
   locationState <- router.locationState
   let fullPath = locationState.pathname <> locationState.search <> locationState.hash
       routeParse = Duplex.parse routes
+  Console.log $ "Initial path " <> fullPath
   initialRoute <- maybe (router.pushState (unsafeToForeign {}) "/" *> pure MittKonto) pure $
                   hush $ routeParse fullPath
   sentryDsn <- sentryDsn_
