@@ -67,12 +67,12 @@ routes = root $ G.sum
   , "PasswordRecovery2": hash "losenord" G.noArgs
   , "PasswordRecovery3": hash "l%F6senord" G.noArgs
   , "CreditCardUpdate": "betalkort" `prefix` subsno segment `suffix` "uppdatera"
-  , "CreditCardCallback": "betalkort" `prefix`
+  , "CreditCardCallback":
       (G.product
-       (subsno segment `suffix` "callback")
+       (subsno $ param "subsno")
        (record
-        # prop (Proxy :: _ "registerNumber") (registerNumber segment)
-        # prop (Proxy :: _ "registerCardId") (registerCardId segment)
+        # prop (Proxy :: _ "registerNumber") (registerNumber $ param "order")
+        # prop (Proxy :: _ "registerCardId") (registerCardId $ param "cardId")
         # prop (Proxy :: _ "transactionId") (param "transactionId")
         # prop (Proxy :: _ "responseCode") (param "responseCode")))
   , "Search": "sök" `prefix` end G.noArgs
