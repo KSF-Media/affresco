@@ -1,6 +1,7 @@
 module MittKonto.Main.Views
   ( module Views
   , alertView
+  , creditCardCallbackView
   , footerView
   , navbarWrapper
   )
@@ -21,7 +22,6 @@ import KSF.Footer as Footer
 import KSF.Navbar.Component as Navbar
 import KSF.User.Cusno as Cusno
 import MittKonto.Main.Helpers as Helpers
-import MittKonto.Main.CreditCardUpdateView (creditCardUpdateView) as Views
 import MittKonto.Main.LoginView (loginView) as Views
 import MittKonto.Main.Types as Types
 import React.Basic (JSX)
@@ -89,3 +89,27 @@ alertView alert =
 
 footerView :: JSX
 footerView = Footer.render
+
+creditCardCallbackView :: Boolean -> Effect Unit -> JSX
+creditCardCallbackView true navToMain =
+  DOM.div_
+    [ DOM.text "Vänligen vänta"
+    , DOM.div_
+        [ DOM.a
+            { href: "/"
+            , onClick: handler preventDefault $ const navToMain
+            , children: [ DOM.text "Eller avbryt" ]
+            }
+        ]
+    ]
+creditCardCallbackView false navToMain =
+  DOM.div_
+    [ DOM.text "Återställning av användarsession misslyckades"
+    , DOM.div_
+        [ DOM.a
+            { href: "/"
+            , onClick: handler preventDefault $ const navToMain
+            , children: [ DOM.text "Avbryt" ]
+            }
+        ]
+    ]
