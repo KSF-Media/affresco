@@ -31,6 +31,9 @@ def run_command(command)
   return result
 end
 
+# Set XDG_CACHE_HOME to make dhall shut up about permissions in github actions
+ENV['XDG_CACHE_HOME'] = './.cache'
+
 # A hash of apps with their configuration
 # We read that from the deploy info that we use to generate the CI jobs
 apps_json = run_command("/bin/bash -c 'npx dhall-to-json <<< \"(./ci/apps.dhall).apps\"'")

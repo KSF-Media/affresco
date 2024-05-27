@@ -17,8 +17,6 @@ let apps = A.apps
 
 let previewUrl = "https://deploy-previews.ksfmedia.fi/\${{ github.sha }}"
 
-let promote = "false"
-
 let apps-to-cache = Prelude.List.filter App.Type Actions.hasLockfile apps
 
 let checkCISteps = Actions.checkCISteps

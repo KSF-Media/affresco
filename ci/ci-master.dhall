@@ -15,8 +15,6 @@ let apps = Prelude.List.filter App.Type (\(a: App.Type) -> a.production)  A.apps
 
 let container = ./container.dhall
 
-let promote = "true"
-
 let apps-to-cache = Prelude.List.filter App.Type Actions.hasLockfile apps
 
 let checkCISteps = Actions.checkCISteps
