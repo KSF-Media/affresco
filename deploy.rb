@@ -32,7 +32,7 @@ def run_command(command)
 end
 
 # Set XDG_CACHE_HOME to make dhall shut up about permissions in github actions
-ENV['XDG_CACHE_HOME'] = './.cache'
+ENV['XDG_CACHE_HOME'] = './.dhallcache'
 
 # A hash of apps with their configuration
 # We read that from the deploy info that we use to generate the CI jobs
