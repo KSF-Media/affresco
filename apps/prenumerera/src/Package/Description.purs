@@ -33,7 +33,7 @@ packageDescriptions = fromFoldable
       , brandLong: "HBL"
       , descriptionShort: " mån-sön"
       , descriptionLong: description
-          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, Ostnyland.fi"
+          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, BBL.fi"
           , Tuple "Allt innehåll i våra nyhetsappar" "HBL Nyheter, VN Nyheter, BBL Nyheter (iOS & Android)"
           , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
           , Tuple "Digitala korsord" ""
@@ -53,7 +53,7 @@ packageDescriptions = fromFoldable
       , brandLong: "HBL"
       , descriptionShort: " fre-sön"
       , descriptionLong: description
-          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, Ostnyland.fi"
+          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, BBL.fi"
           , Tuple "Allt innehåll i våra nyhetsappar" "HBL Nyheter, VN Nyheter, BBL Nyheter (iOS & Android)"
           , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
           , Tuple "Digitala korsord" ""
@@ -73,7 +73,7 @@ packageDescriptions = fromFoldable
       , brandLong: "HBL"
       , descriptionShort: " Söndag"
       , descriptionLong: description
-          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, Ostnyland.fi"
+          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, BBL.fi"
           , Tuple "Allt innehåll i våra nyhetsappar" "HBL Nyheter, VN Nyheter, BBL Nyheter (iOS & Android)"
           , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
           , Tuple "Digitala korsord" ""
@@ -112,7 +112,7 @@ packageDescriptions = fromFoldable
       , brandLong: "Borgåbladet"
       , descriptionShort: ""
       , descriptionLong: description
-          [ Tuple "Premium" "Alla artiklar på Ostnyland.fi"
+          [ Tuple "Premium" "Alla artiklar på BBL.fi"
           , Tuple "Allt innehåll i vår nyhetsapp" "BBL Nyheter (iOS & Android)"
           , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
           , Tuple "Digitala korsord" ""
@@ -123,7 +123,7 @@ packageDescriptions = fromFoldable
       , url: Nothing
       , weekdays: "Papperstidningen tis & fre"
       , ordering: 2
-      , image: "ON.png"
+      , image: "bbl-2dagar.png"
       , packageGroup: "Papperstidningen"
       , priceDisclaimer: Nothing
       }
@@ -132,18 +132,18 @@ packageDescriptions = fromFoldable
       , brandLong: "Borgåbladet"
       , descriptionShort: " + HBL"
       , descriptionLong: description
-          [ Tuple "Premium" "Alla artiklar på HBL.fi, Ostnyland.fi, Vastranyland.fi"
+          [ Tuple "Premium" "Alla artiklar på HBL.fi, BBL.fi, Vastranyland.fi"
           , Tuple "Allt innehåll i våra nyhetsappar" "BBL Nyheter, HBL Nyheter, VN Nyheter (iOS & Android)"
           , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
           , Tuple "Digitala korsord" ""
           , Tuple "E-tidningar" "Papperstidningar digitalt i appen HBL 365 och på webben (BBL, HBL & VN)"
-          , Tuple "Papperstidningen" "Östnyland 2 dagar & HBL 5 dagar"
+          , Tuple "Papperstidningen" "Borgåbladet 2 dagar & HBL 5 dagar"
           ]
       , ribbon: ribbon "2+5" "dagar med papper"
       , url: Nothing
       , weekdays: "Papperstidningen mån-sön"
       , ordering: 3
-      , image: "ON.png"
+      , image: "bbl-2+5dagar.png"
       , packageGroup: "2+5"
       , priceDisclaimer: Nothing
       }
@@ -152,7 +152,7 @@ packageDescriptions = fromFoldable
       , brandLong: "BBL Digital"
       , descriptionShort: ""
       , descriptionLong: description
-          [ Tuple "Premium" "Alla artiklar Ostnyland.fi"
+          [ Tuple "Premium" "Alla artiklar BBL.fi"
           , Tuple "Allt innehåll i vår nyhetsapp" "BBL Nyheter (iOS & Android)"
           , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
           , Tuple "Digitala korsord" ""
@@ -162,7 +162,7 @@ packageDescriptions = fromFoldable
       , url: Nothing
       , weekdays: "Allt digitalt innehåll"
       , ordering: 1
-      , image: "ONPremium.png"
+      , image: "bbl-digi.png"
       , packageGroup: "Webb Premium"
       , priceDisclaimer: Nothing
       }
@@ -192,7 +192,7 @@ packageDescriptions = fromFoldable
       , brandLong: "Västra Nyland"
       , descriptionShort: " + HBL"
       , descriptionLong: description
-          [ Tuple "Premium" "Alla artiklar på Vastranyland.fi, HBL.fi, Ostnyland.fi"
+          [ Tuple "Premium" "Alla artiklar på Vastranyland.fi, HBL.fi, BBL.fi"
           , Tuple "Allt innehåll i våra nyhetsappar" "VN Nyheter, HBL Nyheter, BBL Nyheter (iOS & Android)"
           , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
           , Tuple "Digitala korsord" ""
@@ -248,7 +248,7 @@ packageDescriptions = fromFoldable
       , brandLong: "HBL"
       , descriptionShort: " Digital Plus"
       , descriptionLong: description
-          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, Ostnyland.fi"
+          [ Tuple "Premium" "Alla artiklar på HBL.fi, Vastranyland.fi, BBL.fi"
           , Tuple "Allt innehåll i våra nyhetsappar" "HBL Nyheter, VN Nyheter, BBL Nyheter (iOS & Android)"
           , Tuple "Nyhetsbrev" "Exklusiva förmåner och nyheter"
           , Tuple "Digitala korsord" ""

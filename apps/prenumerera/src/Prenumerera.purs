@@ -284,13 +284,13 @@ renderMain navbar content =
                             [ DOM.strong_ [ DOM.text "Kundservice" ]
                             , link "https://www.hbl.fi/sida/kundservice" HBL
                             , link "https://www.vastranyland.fi/sida/kundservice" VN
-                            , link "https://www.ostnyland.fi/sida/kundservice" ON
+                            , link "https://www.bbl.fi/sida/kundservice" ON
                             ]
                         , DOM.li_
                             [ DOM.strong_ [ DOM.text "Ta kontakt" ]
                             , link "https://www.hbl.fi/sida/kontakt" HBL
                             , link "https://www.vastranyland.fi/sida/kontakt" VN
-                            , link "https://www.ostnyland.fi/sida/kontakt" ON
+                            , link "https://www.bbl.fi/sida/kontakt" ON
                             ]
                         ]
                     }
@@ -299,7 +299,7 @@ renderMain navbar content =
                     , children:
                         [ imgLink "https://www.hbl.fi/" "https://cdn.ksfmedia.fi/prenumerera.ksfmedia.fi/images/hbl.png" HBL
                         , imgLink "https://www.vastranyland.fi/" "https://cdn.ksfmedia.fi/prenumerera.ksfmedia.fi/images/vn.png" VN
-                        , imgLink "https://www.ostnyland.fi/" "https://cdn.ksfmedia.fi/prenumerera.ksfmedia.fi/images/on.png" ON
+                        , imgLink "https://www.bbl.fi/" "https://cdn.ksfmedia.fi/prenumerera.ksfmedia.fi/images/bbl.png" ON
                         ]
                     }
                 , DOM.div
