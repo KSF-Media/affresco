@@ -18,7 +18,7 @@ import React.Basic.DOM as DOM
 
 foreign import logos ::
   { hbl :: String
-  , on  :: String
+  , bbl :: String
   , vn  :: String
   }
 
@@ -62,7 +62,7 @@ loginView self@{ state, setState } setUser logger =
     logosWrapper = Helpers.classy DOM.div "logos"
               [ DOM.img { src: logos.vn, className: "logo", alt: "VN Västis" }
               , DOM.img { src: logos.hbl, className: "logo", alt: "HBL Husis" }
-              , DOM.img { src: logos.on, className: "logo", alt: "ÖN" }
+              , DOM.img { src: logos.bbl, className: "logo", alt: "BBL" }
               ]
 
     title =
