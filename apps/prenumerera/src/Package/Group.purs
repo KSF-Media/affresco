@@ -4,11 +4,11 @@ import Prelude
 
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmpty
-import Data.Array.NonEmpty (NonEmptyArray, foldr1)
+import Data.Array.NonEmpty (NonEmptyArray, find, foldr1)
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (guard)
-import Data.Tuple (Tuple(..), fst)
+import Data.Tuple (Tuple(..), fst, snd)
 import Effect (Effect)
 import Effect.Aff as Aff
 import Effect.Class (liftEffect)
@@ -37,7 +37,8 @@ type Props =
 component :: Component Props
 component = do
   React.component "PackageGroup" \{ packages, startPurchase, userActivePackages } -> React.do
-    activePackage /\ setActivePackage <- useState' $ _.id $ fst $ NonEmpty.head packages
+    activePackage /\ setActivePackage <- useState' $ _.id $ fst $ fromMaybe (NonEmpty.head packages) $
+                                         find (_.groupDefault <<< snd) packages
     transitionPackage /\ setTransitionPackage <- useState' activePackage
     fade /\ setFade <- useState' false
     let startActivePackageFade id = when (not fade) do
