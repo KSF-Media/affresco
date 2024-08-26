@@ -23,6 +23,7 @@ type Description =
   , ordering :: Int
   , image :: String
   , packageGroup :: String
+  , groupDefault :: Boolean
   }
 
 packageDescriptions :: Map String Description
@@ -46,6 +47,7 @@ packageDescriptions = fromFoldable
       , ordering: 3
       , image: "HBLTotal.png"
       , packageGroup: "Papperstidningen"
+      , groupDefault: false
       , priceDisclaimer: Nothing
       }
   , "HBL_P+D FR" /\
@@ -66,6 +68,7 @@ packageDescriptions = fromFoldable
       , ordering: 4
       , image: "HBLHelg.png"
       , packageGroup: "Papperstidningen"
+      , groupDefault: true
       , priceDisclaimer: Nothing
       }
   , "HBL P+D SÖ" /\
@@ -86,6 +89,7 @@ packageDescriptions = fromFoldable
       , ordering: 5
       , image: "HBLSöndag.png"
       , packageGroup: "Papperstidningen"
+      , groupDefault: false
       , priceDisclaimer: Nothing
       }
   , "HBL WEBB" /\
@@ -104,6 +108,7 @@ packageDescriptions = fromFoldable
       , ordering: 1
       , image: "HBLPremium.png"
       , packageGroup: "Webb Premium"
+      , groupDefault: true
       , priceDisclaimer: Nothing
       }
   -- BORGÅBLADET PACKAGES
@@ -125,6 +130,7 @@ packageDescriptions = fromFoldable
       , ordering: 2
       , image: "bbl-2dagar.png"
       , packageGroup: "Papperstidningen"
+      , groupDefault: true
       , priceDisclaimer: Nothing
       }
   , "BBL+HBL" /\
@@ -145,6 +151,7 @@ packageDescriptions = fromFoldable
       , ordering: 3
       , image: "bbl-2+5dagar.png"
       , packageGroup: "2+5"
+      , groupDefault: true
       , priceDisclaimer: Nothing
       }
   , "BBL_DIGI" /\
@@ -164,6 +171,7 @@ packageDescriptions = fromFoldable
       , ordering: 1
       , image: "bbl-digi.png"
       , packageGroup: "Webb Premium"
+      , groupDefault: true
       , priceDisclaimer: Nothing
       }
   -- VÄSTRA NYLAND PACKAGES
@@ -185,6 +193,7 @@ packageDescriptions = fromFoldable
       , ordering: 2
       , image: "VN.png"
       , packageGroup: "Papperstidningen"
+      , groupDefault: true
       , priceDisclaimer: Nothing
       }
   , "VN+HBL" /\
@@ -205,6 +214,7 @@ packageDescriptions = fromFoldable
       , ordering: 3
       , image: "VN.png"
       , packageGroup: "2+5"
+      , groupDefault: true
       , priceDisclaimer: Nothing
       }
   , "VN_DIGI" /\
@@ -224,6 +234,7 @@ packageDescriptions = fromFoldable
       , ordering: 1
       , image: "vn_digi_premium.png"
       , packageGroup: "Webb Premium"
+      , groupDefault: true
       , priceDisclaimer: Nothing
       }
   -- HBL JUNIOR PACKAGES
@@ -240,6 +251,7 @@ packageDescriptions = fromFoldable
       , ordering: 1
       , image: "juniorBoll_1.png"
       , packageGroup: "JUNIOR"
+      , groupDefault: true
       , priceDisclaimer: Nothing
       }
   -- OTHER PACKAGES
@@ -261,6 +273,7 @@ packageDescriptions = fromFoldable
       , ordering: 2
       , image: "HBL365365.png"
       , packageGroup: "HBL 365"
+      , groupDefault: true
       , priceDisclaimer: Nothing
       }
   ]
