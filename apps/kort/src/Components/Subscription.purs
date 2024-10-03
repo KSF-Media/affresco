@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
 import Data.Tuple (Tuple(..))
 import KSF.Api.Subscription (toString) as Subsno
-import KSF.Api.Subscription (isSubscriptionExpired)
+import KSF.Api.Subscription (isSubscriptionExpired, isSubscriptionRenewable)
 import KSF.DescriptionList as DescriptionList
 import KSF.Grid as Grid
 import KSF.User as User
@@ -79,5 +79,5 @@ render self@{ props: { now, subscription: sub } } informationColumn =
     , id: "subscription-" <> subsno
     }
   where
-    expired = isSubscriptionExpired sub now
+    expired = isSubscriptionExpired sub now && not (isSubscriptionRenewable sub)
     subsno = Subsno.toString sub.subsno
