@@ -6,6 +6,7 @@ import Bottega.Models.PaymentMethod (PaymentMethodId)
 import Control.Alt ((<|>))
 import Data.Date (Date)
 import Data.Either (Either(..))
+import Data.Foldable (elem)
 import Data.Generic.Rep (class Generic)
 import Data.Int as Int
 import Data.JSDate (JSDate, toDate)
@@ -146,3 +147,12 @@ isSubscriptionExpired subs today =
   let end = toDate =<< toMaybe subs.dates.end
       suspend = toDate =<< toMaybe subs.dates.suspend
   in maybe false (_ < today) end || maybe false (_ <= today) suspend
+
+-- Can the payment card be changed
+isSubscriptionRenewable :: Subscription -> Boolean
+isSubscriptionRenewable subs =
+  (\(SubscriptionState x) -> x) subs.state `elem`
+  [ "Active"
+  , "Paused"
+  , "RestartedAfterLatePayment"
+  ]
