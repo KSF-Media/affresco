@@ -6,7 +6,7 @@ import Bottega.Models (CreditCard)
 import Data.Array (filter)
 import Data.Array as Array
 import Data.Enum (enumFromTo)
-import Data.Foldable (foldMap, for_)
+import Data.Foldable (foldMap)
 import Data.JSDate (toDate)
 import Data.List (intercalate)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -22,15 +22,12 @@ import KSF.Grid as Grid
 import KSF.Helpers (formatDateDots)
 import KSF.Spinner (loadingSpinner)
 import KSF.User as User
-import KSF.Window (clearOpener)
 import MittKonto.Main.UserView.Subscription.Helpers as Helpers
 import MittKonto.Main.UserView.Subscription.Types as Types
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import React.Basic.DOM.Events (preventDefault)
 import React.Basic.Events (handler)
-import Web.HTML as Web.HTML
-import Web.HTML.Window as Window
 
 receiverName :: Types.Self -> Array DescriptionList.Definition
 receiverName { props: { subscription: { receiver } } } =
@@ -117,7 +114,7 @@ billingDateTerm { props: { subscription: { dates: { end } } } } = foldMap
   ) $ trim <<< formatDateDots <$> (toDate =<< toMaybe end)
 
 subscriptionUpdates :: Types.Self -> JSX
-subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno } } } =
+subscriptionUpdates { props: props@{ subscription: sub@{ subsno } } } =
   Grid.row_ extraActions
   where
     extraActions =
@@ -125,18 +122,14 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno } } } =
         then case props.creditCard of
         Nothing -> [ loadingSpinner ]
         Just Nothing -> []
-        Just (Just card) -> [ creditCardUpdateIcon card ]
+        Just _ -> [ creditCardUpdateIcon ]
         else mempty
 
-    creditCardUpdateIcon card =
+    creditCardUpdateIcon =
       DOM.div
         { className: "subscription--action-item"
         , children: [ DOM.a
-                        { onClick: handler preventDefault $ \_ -> do
-                                    window <- Web.HTML.window
-                                    w <- Window.open "" "_blank" "" window
-                                    for_ w clearOpener
-                                    self.props.updateWindow $ Just w
+                        { onClick: handler preventDefault $ \_ ->
                                     props.router.pushState (unsafeToForeign {}) href
                         , href
                         , children: [ DOM.div
@@ -155,12 +148,12 @@ subscriptionUpdates self@{ props: props@{ subscription: sub@{ subsno } } } =
                         }
                     , DOM.div
                         { className: "subscription--update-action-addtional-text"
-                        , children: [DOM.text "(Öppnas i ett nytt fönster. Vid registreringen görs en täckningsreservation på 1 euro som inte debiteras från kortet.)"]
+                        , children: [DOM.text "(Vid registreringen görs en täckningsreservation på 1 euro som inte debiteras från kortet.)"]
                         }
                     ]
         }
       where
-        href = "/betalkort/" <> Subsno.toString subsno <> "/" <> (show $ unwrap card.id) <> "/uppdatera"
+        href = "/betalkort/" <> Subsno.toString subsno <> "/uppdatera"
 
 subscriptionEndTerm :: Types.Self -> Array DescriptionList.Definition
 subscriptionEndTerm { props: { subscription: { dates: { suspend } } } } = foldMap
