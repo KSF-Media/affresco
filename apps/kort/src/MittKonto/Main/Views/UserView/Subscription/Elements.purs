@@ -119,10 +119,7 @@ subscriptionUpdates { props: props@{ subscription: sub@{ subsno } } } =
   where
     extraActions =
       if sub.paymentMethod == CreditCard && sub.paycusno == props.user.cusno
-        then case props.creditCard of
-        Nothing -> [ loadingSpinner ]
-        Just Nothing -> []
-        Just _ -> [ creditCardUpdateIcon ]
+        then [ creditCardUpdateIcon ]
         else mempty
 
     creditCardUpdateIcon =
